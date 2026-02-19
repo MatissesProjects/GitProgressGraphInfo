@@ -166,6 +166,7 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
     return 1;
   };
 
+  // Recolor main graph days
   days.forEach((day: any) => {
     const date = day.getAttribute('data-date');
     const dayData = data.find(d => d.date === date);
@@ -178,6 +179,35 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
       day.style.border = 'none';
     }
   });
+
+  // Recolor the legend squares (Less -> More)
+  const footer = document.querySelector('.ContributionCalendar-footer');
+  if (footer) {
+    const legendSquares = footer.querySelectorAll('.ContributionCalendar-day');
+    legendSquares.forEach((sq: any, i) => {
+      // Legend usually has 5 squares (0, 1, 2, 3, 4)
+      // Map these to our 12-level scale: 0=0, 1=3, 2=6, 3=9, 4=11
+      const levelMap = [0, 3, 6, 9, 11];
+      const color = colors[levelMap[i]];
+      if (color) {
+        sq.style.setProperty('background-color', color, 'important');
+        sq.style.setProperty('fill', color, 'important');
+      }
+    });
+  }
+
+  // Update injected stats colors
+  const statsPanel = document.getElementById('git-heat-stats');
+  if (statsPanel) {
+    const badges = statsPanel.querySelectorAll('.badge');
+    const badgeLevels = [3, 6, 9, 11]; // L1, L2, L3, L4 mapped to 12-scale
+    badges.forEach((badge: any, i) => {
+      const color = colors[badgeLevels[i]];
+      if (color) {
+        badge.style.setProperty('background-color', color, 'important');
+      }
+    });
+  }
 }
 
 function calculateAdvancedStats(data: ContributionDay[]) {
@@ -366,10 +396,10 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     <div class="mt-3 pt-3 border-top color-border-muted">
       <div class="d-flex flex-items-center flex-wrap gap-2">
         <span class="color-fg-muted text-small mr-2">Decoded Thresholds: </span>
-        <span class="badge" style="background-color: var(--color-calendar-graph-day-L1-bg); border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
-        <span class="badge" style="background-color: var(--color-calendar-graph-day-L2-bg); border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
-        <span class="badge" style="background-color: var(--color-calendar-graph-day-L3-bg); border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
-        <span class="badge" style="background-color: var(--color-calendar-graph-day-L4-bg); border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span>
+        <span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
+        <span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
+        <span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
+        <span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span>
       </div>
     </div>
   `;
