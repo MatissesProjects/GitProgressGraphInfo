@@ -86,9 +86,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Render Advanced Stats
         const adv = response.advanced;
+        document.getElementById('persona-badge')!.textContent = adv.persona;
         document.getElementById('current-streak')!.textContent = `${adv.currentStreak} days`;
         document.getElementById('longest-streak')!.textContent = `${adv.longestStreak} days`;
+        document.getElementById('longest-slump')!.textContent = `${adv.longestSlump} days`;
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
+        document.getElementById('velocity')!.textContent = `${adv.velocity} c/d`;
+        document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
         document.getElementById('best-day')!.textContent = adv.bestDay;
       } else {
         loading.style.display = 'none';

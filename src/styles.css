@@ -88,6 +88,15 @@
   border-radius: 10px;
 }
 
+.Label--secondary {
+  background-color: var(--color-neutral-subtle);
+  color: var(--color-fg-muted);
+  border: 1px solid var(--color-border-default);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
 .square-legend {
   width: 10px;
   height: 10px;

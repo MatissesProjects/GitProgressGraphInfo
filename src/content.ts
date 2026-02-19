@@ -224,53 +224,64 @@ function calculateAdvancedStats(data: ContributionDay[]) {
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
-  // Create yesterday string for streak fallback
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
-
   let currentStreak = 0;
   let longestStreak = 0;
   let tempStreak = 0;
   let activeDays = 0;
+  let longestSlump = 0;
+  let tempSlump = 0;
+  let weekendContributions = 0;
+  let weekdayContributions = 0;
   
   const weekdayCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
 
-  // Sort by date and filter out future dates for accuracy
   const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
   const pastAndPresentData = sortedData.filter(d => d.date <= todayStr);
 
   pastAndPresentData.forEach(day => {
-    const dateObj = new Date(day.date + 'T00:00:00'); // Ensure local date parsing
+    const dateObj = new Date(day.date + 'T00:00:00');
     const weekday = dateObj.getDay();
+    const isWeekend = (weekday === 0 || weekday === 6);
 
     if (day.count > 0) {
       activeDays++;
       tempStreak++;
+      if (tempSlump > longestSlump) longestSlump = tempSlump;
+      tempSlump = 0;
+
+      if (isWeekend) weekendContributions += day.count;
+      else weekdayContributions += day.count;
+      
       weekdayCounts[weekday] += day.count;
     } else {
       if (tempStreak > longestStreak) longestStreak = tempStreak;
       tempStreak = 0;
+      tempSlump++;
     }
   });
   
   if (tempStreak > longestStreak) longestStreak = tempStreak;
+  if (tempSlump > longestSlump) longestSlump = tempSlump;
   
   // Calculate current streak
-  // Start from today or yesterday
-  let streakActive = true;
   for (let i = pastAndPresentData.length - 1; i >= 0; i--) {
     const day = pastAndPresentData[i];
     if (day.count > 0) {
       currentStreak++;
-    } else {
-      // If today has 0, we keep looking at yesterday. 
-      // If we already moved past today/yesterday and hit a 0, the streak is broken.
-      if (day.date !== todayStr) {
-        break;
-      }
+    } else if (day.date !== todayStr) {
+      break;
     }
   }
+
+  const total = weekendContributions + weekdayContributions;
+  const weekendScore = total > 0 ? Math.round((weekendContributions / total) * 100) : 0;
+  const velocity = activeDays > 0 ? (total / activeDays).toFixed(1) : "0";
+
+  // Determine Persona
+  let persona = "Consistent Coder";
+  if (weekendScore > 40) persona = "Weekend Warrior";
+  else if (activeDays / pastAndPresentData.length < 0.2) persona = "Burst Developer";
+  else if (parseInt(velocity) > 15) persona = "High-Volume Architect";
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   let bestDayIndex = 0;
@@ -285,7 +296,11 @@ function calculateAdvancedStats(data: ContributionDay[]) {
   return {
     currentStreak,
     longestStreak,
+    longestSlump,
     consistency: ((activeDays / pastAndPresentData.length) * 100).toFixed(1),
+    velocity,
+    weekendScore,
+    persona,
     bestDay: daysOfWeek[bestDayIndex],
     activeDays
   };
@@ -384,8 +399,11 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
 
   statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-center mb-3">
-      <h3 class="h4 mb-0">GitHeat Analytics</h3>
-      <span class="Label Label--info">Deep Dive Mode</span>
+      <div class="d-flex flex-items-center gap-2">
+        <h3 class="h4 mb-0">GitHeat Analytics</h3>
+        <span class="Label Label--info">${advanced.persona}</span>
+      </div>
+      <span class="Label Label--secondary">Deep Dive Mode</span>
     </div>
     
     <div class="git-heat-grid">
@@ -394,25 +412,24 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
         <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
       </div>
       <div class="stat-card">
-        <span class="color-fg-muted d-block text-small">Current Streak</span>
-        <strong class="f3-light">${advanced.currentStreak} days</strong>
+        <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
+        <strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong>
       </div>
       <div class="stat-card">
-        <span class="color-fg-muted d-block text-small">Longest Streak</span>
-        <strong class="f3-light">${advanced.longestStreak} days</strong>
+        <span class="color-fg-muted d-block text-small">Average Velocity</span>
+        <strong class="f3-light">${advanced.velocity} commits/day</strong>
       </div>
       <div class="stat-card">
         <span class="color-fg-muted d-block text-small">Consistency</span>
         <strong class="f3-light">${advanced.consistency}%</strong>
       </div>
       <div class="stat-card">
-        <span class="color-fg-muted d-block text-small">Best Day</span>
-        <strong class="f3-light">${advanced.bestDay}</strong>
+        <span class="color-fg-muted d-block text-small">Weekend Score</span>
+        <strong class="f3-light">${advanced.weekendScore}%</strong>
       </div>
       <div class="stat-card">
-        <span class="color-fg-muted d-block text-small">Busiest Day</span>
-        <strong class="f3-light">${busiestDay.count}</strong>
-        <span class="text-small color-fg-muted">(${busiestDay.date})</span>
+        <span class="color-fg-muted d-block text-small">Longest Slump</span>
+        <strong class="f3-light">${advanced.longestSlump} days</strong>
       </div>
     </div>
 
