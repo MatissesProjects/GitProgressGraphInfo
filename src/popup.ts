@@ -53,6 +53,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         loading.style.display = 'none';
         content.style.display = 'block';
         
+        const adv = response.advanced;
+        const titleSuffix = adv.isYTD ? '(YTD)' : '(Year)';
+        
+        // Update Total label
+        const totalLabel = totalCount.previousElementSibling;
+        if (totalLabel) {
+          totalLabel.textContent = `Total ${titleSuffix}:`;
+        }
+        
         totalCount.textContent = response.total.toLocaleString();
         
         const t = response.thresholds;
@@ -85,7 +94,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         // Render Advanced Stats
-        const adv = response.advanced;
         document.getElementById('persona-badge')!.textContent = adv.persona;
         document.getElementById('current-streak')!.textContent = `${adv.currentStreak} days`;
         document.getElementById('longest-streak')!.textContent = `${adv.longestStreak} days`;

@@ -228,7 +228,9 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
 
 function calculateAdvancedStats(data: ContributionDay[]) {
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const currentYear = now.getFullYear();
+  const todayStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const ytdStartStr = `${currentYear}-01-01`;
   
   let currentStreak = 0;
   let longestStreak = 0;
@@ -236,9 +238,15 @@ function calculateAdvancedStats(data: ContributionDay[]) {
   let activeDays = 0;
   let longestSlump = 0;
   let tempSlump = 0;
-  let weekendContributions = 0;
-  let weekdayContributions = 0;
   
+  // YTD specific metrics
+  let ytdWeekendContributions = 0;
+  let ytdWeekdayContributions = 0;
+  let ytdActiveWeekendDays = 0;
+  let ytdTotalWeekendDays = 0;
+  let ytdActiveDays = 0;
+  let ytdTotalDays = 0;
+
   const weekdayCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
 
   const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
@@ -248,6 +256,12 @@ function calculateAdvancedStats(data: ContributionDay[]) {
     const dateObj = new Date(day.date + 'T00:00:00');
     const weekday = dateObj.getDay();
     const isWeekend = (weekday === 0 || weekday === 6);
+    const isYTD = day.date >= ytdStartStr;
+
+    if (isYTD) {
+      ytdTotalDays++;
+      if (isWeekend) ytdTotalWeekendDays++;
+    }
 
     if (day.count > 0) {
       activeDays++;
@@ -255,8 +269,15 @@ function calculateAdvancedStats(data: ContributionDay[]) {
       if (tempSlump > longestSlump) longestSlump = tempSlump;
       tempSlump = 0;
 
-      if (isWeekend) weekendContributions += day.count;
-      else weekdayContributions += day.count;
+      if (isYTD) {
+        ytdActiveDays++;
+        if (isWeekend) {
+          ytdActiveWeekendDays++;
+          ytdWeekendContributions += day.count;
+        } else {
+          ytdWeekdayContributions += day.count;
+        }
+      }
       
       weekdayCounts[weekday] += day.count;
     } else {
@@ -279,15 +300,44 @@ function calculateAdvancedStats(data: ContributionDay[]) {
     }
   }
 
-  const total = weekendContributions + weekdayContributions;
-  const weekendScore = total > 0 ? Math.round((weekendContributions / total) * 100) : 0;
-  const velocity = activeDays > 0 ? (total / activeDays).toFixed(1) : "0";
+  // Calculate Weekend Score (Frequency)
+  let weekendScore = 0;
+  let weekendVolumeShare = 0;
+  let velocity = "0";
+  let consistency = "0";
+  
+  const ytdTotalContributions = ytdWeekendContributions + ytdWeekdayContributions;
+  
+  if (ytdTotalDays > 0) {
+    // We have YTD data (current year)
+    weekendScore = ytdTotalWeekendDays > 0 ? Math.round((ytdActiveWeekendDays / ytdTotalWeekendDays) * 100) : 0;
+    weekendVolumeShare = ytdTotalContributions > 0 ? (ytdWeekendContributions / ytdTotalContributions) : 0;
+    velocity = ytdActiveDays > 0 ? (ytdTotalContributions / ytdActiveDays).toFixed(1) : "0";
+    consistency = ((ytdActiveDays / ytdTotalDays) * 100).toFixed(1);
+  } else {
+    // Fallback to full dataset (e.g. looking at a past year)
+    const weekendDaysData = pastAndPresentData.filter(d => {
+      const day = new Date(d.date + 'T00:00:00').getDay();
+      return day === 0 || day === 6;
+    });
+    
+    const activeWeekendDaysCount = weekendDaysData.filter(d => d.count > 0).length;
+    weekendScore = weekendDaysData.length > 0 ? Math.round((activeWeekendDaysCount / weekendDaysData.length) * 100) : 0;
+    
+    const totalWeekendVol = weekendDaysData.reduce((sum, d) => sum + d.count, 0);
+    const totalVol = pastAndPresentData.reduce((sum, d) => sum + d.count, 0);
+    weekendVolumeShare = totalVol > 0 ? (totalWeekendVol / totalVol) : 0;
+    
+    velocity = activeDays > 0 ? (totalVol / activeDays).toFixed(1) : "0";
+    consistency = ((activeDays / pastAndPresentData.length) * 100).toFixed(1);
+  }
 
   // Determine Persona
   let persona = "Consistent Coder";
-  if (weekendScore > 40) persona = "Weekend Warrior";
-  else if (activeDays / pastAndPresentData.length < 0.2) persona = "Burst Developer";
-  else if (parseInt(velocity) > 15) persona = "High-Volume Architect";
+  if (weekendVolumeShare > 0.4) persona = "Weekend Warrior";
+  else if (parseFloat(consistency) < 20) persona = "Burst Developer";
+  else if (parseFloat(velocity) > 15) persona = "High-Volume Architect";
+  else if (weekendScore > 80) persona = "Unstoppable Force";
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   let bestDayIndex = 0;
@@ -303,12 +353,37 @@ function calculateAdvancedStats(data: ContributionDay[]) {
     currentStreak,
     longestStreak,
     longestSlump,
-    consistency: ((activeDays / pastAndPresentData.length) * 100).toFixed(1),
+    consistency,
     velocity,
     weekendScore,
     persona,
     bestDay: daysOfWeek[bestDayIndex],
-    activeDays
+    activeDays,
+    isYTD: ytdTotalDays > 0
+  };
+}
+
+  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  let bestDayIndex = 0;
+  let maxCount = -1;
+  for (let i = 0; i < 7; i++) {
+    if (weekdayCounts[i] > maxCount) {
+      maxCount = weekdayCounts[i];
+      bestDayIndex = i;
+    }
+  }
+
+  return {
+    currentStreak,
+    longestStreak,
+    longestSlump,
+    consistency,
+    velocity,
+    weekendScore,
+    persona,
+    bestDay: daysOfWeek[bestDayIndex],
+    activeDays,
+    isYTD: ytdTotalDays > 0
   };
 }
 
@@ -326,8 +401,18 @@ function init() {
       if (data) {
         const thresholds = calculateThresholds(data);
         const percentiles = calculatePercentiles(data);
-        const total = data.reduce((sum, day) => sum + day.count, 0);
         const advanced = calculateAdvancedStats(data);
+        
+        let total = data.reduce((sum, day) => sum + day.count, 0);
+        if (advanced.isYTD) {
+          const currentYear = new Date().getFullYear();
+          const ytdStartStr = `${currentYear}-01-01`;
+          const ytdData = data.filter(d => d.date >= ytdStartStr);
+          if (ytdData.length > 0) {
+            total = ytdData.reduce((sum, day) => sum + day.count, 0);
+          }
+        }
+        
         sendResponse({ thresholds, percentiles, total, advanced, success: true });
       } else {
         sendResponse({ success: false, error: "No graph found" });
@@ -418,19 +503,24 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
   // Check if we already injected
   if (document.getElementById('git-heat-stats')) return;
 
-  const totalContributions = data.reduce((sum, day) => sum + day.count, 0);
-  const sortedData = [...data].sort((a, b) => b.count - a.count);
-  const busiestDay = sortedData[0];
+  const currentYear = new Date().getFullYear();
+  const ytdStartStr = `${currentYear}-01-01`;
+  const ytdData = data.filter(d => d.date >= ytdStartStr);
+  const totalContributions = (advanced.isYTD && ytdData.length > 0) 
+    ? ytdData.reduce((sum, day) => sum + day.count, 0)
+    : data.reduce((sum, day) => sum + day.count, 0);
 
   const statsDiv = document.createElement('div');
   statsDiv.id = 'git-heat-stats';
   statsDiv.className = 'git-heat-panel border color-border-muted color-bg-subtle rounded-2 p-3 mb-3';
   statsDiv.style.marginTop = '16px';
 
+  const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
+
   statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-center mb-3">
       <div class="d-flex flex-items-center gap-2">
-        <h3 class="h4 mb-0">GitHeat Analytics</h3>
+        <h3 class="h4 mb-0">GitHeat Analytics ${titleSuffix}</h3>
         <span class="Label Label--info">${advanced.persona}</span>
       </div>
       <span class="Label Label--secondary">Deep Dive Mode</span>
@@ -438,7 +528,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     
     <div class="git-heat-grid">
       <div class="stat-card">
-        <span class="color-fg-muted d-block text-small">Total (Year)</span>
+        <span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span>
         <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
       </div>
       <div class="stat-card">
