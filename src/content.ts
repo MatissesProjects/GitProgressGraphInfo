@@ -42,7 +42,7 @@ function parseContributionGraph() {
   });
 
   if (contributionData.length === 0) {
-    console.warn("GitHeat: No contribution data found. Is this a GitHub profile page?");
+    // console.warn("GitHeat: No contribution data found. Is this a GitHub profile page?");
     return null;
   }
 
@@ -148,8 +148,14 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
   
   let colors: string[];
   if (themeName === 'custom') {
-    const settings = await chrome.storage.local.get(['customStart', 'customStop']);
-    colors = generateCustomScale((settings.customStart as string) || '#ebedf0', (settings.customStop as string) || '#216e39');
+    if (!chrome.runtime?.id) return;
+    try {
+      const settings = await chrome.storage.local.get(['customStart', 'customStop']);
+      colors = generateCustomScale((settings.customStart as string) || '#ebedf0', (settings.customStop as string) || '#216e39');
+    } catch (e) {
+      // Context invalidated
+      return;
+    }
   } else {
     colors = THEMES[themeName] || THEMES.green;
   }
@@ -309,8 +315,12 @@ function calculateAdvancedStats(data: ContributionDay[]) {
 function init() {
   console.log("GitHeat: Initializing...");
   
+  // Helper to check if extension context is still valid
+  const isContextValid = () => !!chrome.runtime?.id;
+
   // Listen for messages from the popup
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (!isContextValid()) return;
     if (request.action === "getStats") {
       const data = parseContributionGraph();
       if (data) {
@@ -328,35 +338,51 @@ function init() {
 
   // Listen for storage changes to update theme instantly
   chrome.storage.onChanged.addListener(async (changes) => {
+    if (!isContextValid()) return;
     if (changes.theme || changes.customStart || changes.customStop) {
       const data = parseContributionGraph();
       if (data) {
         const percentiles = calculatePercentiles(data);
         const thresholds = calculateThresholds(data);
-        const settings = await chrome.storage.local.get('theme');
-        await applyDeepRecoloring(data, percentiles, (settings.theme as string) || 'green', thresholds);
+        try {
+          const settings = await chrome.storage.local.get('theme');
+          await applyDeepRecoloring(data, percentiles, (settings.theme as string) || 'green', thresholds);
+        } catch (e) {
+          // Context might have been invalidated during await
+        }
       }
     }
   });
 
   // Wait for the graph to load for injection
   const runAnalysis = async () => {
-    const data = parseContributionGraph();
-    if (data) {
-      const thresholds = calculateThresholds(data);
-      const percentiles = calculatePercentiles(data);
-      
-      const settings = await chrome.storage.local.get('theme');
-      const theme = (settings.theme as string) || 'green';
-      const advanced = calculateAdvancedStats(data);
-      
-      injectStats(thresholds, data, advanced);
-      extendLegend(thresholds);
-      await applyDeepRecoloring(data, percentiles, theme, thresholds);
+    if (!isContextValid()) return;
+    
+    try {
+      const data = parseContributionGraph();
+      if (data) {
+        const thresholds = calculateThresholds(data);
+        const percentiles = calculatePercentiles(data);
+        
+        const settings = await chrome.storage.local.get('theme');
+        const theme = (settings.theme as string) || 'green';
+        const advanced = calculateAdvancedStats(data);
+        
+        injectStats(thresholds, data, advanced);
+        extendLegend(thresholds);
+        await applyDeepRecoloring(data, percentiles, theme, thresholds);
+      }
+    } catch (e) {
+      console.log("GitHeat: Analysis skipped or failed (likely extension context invalidated)");
     }
   };
 
   const observer = new MutationObserver((mutations) => {
+    if (!isContextValid()) {
+      observer.disconnect();
+      return;
+    }
+    
     // Check if the graph container was added or updated
     for (const mutation of mutations) {
       if (mutation.type === 'childList') {
@@ -365,7 +391,9 @@ function init() {
           // If our stats panel is missing, it means the year was likely switched
           if (!document.getElementById('git-heat-stats')) {
             console.log("GitHeat: Graph update detected, re-running analysis...");
-            runAnalysis();
+            runAnalysis().catch(() => {
+              // Ignore errors from invalidated context
+            });
           }
         }
       }
@@ -378,7 +406,9 @@ function init() {
   });
 
   // Initial run
-  runAnalysis();
+  runAnalysis().catch(() => {
+    // Ignore errors from invalidated context
+  });
 }
 
 function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
