@@ -81,3 +81,18 @@
   padding: 2px 6px;
   border-radius: 10px;
 }
+
+.square-legend {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid var(--color-calendar-graph-day-border);
+}
+
+.mr-3 {
+  margin-right: 16px !important;
+}
+
+.gap-1 {
+  gap: 4px;
+}

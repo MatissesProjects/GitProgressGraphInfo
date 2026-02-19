@@ -199,6 +199,16 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
   // Update injected stats colors
   const statsPanel = document.getElementById('git-heat-stats');
   if (statsPanel) {
+    // 1. Color the granular legend bar
+    const legendSquares = statsPanel.querySelectorAll('.square-legend');
+    legendSquares.forEach((sq: any, i) => {
+      const color = colors[i];
+      if (color) {
+        sq.style.setProperty('background-color', color, 'important');
+      }
+    });
+
+    // 2. Color the threshold badges
     const badges = statsPanel.querySelectorAll('.badge');
     const badgeLevels = [3, 6, 9, 11]; // L1, L2, L3, L4 mapped to 12-scale
     badges.forEach((badge: any, i) => {
@@ -394,12 +404,30 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     </div>
 
     <div class="mt-3 pt-3 border-top color-border-muted">
-      <div class="d-flex flex-items-center flex-wrap gap-2">
-        <span class="color-fg-muted text-small mr-2">Decoded Thresholds: </span>
-        <span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
-        <span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
-        <span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
-        <span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span>
+      <div class="d-flex flex-items-center flex-wrap">
+        <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
+        <div id="granular-legend" class="d-flex gap-1 mr-3">
+          <!-- 12 squares will be injected here -->
+          <div class="square-legend" style="background-color: var(--color-calendar-graph-day-bg)"></div>
+          <div class="square-legend level-1"></div>
+          <div class="square-legend level-2"></div>
+          <div class="square-legend level-3"></div>
+          <div class="square-legend level-4"></div>
+          <div class="square-legend level-5"></div>
+          <div class="square-legend level-6"></div>
+          <div class="square-legend level-7"></div>
+          <div class="square-legend level-8"></div>
+          <div class="square-legend level-9"></div>
+          <div class="square-legend level-10"></div>
+          <div class="square-legend level-11"></div>
+        </div>
+        <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
+          <span class="color-fg-muted text-small mr-1">Thresholds: </span>
+          <span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
+          <span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
+          <span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
+          <span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span>
+        </div>
       </div>
     </div>
   `;
