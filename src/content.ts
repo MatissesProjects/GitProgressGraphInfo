@@ -830,7 +830,9 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
   // Check if we already injected
   if (document.getElementById('git-heat-stats')) return;
 
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const currentYear = now.getFullYear();
   const ytdStartStr = `${currentYear}-01-01`;
   const ytdData = data.filter(d => d.date >= ytdStartStr);
   const totalContributions = (advanced.isYTD && ytdData.length > 0) 
@@ -984,10 +986,14 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     });
   };
 
-  const highlightWeekday = (weekdayIndex: number) => {
+  const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string) => {
     const days = document.querySelectorAll('.ContributionCalendar-day[data-date]');
     days.forEach((day: any) => {
       const date = day.getAttribute('data-date');
+      if (!date) return;
+      if (startDate && date < startDate) return;
+      if (endDate && date > endDate) return;
+
       const d = new Date(date + 'T00:00:00');
       if (d.getDay() === weekdayIndex) {
         day.classList.add('gh-highlight');
@@ -1029,7 +1035,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     bestDayCard.addEventListener('mouseenter', () => {
       bestDayCard.classList.add('highlighting');
       const idx = parseInt((bestDayCard as HTMLElement).dataset.weekday || '0', 10);
-      highlightWeekday(idx);
+      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
     });
     bestDayCard.addEventListener('mouseleave', () => {
       bestDayCard.classList.remove('highlighting');
@@ -1042,7 +1048,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     worstDayCard.addEventListener('mouseenter', () => {
       worstDayCard.classList.add('highlighting');
       const idx = parseInt((worstDayCard as HTMLElement).dataset.weekday || '0', 10);
-      highlightWeekday(idx);
+      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
     });
     worstDayCard.addEventListener('mouseleave', () => {
       worstDayCard.classList.remove('highlighting');
