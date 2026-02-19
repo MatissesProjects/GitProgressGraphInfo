@@ -342,10 +342,17 @@ function calculateAdvancedStats(data: ContributionDay[]) {
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   let bestDayIndex = 0;
   let maxCount = -1;
+  let worstDayIndex = 0;
+  let minCount = Infinity;
+
   for (let i = 0; i < 7; i++) {
     if (weekdayCounts[i] > maxCount) {
       maxCount = weekdayCounts[i];
       bestDayIndex = i;
+    }
+    if (weekdayCounts[i] < minCount) {
+      minCount = weekdayCounts[i];
+      worstDayIndex = i;
     }
   }
 
@@ -359,6 +366,8 @@ function calculateAdvancedStats(data: ContributionDay[]) {
     persona,
     bestDay: daysOfWeek[bestDayIndex],
     bestDayCount: maxCount,
+    worstDay: daysOfWeek[worstDayIndex],
+    worstDayCount: minCount,
     activeDays,
     isYTD: ytdTotalDays > 0
   };
@@ -531,6 +540,10 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
       <div class="stat-card">
         <span class="color-fg-muted d-block text-small">Best Weekday</span>
         <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Worst Weekday</span>
+        <strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong>
       </div>
     </div>
 
