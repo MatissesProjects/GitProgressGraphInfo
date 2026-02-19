@@ -4,6 +4,118 @@ interface ContributionDay {
   count: number;
 }
 
+interface PinnedProject {
+  name: string;
+  stars: number;
+  forks: number;
+  language: string;
+  languageColor: string;
+}
+
+interface RepoActivity {
+  name: string;
+  commits: number;
+}
+
+interface SocialStats {
+  followers: number;
+  following: number;
+  organizations: number;
+}
+
+function parseActivityTimeline(): RepoActivity[] {
+  const activities: Record<string, number> = {};
+  
+  // Look for "Created X commits in Y repositories" blocks
+  const activityItems = document.querySelectorAll('.TimelineItem-body');
+  
+  activityItems.forEach(item => {
+    // Try to find the list of repositories under a "commits" summary
+    const listItems = item.querySelectorAll('ul.list-style-none li');
+    listItems.forEach(li => {
+      const link = li.querySelector('a[href*="/commits/"]');
+      const text = li.textContent?.trim() || "";
+      if (link) {
+        const repoName = link.textContent?.trim() || "";
+        // Match "10 commits" or similar
+        const commitMatch = text.match(/(\d+)\s+commit/);
+        if (commitMatch && repoName) {
+          const count = parseInt(commitMatch[1], 10);
+          activities[repoName] = (activities[repoName] || 0) + count;
+        }
+      }
+    });
+  });
+
+  return Object.entries(activities)
+    .map(([name, commits]) => ({ name, commits }))
+    .sort((a, b) => b.commits - a.commits);
+}
+
+function parseAchievements(): string[] {
+  const achievements: string[] = [];
+  const badges = document.querySelectorAll('.achievement-badge-sidebar, .js-achievement-badge-card img');
+  badges.forEach(badge => {
+    const alt = badge.getAttribute('alt') || "";
+    if (alt && !achievements.includes(alt)) {
+      // Clean up alt text: "Achievement: Pull Shark" -> "Pull Shark"
+      achievements.push(alt.replace("Achievement: ", ""));
+    }
+  });
+  return achievements;
+}
+
+function parseSocials(): SocialStats {
+  const followersText = document.querySelector('a[href*="?tab=followers"] span')?.textContent?.trim() || "0";
+  const followingText = document.querySelector('a[href*="?tab=following"] span')?.textContent?.trim() || "0";
+  const orgs = document.querySelectorAll('.avatar-group-item').length;
+
+  const parseNum = (txt: string) => {
+    if (txt.includes('k')) return parseFloat(txt) * 1000;
+    return parseInt(txt.replace(/,/g, ''), 10) || 0;
+  };
+
+  return {
+    followers: parseNum(followersText),
+    following: parseNum(followingText),
+    organizations: orgs
+  };
+}
+
+function parsePinnedProjects(): PinnedProject[] {
+  const projects: PinnedProject[] = [];
+  const pinnedItems = document.querySelectorAll('.pinned-item-list-item-content');
+
+  pinnedItems.forEach((item) => {
+    const name = item.querySelector('a.Link')?.textContent?.trim() || "";
+    const language = item.querySelector('[itemprop="programmingLanguage"]')?.textContent?.trim() || "Unknown";
+    const languageColor = (item.querySelector('.repo-language-color') as HTMLElement)?.style?.backgroundColor || "";
+    
+    // Stars and Forks
+    let stars = 0;
+    let forks = 0;
+    
+    const links = item.querySelectorAll('a.pinned-item-meta');
+    links.forEach(link => {
+      const text = link.textContent?.trim() || "";
+      const href = link.getAttribute('href') || "";
+      const count = parseInt(text.replace(/,/g, ''), 10) || 0;
+      
+      if (href.includes('/stargazers')) {
+        stars = count;
+      } else if (href.includes('/forks') || href.includes('/network/members')) {
+        forks = count;
+      }
+    });
+
+    if (name) {
+      projects.push({ name, stars, forks, language, languageColor });
+    }
+  });
+
+  return projects;
+}
+
 function parseContributionGraph() {
   console.log("GitHeat: Starting to parse contribution graph...");
 
@@ -226,7 +338,7 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
   }
 }
 
-function calculateAdvancedStats(data: ContributionDay[]) {
+function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], repos: RepoActivity[] = [], achievements: string[] = [], socials: SocialStats) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const todayStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -332,12 +444,22 @@ function calculateAdvancedStats(data: ContributionDay[]) {
     consistency = ((activeDays / pastAndPresentData.length) * 100).toFixed(1);
   }
 
+  // Pinned Data Insights
+  const totalStars = pinned.reduce((sum, p) => sum + p.stars, 0);
+  const totalForks = pinned.reduce((sum, p) => sum + p.forks, 0);
+  const langFreq: Record<string, number> = {};
+  pinned.forEach(p => {
+    if (p.language !== "Unknown") langFreq[p.language] = (langFreq[p.language] || 0) + 1;
+  });
+  const topLangs = Object.entries(langFreq).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]);
+
   // Determine Persona
   let persona = "Consistent Coder";
   if (weekendVolumeShare > 0.4) persona = "Weekend Warrior";
   else if (parseFloat(consistency) < 20) persona = "Burst Developer";
   else if (parseFloat(velocity) > 15) persona = "High-Volume Architect";
   else if (weekendScore > 80) persona = "Unstoppable Force";
+  else if (totalStars > 100) persona = "Popular Maintainer";
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   let bestDayIndex = 0;
@@ -369,7 +491,13 @@ function calculateAdvancedStats(data: ContributionDay[]) {
     worstDay: daysOfWeek[worstDayIndex],
     worstDayCount: minCount,
     activeDays,
-    isYTD: ytdTotalDays > 0
+    isYTD: ytdTotalDays > 0,
+    totalStars,
+    totalForks,
+    topLangs,
+    topRepos: repos.slice(0, 3), // Return top 3 most active repositories
+    achievements: achievements.slice(0, 4), // Top 4 badges
+    socials
   };
 }
 
@@ -384,10 +512,15 @@ function init() {
     if (!isContextValid()) return;
     if (request.action === "getStats") {
       const data = parseContributionGraph();
+      const pinned = parsePinnedProjects();
+      const repos = parseActivityTimeline();
+      const achievements = parseAchievements();
+      const socials = parseSocials();
+      
       if (data) {
         const thresholds = calculateThresholds(data);
         const percentiles = calculatePercentiles(data);
-        const advanced = calculateAdvancedStats(data);
+        const advanced = calculateAdvancedStats(data, pinned, repos, achievements, socials);
         
         let total = data.reduce((sum, day) => sum + day.count, 0);
         if (advanced.isYTD) {
@@ -431,13 +564,18 @@ function init() {
     
     try {
       const data = parseContributionGraph();
+      const pinned = parsePinnedProjects();
+      const repos = parseActivityTimeline();
+      const achievements = parseAchievements();
+      const socials = parseSocials();
+
       if (data) {
         const thresholds = calculateThresholds(data);
         const percentiles = calculatePercentiles(data);
         
         const settings = await chrome.storage.local.get('theme');
         const theme = (settings.theme as string) || 'green';
-        const advanced = calculateAdvancedStats(data);
+        const advanced = calculateAdvancedStats(data, pinned, repos, achievements, socials);
         
         injectStats(thresholds, data, advanced);
         extendLegend(thresholds);
@@ -544,6 +682,40 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
       <div class="stat-card">
         <span class="color-fg-muted d-block text-small">Worst Weekday</span>
         <strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span>
+        <strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Top Languages</span>
+        <strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Network</span>
+        <strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong>
+      </div>
+    </div>
+
+    <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4">
+      <div style="flex: 1; min-width: 200px;">
+        <span class="color-fg-muted text-small d-block mb-2">Most Active Repositories</span>
+        <div class="d-flex flex-column gap-1">
+          ${advanced.topRepos.map((r: any) => `
+            <div class="d-flex flex-justify-between text-small">
+              <span>${r.name}</span>
+              <span class="color-fg-muted">${r.commits} commits</span>
+            </div>
+          `).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}
+        </div>
+      </div>
+      <div style="flex: 1; min-width: 200px;">
+        <span class="color-fg-muted text-small d-block mb-2">Recent Achievements</span>
+        <div class="d-flex flex-wrap gap-1">
+          ${advanced.achievements.map((a: string) => `
+            <span class="Label Label--secondary" title="${a}">${a}</span>
+          `).join('') || '<span class="text-small color-fg-muted">None found</span>'}
+        </div>
       </div>
     </div>
 

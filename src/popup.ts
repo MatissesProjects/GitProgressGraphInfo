@@ -103,6 +103,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
         document.getElementById('best-day')!.textContent = `${adv.bestDay} (${adv.bestDayCount})`;
         document.getElementById('worst-day')!.textContent = `${adv.worstDay} (${adv.worstDayCount})`;
+        document.getElementById('pinned-stats')!.textContent = `${adv.totalStars} / ${adv.totalForks}`;
+        document.getElementById('top-langs')!.textContent = adv.topLangs.join(', ') || 'N/A';
+        document.getElementById('socials')!.textContent = `${adv.socials.followers} Follow / ${adv.socials.organizations} Orgs`;
+
+        // Render Top Repos
+        const repoList = document.getElementById('repo-list')!;
+        repoList.innerHTML = '';
+        adv.topRepos.forEach((r: any) => {
+          const div = document.createElement('div');
+          div.className = 'stat-row';
+          div.style.fontSize = '12px';
+          div.innerHTML = `<span>${r.name}</span><span style="font-weight: 600;">${r.commits}</span>`;
+          repoList.appendChild(div);
+        });
+
+        // Render Achievements
+        const achList = document.getElementById('achievement-list')!;
+        achList.innerHTML = '';
+        adv.achievements.forEach((a: string) => {
+          const span = document.createElement('span');
+          span.style.fontSize = '10px';
+          span.style.padding = '2px 4px';
+          span.style.background = '#f6f8fa';
+          span.style.border = '1px solid #d0d7de';
+          span.style.borderRadius = '4px';
+          span.textContent = a;
+          achList.appendChild(span);
+        });
       } else {
         loading.style.display = 'none';
         error.textContent = response?.error || "Could not find contribution graph.";
