@@ -181,6 +181,14 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
 }
 
 function calculateAdvancedStats(data: ContributionDay[]) {
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  
+  // Create yesterday string for streak fallback
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
   let currentStreak = 0;
   let longestStreak = 0;
   let tempStreak = 0;
@@ -188,11 +196,12 @@ function calculateAdvancedStats(data: ContributionDay[]) {
   
   const weekdayCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
 
-  // Sort by date to calculate streaks correctly
+  // Sort by date and filter out future dates for accuracy
   const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
+  const pastAndPresentData = sortedData.filter(d => d.date <= todayStr);
 
-  sortedData.forEach(day => {
-    const dateObj = new Date(day.date);
+  pastAndPresentData.forEach(day => {
+    const dateObj = new Date(day.date + 'T00:00:00'); // Ensure local date parsing
     const weekday = dateObj.getDay();
 
     if (day.count > 0) {
@@ -205,20 +214,21 @@ function calculateAdvancedStats(data: ContributionDay[]) {
     }
   });
   
-  // Check last streak
   if (tempStreak > longestStreak) longestStreak = tempStreak;
   
-  // Calculate current streak (working backwards from today)
-  const today = new Date().toISOString().split('T')[0];
-  let foundToday = false;
-  for (let i = sortedData.length - 1; i >= 0; i--) {
-    if (sortedData[i].count > 0) {
+  // Calculate current streak
+  // Start from today or yesterday
+  let streakActive = true;
+  for (let i = pastAndPresentData.length - 1; i >= 0; i--) {
+    const day = pastAndPresentData[i];
+    if (day.count > 0) {
       currentStreak++;
-      if (sortedData[i].date === today) foundToday = true;
     } else {
-      // If we haven't found today and the day isn't yesterday/today, streak is 0
-      // But GitHub graph usually ends today, so we check if the gap is > 1 day
-      break;
+      // If today has 0, we keep looking at yesterday. 
+      // If we already moved past today/yesterday and hit a 0, the streak is broken.
+      if (day.date !== todayStr) {
+        break;
+      }
     }
   }
 
@@ -235,7 +245,7 @@ function calculateAdvancedStats(data: ContributionDay[]) {
   return {
     currentStreak,
     longestStreak,
-    consistency: ((activeDays / data.length) * 100).toFixed(1),
+    consistency: ((activeDays / pastAndPresentData.length) * 100).toFixed(1),
     bestDay: daysOfWeek[bestDayIndex],
     activeDays
   };
