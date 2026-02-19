@@ -83,6 +83,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             raritySection.appendChild(row);
           }
         });
+
+        // Render Advanced Stats
+        const adv = response.advanced;
+        document.getElementById('current-streak')!.textContent = `${adv.currentStreak} days`;
+        document.getElementById('longest-streak')!.textContent = `${adv.longestStreak} days`;
+        document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
+        document.getElementById('best-day')!.textContent = adv.bestDay;
       } else {
         loading.style.display = 'none';
         error.textContent = response?.error || "Could not find contribution graph.";

@@ -180,6 +180,67 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
   });
 }
 
+function calculateAdvancedStats(data: ContributionDay[]) {
+  let currentStreak = 0;
+  let longestStreak = 0;
+  let tempStreak = 0;
+  let activeDays = 0;
+  
+  const weekdayCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+
+  // Sort by date to calculate streaks correctly
+  const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
+
+  sortedData.forEach(day => {
+    const dateObj = new Date(day.date);
+    const weekday = dateObj.getDay();
+
+    if (day.count > 0) {
+      activeDays++;
+      tempStreak++;
+      weekdayCounts[weekday] += day.count;
+    } else {
+      if (tempStreak > longestStreak) longestStreak = tempStreak;
+      tempStreak = 0;
+    }
+  });
+  
+  // Check last streak
+  if (tempStreak > longestStreak) longestStreak = tempStreak;
+  
+  // Calculate current streak (working backwards from today)
+  const today = new Date().toISOString().split('T')[0];
+  let foundToday = false;
+  for (let i = sortedData.length - 1; i >= 0; i--) {
+    if (sortedData[i].count > 0) {
+      currentStreak++;
+      if (sortedData[i].date === today) foundToday = true;
+    } else {
+      // If we haven't found today and the day isn't yesterday/today, streak is 0
+      // But GitHub graph usually ends today, so we check if the gap is > 1 day
+      break;
+    }
+  }
+
+  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  let bestDayIndex = 0;
+  let maxCount = -1;
+  for (let i = 0; i < 7; i++) {
+    if (weekdayCounts[i] > maxCount) {
+      maxCount = weekdayCounts[i];
+      bestDayIndex = i;
+    }
+  }
+
+  return {
+    currentStreak,
+    longestStreak,
+    consistency: ((activeDays / data.length) * 100).toFixed(1),
+    bestDay: daysOfWeek[bestDayIndex],
+    activeDays
+  };
+}
+
 function init() {
   console.log("GitHeat: Initializing...");
   
@@ -191,7 +252,8 @@ function init() {
         const thresholds = calculateThresholds(data);
         const percentiles = calculatePercentiles(data);
         const total = data.reduce((sum, day) => sum + day.count, 0);
-        sendResponse({ thresholds, percentiles, total, success: true });
+        const advanced = calculateAdvancedStats(data);
+        sendResponse({ thresholds, percentiles, total, advanced, success: true });
       } else {
         sendResponse({ success: false, error: "No graph found" });
       }
