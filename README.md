@@ -2,6 +2,8 @@
 
 A Chrome extension to reveal hidden metrics behind GitHub contribution graphs.
 
+![Example Graph And Data](src/ExampleGraphAndData.png)
+
 ## Features
 - **Threshold Decoder:** Shows exact commit ranges for Level 1-4 squares.
 - **Heatmap Injection:** Adds a stats panel above the contribution graph.
