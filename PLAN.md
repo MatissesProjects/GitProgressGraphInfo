@@ -62,6 +62,7 @@ We will target the SVG/Table elements in the GitHub UI.
 - [x] Inject the panel into the GitHub DOM.
 - [x] Style it using GitHub's CSS variables to match Dark/Light mode automatically.
 - [x] Implement Legend Extender to show numbers next to legend squares.
+- [x] Expand Timeline parsing to capture detailed PR, Review, Issue, and Repository creation stats.
 
 ### Phase 4: Refinement & Publish (Day 6+)
 - [ ] Add error handling (if GitHub UI changes).

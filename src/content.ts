@@ -17,39 +17,136 @@ interface RepoActivity {
   commits: number;
 }
 
+interface CreatedRepo {
+  name: string;
+  language: string;
+}
+
+interface TimelineActivity {
+  topRepos: RepoActivity[];
+  createdRepos: number;
+  createdRepoList: CreatedRepo[];
+  issuesOpened: number;
+  pullRequests: number;
+  pullRequestReviews: number;
+  mergedPullRequests: number;
+}
+
 interface SocialStats {
   followers: number;
   following: number;
   organizations: number;
 }
 
-function parseActivityTimeline(): RepoActivity[] {
-  const activities: Record<string, number> = {};
+function parseActivityTimeline(): TimelineActivity {
+  const repoCommits: Record<string, number> = {};
+  let createdRepos = 0;
+  let createdRepoList: CreatedRepo[] = [];
+  let issuesOpened = 0;
+  let pullRequests = 0;
+  let pullRequestReviews = 0;
+  let mergedPullRequests = 0;
   
-  // Look for "Created X commits in Y repositories" blocks
-  const activityItems = document.querySelectorAll('.TimelineItem-body');
+  const activityItems = document.querySelectorAll('.TimelineItem');
   
   activityItems.forEach(item => {
-    // Try to find the list of repositories under a "commits" summary
-    const listItems = item.querySelectorAll('ul.list-style-none li');
-    listItems.forEach(li => {
-      const link = li.querySelector('a[href*="/commits/"]');
-      const text = li.textContent?.trim() || "";
-      if (link) {
-        const repoName = link.textContent?.trim() || "";
-        // Match "10 commits" or similar
-        const commitMatch = text.match(/(\d+)\s+commit/);
-        if (commitMatch && repoName) {
-          const count = parseInt(commitMatch[1], 10);
-          activities[repoName] = (activities[repoName] || 0) + count;
+    const body = item.querySelector('.TimelineItem-body');
+    if (!body) return;
+
+    const text = body.textContent?.trim() || "";
+
+    // 1. Parse Commits
+    if (text.includes('commits in')) {
+      const listItems = body.querySelectorAll('ul.list-style-none li');
+      listItems.forEach(li => {
+        const link = li.querySelector('a[href*="/commits/"]');
+        const liText = li.textContent?.trim() || "";
+        if (link) {
+          const repoName = link.textContent?.trim() || "";
+          const commitMatch = liText.match(/(\d+)\s+commit/);
+          if (commitMatch && repoName) {
+            repoCommits[repoName] = (repoCommits[repoName] || 0) + parseInt(commitMatch[1], 10);
+          }
         }
+      });
+    }
+
+    // 2. Parse Created Repositories
+    if (text.includes('Created') && text.includes('repositor')) {
+      const match = text.match(/Created (\d+) repositor/i);
+      if (match) {
+        createdRepos += parseInt(match[1], 10);
+      } else if (text.includes('Created a repository')) {
+        createdRepos += 1;
       }
-    });
+      
+      const listItems = body.querySelectorAll('ul.list-style-none li');
+      listItems.forEach(li => {
+        const link = li.querySelector('a.Link');
+        if (link) {
+          const name = link.textContent?.trim() || "";
+          const language = li.querySelector('[itemprop="programmingLanguage"]')?.textContent?.trim() || "";
+          if (name) {
+            createdRepoList.push({ name, language });
+          }
+        }
+      });
+    }
+
+    // 3. Parse Issues
+    if (text.includes('Opened') && text.includes('issue')) {
+      const match = text.match(/Opened (\d+) (?:other )?issue/i);
+      if (match) {
+        issuesOpened += parseInt(match[1], 10);
+      } else if (text.includes('Opened an issue')) {
+        issuesOpened += 1;
+      }
+    }
+    if (text.includes('Created an issue')) {
+      issuesOpened += 1;
+    }
+
+    // 4. Parse Pull Requests (Opened, Merged, Reviewed)
+    if (text.includes('pull request')) {
+      // 4a. Opened / Proposed
+      const proposedMatch = text.match(/(?:Proposed|Opened) (\d+) (?:other )?pull request/i);
+      if (proposedMatch) {
+        pullRequests += parseInt(proposedMatch[1], 10);
+      } else if (text.includes('Opened a pull request') || text.includes('Proposed a pull request')) {
+        pullRequests += 1;
+      }
+
+      // 4b. Merged
+      const mergedMatch = text.match(/Merged (\d+) (?:other )?pull request/i);
+      if (mergedMatch) {
+        mergedPullRequests += parseInt(mergedMatch[1], 10);
+      } else if (text.includes('Merged a pull request')) {
+        mergedPullRequests += 1;
+      }
+
+      // 4c. Reviewed
+      const reviewedMatch = text.match(/Reviewed (\d+) (?:other )?pull request/i);
+      if (reviewedMatch) {
+        pullRequestReviews += parseInt(reviewedMatch[1], 10);
+      } else if (text.includes('Reviewed a pull request')) {
+        pullRequestReviews += 1;
+      }
+    }
   });
 
-  return Object.entries(activities)
+  const topRepos = Object.entries(repoCommits)
     .map(([name, commits]) => ({ name, commits }))
     .sort((a, b) => b.commits - a.commits);
+
+  return { 
+    topRepos, 
+    createdRepos, 
+    createdRepoList, 
+    issuesOpened, 
+    pullRequests, 
+    pullRequestReviews, 
+    mergedPullRequests 
+  };
 }
 
 function parseAchievements(): string[] {
@@ -338,7 +435,7 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
   }
 }
 
-function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], repos: RepoActivity[] = [], achievements: string[] = [], socials: SocialStats) {
+function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const todayStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -495,8 +592,14 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     totalStars,
     totalForks,
     topLangs,
-    topRepos: repos.slice(0, 3), // Return top 3 most active repositories
-    achievements: achievements.slice(0, 4), // Top 4 badges
+    topRepos: timeline.topRepos.slice(0, 3),
+    createdRepos: timeline.createdRepos,
+    createdRepoList: timeline.createdRepoList,
+    issuesOpened: timeline.issuesOpened,
+    pullRequests: timeline.pullRequests,
+    pullRequestReviews: timeline.pullRequestReviews,
+    mergedPullRequests: timeline.mergedPullRequests,
+    achievements: achievements.slice(0, 4),
     socials
   };
 }
@@ -513,14 +616,14 @@ function init() {
     if (request.action === "getStats") {
       const data = parseContributionGraph();
       const pinned = parsePinnedProjects();
-      const repos = parseActivityTimeline();
+      const timeline = parseActivityTimeline();
       const achievements = parseAchievements();
       const socials = parseSocials();
       
       if (data) {
         const thresholds = calculateThresholds(data);
         const percentiles = calculatePercentiles(data);
-        const advanced = calculateAdvancedStats(data, pinned, repos, achievements, socials);
+        const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
         
         let total = data.reduce((sum, day) => sum + day.count, 0);
         if (advanced.isYTD) {
@@ -565,7 +668,7 @@ function init() {
     try {
       const data = parseContributionGraph();
       const pinned = parsePinnedProjects();
-      const repos = parseActivityTimeline();
+      const timeline = parseActivityTimeline();
       const achievements = parseAchievements();
       const socials = parseSocials();
 
@@ -575,7 +678,7 @@ function init() {
         
         const settings = await chrome.storage.local.get('theme');
         const theme = (settings.theme as string) || 'green';
-        const advanced = calculateAdvancedStats(data, pinned, repos, achievements, socials);
+        const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
         
         injectStats(thresholds, data, advanced);
         extendLegend(thresholds);
@@ -688,6 +791,14 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
         <strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong>
       </div>
       <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span>
+        <strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Issues / Created Repos</span>
+        <strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong>
+      </div>
+      <div class="stat-card">
         <span class="color-fg-muted d-block text-small">Top Languages</span>
         <strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong>
       </div>
@@ -699,7 +810,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
 
     <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4">
       <div style="flex: 1; min-width: 200px;">
-        <span class="color-fg-muted text-small d-block mb-2">Most Active Repositories</span>
+        <span class="color-fg-muted text-small d-block mb-2">Most Active Repos (Commits)</span>
         <div class="d-flex flex-column gap-1">
           ${advanced.topRepos.map((r: any) => `
             <div class="d-flex flex-justify-between text-small">
@@ -707,6 +818,17 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
               <span class="color-fg-muted">${r.commits} commits</span>
             </div>
           `).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}
+        </div>
+      </div>
+      <div style="flex: 1; min-width: 200px;">
+        <span class="color-fg-muted text-small d-block mb-2">Created Repositories</span>
+        <div class="d-flex flex-column gap-1">
+          ${advanced.createdRepoList.slice(0, 5).map((r: any) => `
+            <div class="d-flex flex-justify-between text-small">
+              <span>${r.name}</span>
+              <span class="color-fg-muted">${r.language || ''}</span>
+            </div>
+          `).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}
         </div>
       </div>
       <div style="flex: 1; min-width: 200px;">

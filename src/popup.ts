@@ -100,6 +100,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('longest-slump')!.textContent = `${adv.longestSlump} days`;
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
         document.getElementById('velocity')!.textContent = `${adv.velocity} c/d`;
+        document.getElementById('pr-stats')!.textContent = `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`;
+        document.getElementById('issue-repo-stats')!.textContent = `${adv.issuesOpened} / ${adv.createdRepos}`;
         document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
         document.getElementById('best-day')!.textContent = `${adv.bestDay} (${adv.bestDayCount})`;
         document.getElementById('worst-day')!.textContent = `${adv.worstDay} (${adv.worstDayCount})`;
@@ -117,6 +119,21 @@ document.addEventListener('DOMContentLoaded', async () => {
           div.innerHTML = `<span>${r.name}</span><span style="font-weight: 600;">${r.commits}</span>`;
           repoList.appendChild(div);
         });
+
+        // Render Created Repos
+        const createdRepoList = document.getElementById('created-repo-list')!;
+        createdRepoList.innerHTML = '';
+        if (adv.createdRepoList && adv.createdRepoList.length > 0) {
+          adv.createdRepoList.slice(0, 5).forEach((r: any) => {
+            const div = document.createElement('div');
+            div.className = 'stat-row';
+            div.style.fontSize = '12px';
+            div.innerHTML = `<span>${r.name}</span><span style="font-weight: 400; color: #57606a;">${r.language || ''}</span>`;
+            createdRepoList.appendChild(div);
+          });
+        } else {
+          createdRepoList.innerHTML = '<span style="font-size: 11px; color: #57606a;">No repos created</span>';
+        }
 
         // Render Achievements
         const achList = document.getElementById('achievement-list')!;
