@@ -47,3 +47,37 @@
   flex: 1;
   min-width: 120px;
 }
+
+.git-heat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  padding: 8px 12px;
+  background-color: var(--color-canvas-default);
+  border: 1px solid var(--color-border-muted);
+  border-radius: 6px;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-accent-emphasis);
+}
+
+.f3-light {
+  font-size: 18px;
+  font-weight: 400;
+  display: block;
+}
+
+.Label--info {
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent-fg);
+  border: 1px solid var(--color-accent-muted);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+}

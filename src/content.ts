@@ -296,8 +296,9 @@ function init() {
           
           const settings = await chrome.storage.local.get('theme');
           const theme = (settings.theme as string) || 'green';
+          const advanced = calculateAdvancedStats(data);
           
-          injectStats(thresholds, data);
+          injectStats(thresholds, data, advanced);
           extendLegend(thresholds);
           await applyDeepRecoloring(data, percentiles, theme);
         }
@@ -312,7 +313,7 @@ function init() {
   });
 }
 
-function injectStats(thresholds: any, data: ContributionDay[]) {
+function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
 
@@ -329,29 +330,47 @@ function injectStats(thresholds: any, data: ContributionDay[]) {
   statsDiv.style.marginTop = '16px';
 
   statsDiv.innerHTML = `
-    <h3 class="h4 mb-2">GitHeat Analysis</h3>
-    <div class="d-flex flex-wrap gap-3">
-      <div class="stat-item">
-        <span class="color-fg-muted">Total (Year):</span>
-        <strong class="color-fg-default">${totalContributions}</strong>
+    <div class="d-flex flex-justify-between flex-items-center mb-3">
+      <h3 class="h4 mb-0">GitHeat Analytics</h3>
+      <span class="Label Label--info">Deep Dive Mode</span>
+    </div>
+    
+    <div class="git-heat-grid">
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Total (Year)</span>
+        <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
       </div>
-      <div class="stat-item">
-        <span class="color-fg-muted">Busiest Day:</span>
-        <strong class="color-fg-default">${busiestDay.count} (${busiestDay.date})</strong>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Current Streak</span>
+        <strong class="f3-light">${advanced.currentStreak} days</strong>
       </div>
-      <div class="stat-item">
-        <span class="color-fg-muted">Level 4 Cutoff:</span>
-        <strong class="color-fg-success">${thresholds[4]?.min || 'N/A'}+</strong>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Longest Streak</span>
+        <strong class="f3-light">${advanced.longestStreak} days</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Consistency</span>
+        <strong class="f3-light">${advanced.consistency}%</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Best Day</span>
+        <strong class="f3-light">${advanced.bestDay}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Busiest Day</span>
+        <strong class="f3-light">${busiestDay.count}</strong>
+        <span class="text-small color-fg-muted">(${busiestDay.date})</span>
       </div>
     </div>
-    <div class="mt-2 pt-2 border-top color-border-muted">
-      <span class="color-fg-muted text-small">Detected Thresholds: </span>
-      <span class="d-inline-flex gap-2 text-small">
-        <span class="badge color-bg-done-emphasis color-fg-on-emphasis" style="background-color: var(--color-calendar-graph-day-L1-bg) !important; color: var(--color-fg-default) !important; border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
-        <span class="badge color-bg-done-emphasis color-fg-on-emphasis" style="background-color: var(--color-calendar-graph-day-L2-bg) !important; color: var(--color-fg-default) !important; border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
-        <span class="badge color-bg-done-emphasis color-fg-on-emphasis" style="background-color: var(--color-calendar-graph-day-L3-bg) !important; color: var(--color-fg-default) !important; border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
-        <span class="badge color-bg-done-emphasis color-fg-on-emphasis" style="background-color: var(--color-calendar-graph-day-L4-bg) !important; color: var(--color-fg-default) !important; border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span>
-      </span>
+
+    <div class="mt-3 pt-3 border-top color-border-muted">
+      <div class="d-flex flex-items-center flex-wrap gap-2">
+        <span class="color-fg-muted text-small mr-2">Decoded Thresholds: </span>
+        <span class="badge" style="background-color: var(--color-calendar-graph-day-L1-bg); border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
+        <span class="badge" style="background-color: var(--color-calendar-graph-day-L2-bg); border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
+        <span class="badge" style="background-color: var(--color-calendar-graph-day-L3-bg); border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
+        <span class="badge" style="background-color: var(--color-calendar-graph-day-L4-bg); border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span>
+      </div>
     </div>
   `;
 
