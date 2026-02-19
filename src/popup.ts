@@ -8,8 +8,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const colorStart = document.getElementById('color-start') as HTMLInputElement;
   const colorStop = document.getElementById('color-stop') as HTMLInputElement;
 
+  // Visibility Toggles
+  const toggleGrid = document.getElementById('toggle-grid') as HTMLInputElement;
+  const toggleActiveRepos = document.getElementById('toggle-active-repos') as HTMLInputElement;
+  const toggleCreatedRepos = document.getElementById('toggle-created-repos') as HTMLInputElement;
+  const toggleAchievements = document.getElementById('toggle-achievements') as HTMLInputElement;
+
   // Load saved theme and colors
-  const settings = await chrome.storage.local.get(['theme', 'customStart', 'customStop']);
+  const settings = await chrome.storage.local.get([
+    'theme', 'customStart', 'customStop', 
+    'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements'
+  ]);
+
   if (settings.theme) {
     themeSelect.value = settings.theme as string;
     if (themeSelect.value === 'custom') {
@@ -18,6 +28,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   if (settings.customStart) colorStart.value = settings.customStart as string;
   if (settings.customStop) colorStop.value = settings.customStop as string;
+
+  // Set toggle states
+  toggleGrid.checked = settings.showGrid !== false;
+  toggleActiveRepos.checked = settings.showActiveRepos !== false;
+  toggleCreatedRepos.checked = settings.showCreatedRepos !== false;
+  toggleAchievements.checked = settings.showAchievements !== false;
 
   themeSelect.addEventListener('change', async () => {
     await chrome.storage.local.set({ theme: themeSelect.value });
@@ -33,6 +49,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   colorStart.addEventListener('input', saveColors);
   colorStop.addEventListener('input', saveColors);
+
+  // Toggle Event Listeners
+  toggleGrid.addEventListener('change', () => chrome.storage.local.set({ showGrid: toggleGrid.checked }));
+  toggleActiveRepos.addEventListener('change', () => chrome.storage.local.set({ showActiveRepos: toggleActiveRepos.checked }));
+  toggleCreatedRepos.addEventListener('change', () => chrome.storage.local.set({ showCreatedRepos: toggleCreatedRepos.checked }));
+  toggleAchievements.addEventListener('change', () => chrome.storage.local.set({ showAchievements: toggleAchievements.checked }));
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

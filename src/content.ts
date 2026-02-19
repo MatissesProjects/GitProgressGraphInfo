@@ -108,20 +108,49 @@ function parseActivityTimeline(): TimelineActivity {
 
     // 4. Parse Pull Requests (Opened, Merged, Reviewed)
     if (text.includes('pull request')) {
+      const listItems = body.querySelectorAll('ul.list-style-none li');
+      
       // 4a. Opened / Proposed
       const proposedMatch = text.match(/(?:Proposed|Opened) (\d+) (?:other )?pull request/i);
       if (proposedMatch) {
-        pullRequests += parseInt(proposedMatch[1], 10);
+        const count = parseInt(proposedMatch[1], 10);
+        pullRequests += count;
+        // Attribute to repos
+        listItems.forEach(li => {
+          const link = li.querySelector('a.Link');
+          if (link) {
+            const repoName = link.textContent?.trim() || "";
+            if (repoName) repoCommits[repoName] = (repoCommits[repoName] || 0) + 1;
+          }
+        });
       } else if (text.includes('Opened a pull request') || text.includes('Proposed a pull request')) {
         pullRequests += 1;
+        const link = body.querySelector('a.Link');
+        if (link) {
+          const repoName = link.textContent?.trim() || "";
+          if (repoName) repoCommits[repoName] = (repoCommits[repoName] || 0) + 1;
+        }
       }
 
       // 4b. Merged
       const mergedMatch = text.match(/Merged (\d+) (?:other )?pull request/i);
       if (mergedMatch) {
-        mergedPullRequests += parseInt(mergedMatch[1], 10);
+        const count = parseInt(mergedMatch[1], 10);
+        mergedPullRequests += count;
+        listItems.forEach(li => {
+          const link = li.querySelector('a.Link');
+          if (link) {
+            const repoName = link.textContent?.trim() || "";
+            if (repoName) repoCommits[repoName] = (repoCommits[repoName] || 0) + 1;
+          }
+        });
       } else if (text.includes('Merged a pull request')) {
         mergedPullRequests += 1;
+        const link = body.querySelector('a.Link');
+        if (link) {
+          const repoName = link.textContent?.trim() || "";
+          if (repoName) repoCommits[repoName] = (repoCommits[repoName] || 0) + 1;
+        }
       }
 
       // 4c. Reviewed
@@ -435,6 +464,32 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
   }
 }
 
+async function applyVisibility() {
+  if (!chrome.runtime?.id) return;
+  const settings = await chrome.storage.local.get([
+    'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements'
+  ]);
+
+  const grid = document.getElementById('gh-grid-stats');
+  const detailed = document.getElementById('gh-detailed-stats');
+  const activeRepos = document.getElementById('gh-active-repos');
+  const createdRepos = document.getElementById('gh-created-repos');
+  const achievements = document.getElementById('gh-achievements');
+
+  if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
+  if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
+  if (createdRepos) createdRepos.style.display = (settings.showCreatedRepos !== false) ? 'block' : 'none';
+  if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
+
+  // If all detailed sections are hidden, hide the container too
+  if (detailed) {
+    const anyDetailedVisible = (settings.showActiveRepos !== false) || 
+                              (settings.showCreatedRepos !== false) || 
+                              (settings.showAchievements !== false);
+    detailed.style.display = anyDetailedVisible ? 'flex' : 'none';
+  }
+}
+
 function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats) {
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -646,6 +701,12 @@ function init() {
   // Listen for storage changes to update theme instantly
   chrome.storage.onChanged.addListener(async (changes) => {
     if (!isContextValid()) return;
+    
+    // Handle visibility changes
+    if (changes.showGrid || changes.showActiveRepos || changes.showCreatedRepos || changes.showAchievements) {
+      applyVisibility();
+    }
+
     if (changes.theme || changes.customStart || changes.customStop) {
       const data = parseContributionGraph();
       if (data) {
@@ -676,13 +737,14 @@ function init() {
         const thresholds = calculateThresholds(data);
         const percentiles = calculatePercentiles(data);
         
-        const settings = await chrome.storage.local.get('theme');
+        const settings = await chrome.storage.local.get(['theme']);
         const theme = (settings.theme as string) || 'green';
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
         
         injectStats(thresholds, data, advanced);
         extendLegend(thresholds);
         await applyDeepRecoloring(data, percentiles, theme, thresholds);
+        await applyVisibility();
       }
     } catch (e) {
       console.log("GitHeat: Analysis skipped or failed (likely extension context invalidated)");
@@ -753,7 +815,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
       <span class="Label Label--secondary">Deep Dive Mode</span>
     </div>
     
-    <div class="git-heat-grid">
+    <div class="git-heat-grid" id="gh-grid-stats">
       <div class="stat-card">
         <span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span>
         <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
@@ -808,8 +870,8 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
       </div>
     </div>
 
-    <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4">
-      <div style="flex: 1; min-width: 200px;">
+    <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4" id="gh-detailed-stats">
+      <div style="flex: 1; min-width: 200px;" id="gh-active-repos">
         <span class="color-fg-muted text-small d-block mb-2">Most Active Repos (Commits)</span>
         <div class="d-flex flex-column gap-1">
           ${advanced.topRepos.map((r: any) => `
@@ -820,7 +882,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
           `).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}
         </div>
       </div>
-      <div style="flex: 1; min-width: 200px;">
+      <div style="flex: 1; min-width: 200px;" id="gh-created-repos">
         <span class="color-fg-muted text-small d-block mb-2">Created Repositories</span>
         <div class="d-flex flex-column gap-1">
           ${advanced.createdRepoList.slice(0, 5).map((r: any) => `
@@ -831,7 +893,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
           `).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}
         </div>
       </div>
-      <div style="flex: 1; min-width: 200px;">
+      <div style="flex: 1; min-width: 200px;" id="gh-achievements">
         <span class="color-fg-muted text-small d-block mb-2">Recent Achievements</span>
         <div class="d-flex flex-wrap gap-1">
           ${advanced.achievements.map((a: string) => `
