@@ -442,7 +442,8 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
 async function applyVisibility() {
   if (!chrome.runtime?.id) return;
   const settings = await chrome.storage.local.get([
-    'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements'
+    'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
+    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
   ]);
 
   const grid = document.getElementById('gh-grid-stats');
@@ -450,11 +451,42 @@ async function applyVisibility() {
   const activeRepos = document.getElementById('gh-active-repos');
   const createdRepos = document.getElementById('gh-created-repos');
   const achievements = document.getElementById('gh-achievements');
+  const persona = document.getElementById('gh-persona');
+  const footer = document.getElementById('gh-footer');
 
   if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
   if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
   if (createdRepos) createdRepos.style.display = (settings.showCreatedRepos !== false) ? 'block' : 'none';
   if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
+  if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
+  if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
+
+  // Granular Grid Toggles
+  const toggleMap: Record<string, any> = {
+    'gh-total': settings.showTotal,
+    'gh-streak': settings.showStreak,
+    'gh-velocity': settings.showVelocity,
+    'gh-consistency': settings.showConsistency,
+    'gh-weekend': settings.showWeekend,
+    'gh-slump': settings.showSlump,
+    'gh-best-day': settings.showBestDay,
+    'gh-worst-day': settings.showWorstDay,
+    'gh-stars': settings.showStars,
+    'gh-pr': settings.showPR,
+    'gh-issue-created': settings.showIssueCreated,
+    'gh-langs': settings.showLangs,
+    'gh-network': settings.showNetwork
+  };
+
+  Object.entries(toggleMap).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (val !== false) ? 'block' : 'none';
+  });
+
+  // Toggle legend labels
+  document.querySelectorAll('.git-heat-legend-label').forEach((el: any) => {
+    el.style.display = (settings.showLegendNumbers !== false) ? 'inline' : 'none';
+  });
 
   // If all detailed sections are hidden, hide the container too
   if (detailed) {
@@ -678,7 +710,11 @@ function init() {
     if (!isContextValid()) return;
     
     // Handle visibility changes
-    if (changes.showGrid || changes.showActiveRepos || changes.showCreatedRepos || changes.showAchievements) {
+    if (changes.showGrid || changes.showActiveRepos || changes.showCreatedRepos || changes.showAchievements || 
+        changes.showPersona || changes.showFooter || changes.showLegendNumbers ||
+        changes.showTotal || changes.showStreak || changes.showVelocity || changes.showConsistency ||
+        changes.showWeekend || changes.showSlump || changes.showBestDay || changes.showWorstDay ||
+        changes.showStars || changes.showPR || changes.showIssueCreated || changes.showLangs || changes.showNetwork) {
       applyVisibility();
     }
 
@@ -785,61 +821,61 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     <div class="d-flex flex-justify-between flex-items-center mb-3">
       <div class="d-flex flex-items-center gap-2">
         <h3 class="h4 mb-0">GitHeat Analytics ${titleSuffix}</h3>
-        <span class="Label Label--info">${advanced.persona}</span>
+        <span id="gh-persona" class="Label Label--info">${advanced.persona}</span>
       </div>
       <span class="Label Label--secondary">Deep Dive Mode</span>
     </div>
     
     <div class="git-heat-grid" id="gh-grid-stats">
-      <div class="stat-card">
+      <div class="stat-card" id="gh-total">
         <span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span>
         <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-streak">
         <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
         <strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-velocity">
         <span class="color-fg-muted d-block text-small">Average Velocity</span>
         <strong class="f3-light">${advanced.velocity} commits/day</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-consistency">
         <span class="color-fg-muted d-block text-small">Consistency</span>
         <strong class="f3-light">${advanced.consistency}%</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-weekend">
         <span class="color-fg-muted d-block text-small">Weekend Score</span>
         <strong class="f3-light">${advanced.weekendScore}%</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-slump">
         <span class="color-fg-muted d-block text-small">Longest Slump</span>
         <strong class="f3-light">${advanced.longestSlump} days</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-best-day">
         <span class="color-fg-muted d-block text-small">Best Weekday</span>
         <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-worst-day">
         <span class="color-fg-muted d-block text-small">Worst Weekday</span>
         <strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-stars">
         <span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span>
         <strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-pr">
         <span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span>
         <strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-issue-created">
         <span class="color-fg-muted d-block text-small">Issues / Created Repos</span>
         <strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-langs">
         <span class="color-fg-muted d-block text-small">Top Languages</span>
         <strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" id="gh-network">
         <span class="color-fg-muted d-block text-small">Network</span>
         <strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong>
       </div>
@@ -876,7 +912,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
       </div>
     </div>
 
-    <div class="mt-3 pt-3 border-top color-border-muted">
+    <div class="mt-3 pt-3 border-top color-border-muted" id="gh-footer">
       <div class="d-flex flex-items-center flex-wrap">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
         <div id="granular-legend" class="d-flex gap-1 mr-3">

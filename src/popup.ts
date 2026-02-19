@@ -8,16 +8,36 @@ document.addEventListener('DOMContentLoaded', async () => {
   const colorStart = document.getElementById('color-start') as HTMLInputElement;
   const colorStop = document.getElementById('color-stop') as HTMLInputElement;
 
-  // Visibility Toggles
+  // Visibility Toggles - Sections
   const toggleGrid = document.getElementById('toggle-grid') as HTMLInputElement;
+  const togglePersona = document.getElementById('toggle-persona') as HTMLInputElement;
   const toggleActiveRepos = document.getElementById('toggle-active-repos') as HTMLInputElement;
   const toggleCreatedRepos = document.getElementById('toggle-created-repos') as HTMLInputElement;
   const toggleAchievements = document.getElementById('toggle-achievements') as HTMLInputElement;
+  const toggleFooter = document.getElementById('toggle-footer') as HTMLInputElement;
+  const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
+
+  // Visibility Toggles - Grid Items
+  const toggleTotal = document.getElementById('toggle-total') as HTMLInputElement;
+  const toggleStreak = document.getElementById('toggle-streak') as HTMLInputElement;
+  const toggleVelocity = document.getElementById('toggle-velocity') as HTMLInputElement;
+  const toggleConsistency = document.getElementById('toggle-consistency') as HTMLInputElement;
+  const toggleWeekend = document.getElementById('toggle-weekend') as HTMLInputElement;
+  const toggleSlump = document.getElementById('toggle-slump') as HTMLInputElement;
+  const toggleBestDay = document.getElementById('toggle-best-day') as HTMLInputElement;
+  const toggleWorstDay = document.getElementById('toggle-worst-day') as HTMLInputElement;
+  const toggleStars = document.getElementById('toggle-stars') as HTMLInputElement;
+  const togglePR = document.getElementById('toggle-pr') as HTMLInputElement;
+  const toggleIssueCreated = document.getElementById('toggle-issue-created') as HTMLInputElement;
+  const toggleLangs = document.getElementById('toggle-langs') as HTMLInputElement;
+  const toggleNetwork = document.getElementById('toggle-network') as HTMLInputElement;
 
   // Load saved theme and colors
   const settings = await chrome.storage.local.get([
     'theme', 'customStart', 'customStop', 
-    'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements'
+    'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
+    'showPersona', 'showFooter', 'showLegendNumbers',
+    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
   ]);
 
   if (settings.theme) {
@@ -30,10 +50,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (settings.customStop) colorStop.value = settings.customStop as string;
 
   // Set toggle states
-  toggleGrid.checked = settings.showGrid !== false;
-  toggleActiveRepos.checked = settings.showActiveRepos !== false;
-  toggleCreatedRepos.checked = settings.showCreatedRepos !== false;
-  toggleAchievements.checked = settings.showAchievements !== false;
+  const setChecked = (el: HTMLInputElement, val: any) => el.checked = val !== false;
+  
+  setChecked(toggleGrid, settings.showGrid);
+  setChecked(togglePersona, settings.showPersona);
+  setChecked(toggleActiveRepos, settings.showActiveRepos);
+  setChecked(toggleCreatedRepos, settings.showCreatedRepos);
+  setChecked(toggleAchievements, settings.showAchievements);
+  setChecked(toggleFooter, settings.showFooter);
+  setChecked(toggleLegendNums, settings.showLegendNumbers);
+
+  setChecked(toggleTotal, settings.showTotal);
+  setChecked(toggleStreak, settings.showStreak);
+  setChecked(toggleVelocity, settings.showVelocity);
+  setChecked(toggleConsistency, settings.showConsistency);
+  setChecked(toggleWeekend, settings.showWeekend);
+  setChecked(toggleSlump, settings.showSlump);
+  setChecked(toggleBestDay, settings.showBestDay);
+  setChecked(toggleWorstDay, settings.showWorstDay);
+  setChecked(toggleStars, settings.showStars);
+  setChecked(togglePR, settings.showPR);
+  setChecked(toggleIssueCreated, settings.showIssueCreated);
+  setChecked(toggleLangs, settings.showLangs);
+  setChecked(toggleNetwork, settings.showNetwork);
 
   themeSelect.addEventListener('change', async () => {
     await chrome.storage.local.set({ theme: themeSelect.value });
@@ -51,10 +90,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   colorStop.addEventListener('input', saveColors);
 
   // Toggle Event Listeners
-  toggleGrid.addEventListener('change', () => chrome.storage.local.set({ showGrid: toggleGrid.checked }));
-  toggleActiveRepos.addEventListener('change', () => chrome.storage.local.set({ showActiveRepos: toggleActiveRepos.checked }));
-  toggleCreatedRepos.addEventListener('change', () => chrome.storage.local.set({ showCreatedRepos: toggleCreatedRepos.checked }));
-  toggleAchievements.addEventListener('change', () => chrome.storage.local.set({ showAchievements: toggleAchievements.checked }));
+  const addToggleListener = (el: HTMLInputElement, key: string) => {
+    el.addEventListener('change', () => chrome.storage.local.set({ [key]: el.checked }));
+  };
+
+  addToggleListener(toggleGrid, 'showGrid');
+  addToggleListener(togglePersona, 'showPersona');
+  addToggleListener(toggleActiveRepos, 'showActiveRepos');
+  addToggleListener(toggleCreatedRepos, 'showCreatedRepos');
+  addToggleListener(toggleAchievements, 'showAchievements');
+  addToggleListener(toggleFooter, 'showFooter');
+  addToggleListener(toggleLegendNums, 'showLegendNumbers');
+
+  addToggleListener(toggleTotal, 'showTotal');
+  addToggleListener(toggleStreak, 'showStreak');
+  addToggleListener(toggleVelocity, 'showVelocity');
+  addToggleListener(toggleConsistency, 'showConsistency');
+  addToggleListener(toggleWeekend, 'showWeekend');
+  addToggleListener(toggleSlump, 'showSlump');
+  addToggleListener(toggleBestDay, 'showBestDay');
+  addToggleListener(toggleWorstDay, 'showWorstDay');
+  addToggleListener(toggleStars, 'showStars');
+  addToggleListener(togglePR, 'showPR');
+  addToggleListener(toggleIssueCreated, 'showIssueCreated');
+  addToggleListener(toggleLangs, 'showLangs');
+  addToggleListener(toggleNetwork, 'showNetwork');
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
