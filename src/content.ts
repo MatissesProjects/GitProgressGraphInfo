@@ -102,6 +102,52 @@ function calculatePercentiles(data: ContributionDay[]) {
   return percentiles;
 }
 
+function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>) {
+  const days = document.querySelectorAll('.ContributionCalendar-day');
+  
+  // Custom Color Scale (Flame/Heat inspired)
+  const colors = [
+    '#ebedf0', // 0: empty
+    '#ffeecc', // 10%
+    '#ffdd99', // 20%
+    '#ffcc66', // 30%
+    '#ffbb44', // 40%
+    '#ff9922', // 50%
+    '#ff7711', // 60%
+    '#ff5500', // 70%
+    '#dd3300', // 80%
+    '#bb1100', // 90%
+    '#880000', // Top 5%
+    '#550000'  // Top 1%
+  ];
+
+  const getGranularLevel = (count: number) => {
+    if (count === 0) return 0;
+    if (count >= (percentiles[99] || 999)) return 11;
+    if (count >= (percentiles[95] || 999)) return 10;
+    if (count >= (percentiles[90] || 999)) return 9;
+    if (count >= (percentiles[75] || 999)) return 8;
+    if (count >= (percentiles[50] || 999)) return 5;
+    if (count >= (percentiles[25] || 999)) return 3;
+    if (count >= (percentiles[10] || 999)) return 1;
+    return 1;
+  };
+
+  days.forEach((day: any) => {
+    const date = day.getAttribute('data-date');
+    const dayData = data.find(d => d.date === date);
+    if (dayData && dayData.count > 0) {
+      const level = getGranularLevel(dayData.count);
+      day.style.fill = colors[level]; // For SVG squares
+      day.style.backgroundColor = colors[level]; // For Table-based squares
+      day.style.setProperty('background-color', colors[level], 'important');
+      day.style.setProperty('fill', colors[level], 'important');
+      day.style.outline = 'none';
+      day.style.border = 'none';
+    }
+  });
+}
+
 function init() {
   console.log("GitHeat: Initializing...");
   
@@ -130,9 +176,11 @@ function init() {
         const data = parseContributionGraph();
         if (data) {
           const thresholds = calculateThresholds(data);
+          const percentiles = calculatePercentiles(data);
           console.log("GitHeat Thresholds:", thresholds);
           injectStats(thresholds, data);
           extendLegend(thresholds);
+          applyDeepRecoloring(data, percentiles);
         }
       }, 500);
       obs.disconnect();
