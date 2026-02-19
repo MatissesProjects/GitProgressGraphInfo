@@ -114,9 +114,45 @@ const THEMES: Record<string, string[]> = {
   ]
 };
 
-function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green') {
+function interpolateColor(color1: string, color2: string, factor: number) {
+  const hex = (x: number) => {
+    const s = x.toString(16);
+    return s.length === 1 ? '0' + s : s;
+  };
+
+  const r1 = parseInt(color1.substring(1, 3), 16);
+  const g1 = parseInt(color1.substring(3, 5), 16);
+  const b1 = parseInt(color1.substring(5, 7), 16);
+
+  const r2 = parseInt(color2.substring(1, 3), 16);
+  const g2 = parseInt(color2.substring(3, 5), 16);
+  const b2 = parseInt(color2.substring(5, 7), 16);
+
+  const r = Math.round(r1 + factor * (r2 - r1));
+  const g = Math.round(g1 + factor * (g2 - g1));
+  const b = Math.round(b1 + factor * (b2 - b1));
+
+  return `#${hex(r)}${hex(g)}${hex(b)}`;
+}
+
+function generateCustomScale(start: string, stop: string): string[] {
+  const scale = [start];
+  for (let i = 1; i <= 11; i++) {
+    scale.push(interpolateColor(start, stop, i / 11));
+  }
+  return scale;
+}
+
+async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green') {
   const days = document.querySelectorAll('.ContributionCalendar-day');
-  const colors = THEMES[themeName] || THEMES.green;
+  
+  let colors: string[];
+  if (themeName === 'custom') {
+    const settings = await chrome.storage.local.get(['customStart', 'customStop']);
+    colors = generateCustomScale((settings.customStart as string) || '#ebedf0', (settings.customStop as string) || '#216e39');
+  } else {
+    colors = THEMES[themeName] || THEMES.green;
+  }
   
   const getGranularLevel = (count: number) => {
     if (count === 0) return 0;
@@ -165,11 +201,13 @@ function init() {
 
   // Listen for storage changes to update theme instantly
   chrome.storage.onChanged.addListener((changes) => {
-    if (changes.theme) {
+    if (changes.theme || changes.customStart || changes.customStop) {
       const data = parseContributionGraph();
       if (data) {
         const percentiles = calculatePercentiles(data);
-        applyDeepRecoloring(data, percentiles, changes.theme.newValue as string);
+        chrome.storage.local.get('theme').then(settings => {
+          applyDeepRecoloring(data, percentiles, settings.theme as string || 'green');
+        });
       }
     }
   });
@@ -189,7 +227,7 @@ function init() {
           
           injectStats(thresholds, data);
           extendLegend(thresholds);
-          applyDeepRecoloring(data, percentiles, theme);
+          await applyDeepRecoloring(data, percentiles, theme);
         }
       }, 500);
       obs.disconnect();

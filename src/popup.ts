@@ -4,16 +4,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   const content = document.getElementById('content')!;
   const totalCount = document.getElementById('total-count')!;
   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
+  const customColors = document.getElementById('custom-colors') as HTMLDivElement;
+  const colorStart = document.getElementById('color-start') as HTMLInputElement;
+  const colorStop = document.getElementById('color-stop') as HTMLInputElement;
 
-  // Load saved theme
-  const settings = await chrome.storage.local.get('theme');
+  // Load saved theme and colors
+  const settings = await chrome.storage.local.get(['theme', 'customStart', 'customStop']);
   if (settings.theme) {
     themeSelect.value = settings.theme as string;
+    if (themeSelect.value === 'custom') {
+      customColors.style.display = 'block';
+    }
   }
+  if (settings.customStart) colorStart.value = settings.customStart as string;
+  if (settings.customStop) colorStop.value = settings.customStop as string;
 
   themeSelect.addEventListener('change', async () => {
     await chrome.storage.local.set({ theme: themeSelect.value });
+    customColors.style.display = themeSelect.value === 'custom' ? 'block' : 'none';
   });
+
+  const saveColors = async () => {
+    await chrome.storage.local.set({ 
+      customStart: colorStart.value,
+      customStop: colorStop.value 
+    });
+  };
+
+  colorStart.addEventListener('input', saveColors);
+  colorStop.addEventListener('input', saveColors);
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
