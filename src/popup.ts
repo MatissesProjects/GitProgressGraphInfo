@@ -138,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           const div = document.createElement('div');
           div.className = 'stat-row';
           div.style.fontSize = '12px';
-          div.innerHTML = `<span>${r.name}</span><span style="font-weight: 600;">${r.commits}</span>`;
+          div.innerHTML = `<span>${r.name}</span>`;
           repoList.appendChild(div);
         });
 
@@ -150,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const div = document.createElement('div');
             div.className = 'stat-row';
             div.style.fontSize = '12px';
-            div.innerHTML = `<span>${r.name}</span><span style="font-weight: 400; color: #57606a;">${r.language || ''}</span>`;
+            div.innerHTML = `<span>${r.name}</span>`;
             createdRepoList.appendChild(div);
           });
         } else {

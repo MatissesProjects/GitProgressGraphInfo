@@ -53,111 +53,86 @@ function parseActivityTimeline(): TimelineActivity {
     const body = item.querySelector('.TimelineItem-body');
     if (!body) return;
 
-    const text = body.textContent?.trim() || "";
+    const bodyText = body.textContent?.trim() || "";
 
-    // 1. Parse Commits
-    if (text.includes('commits in')) {
-      const listItems = body.querySelectorAll('ul.list-style-none li');
+    // 1. Commits / Most Active Repos
+    // Example: "Created 290 commits in 5 repositories"
+    if (bodyText.includes('commits in')) {
+      const listItems = body.querySelectorAll('li');
       listItems.forEach(li => {
-        const link = li.querySelector('a[href*="/commits/"]');
-        const liText = li.textContent?.trim() || "";
+        const link = li.querySelector('a');
         if (link) {
           const repoName = link.textContent?.trim() || "";
+          const liText = li.textContent?.trim() || "";
           const commitMatch = liText.match(/(\d+)\s+commit/);
-          if (commitMatch && repoName) {
+          if (commitMatch && repoName && repoName.includes('/')) {
             repoCommits[repoName] = (repoCommits[repoName] || 0) + parseInt(commitMatch[1], 10);
           }
         }
       });
     }
 
-    // 2. Parse Created Repositories
-    if (text.includes('Created') && text.includes('repositor')) {
-      const match = text.match(/Created (\d+) repositor/i);
+    // 2. Created Repositories Section
+    // Header: "Created 4 repositories"
+    if (bodyText.includes('Created') && bodyText.includes('repositor') && !bodyText.includes('commits in')) {
+      const match = bodyText.match(/Created (\d+) repositor/i);
       if (match) {
         createdRepos += parseInt(match[1], 10);
-      } else if (text.includes('Created a repository')) {
+      } else if (bodyText.includes('Created a repository')) {
         createdRepos += 1;
       }
       
-      const listItems = body.querySelectorAll('ul.list-style-none li');
+      const listItems = body.querySelectorAll('li, div.py-1');
       listItems.forEach(li => {
-        const link = li.querySelector('a.Link');
+        const link = li.querySelector('a');
         if (link) {
           const name = link.textContent?.trim() || "";
-          const language = li.querySelector('[itemprop="programmingLanguage"]')?.textContent?.trim() || "";
-          if (name) {
-            createdRepoList.push({ name, language });
+          if (name && name.includes('/') && !name.includes(' ')) {
+            const language = li.querySelector('[itemprop="programmingLanguage"]')?.textContent?.trim() || "";
+            if (!createdRepoList.some(r => r.name === name)) {
+              createdRepoList.push({ name, language });
+            }
           }
         }
       });
     }
 
     // 3. Parse Issues
-    if (text.includes('Opened') && text.includes('issue')) {
-      const match = text.match(/Opened (\d+) (?:other )?issue/i);
+    if (bodyText.includes('Opened') && bodyText.includes('issue')) {
+      const match = bodyText.match(/Opened (\d+) (?:other )?issue/i);
       if (match) {
         issuesOpened += parseInt(match[1], 10);
-      } else if (text.includes('Opened an issue')) {
+      } else if (bodyText.includes('Opened an issue')) {
         issuesOpened += 1;
       }
     }
-    if (text.includes('Created an issue')) {
+    if (bodyText.includes('Created an issue')) {
       issuesOpened += 1;
     }
 
     // 4. Parse Pull Requests (Opened, Merged, Reviewed)
-    if (text.includes('pull request')) {
-      const listItems = body.querySelectorAll('ul.list-style-none li');
-      
+    if (bodyText.includes('pull request')) {
       // 4a. Opened / Proposed
-      const proposedMatch = text.match(/(?:Proposed|Opened) (\d+) (?:other )?pull request/i);
+      const proposedMatch = bodyText.match(/(?:Proposed|Opened) (\d+) (?:other )?pull request/i);
       if (proposedMatch) {
-        const count = parseInt(proposedMatch[1], 10);
-        pullRequests += count;
-        // Attribute to repos
-        listItems.forEach(li => {
-          const link = li.querySelector('a.Link');
-          if (link) {
-            const repoName = link.textContent?.trim() || "";
-            if (repoName) repoCommits[repoName] = (repoCommits[repoName] || 0) + 1;
-          }
-        });
-      } else if (text.includes('Opened a pull request') || text.includes('Proposed a pull request')) {
+        pullRequests += parseInt(proposedMatch[1], 10);
+      } else if (bodyText.includes('Opened a pull request') || bodyText.includes('Proposed a pull request')) {
         pullRequests += 1;
-        const link = body.querySelector('a.Link');
-        if (link) {
-          const repoName = link.textContent?.trim() || "";
-          if (repoName) repoCommits[repoName] = (repoCommits[repoName] || 0) + 1;
-        }
       }
 
       // 4b. Merged
-      const mergedMatch = text.match(/Merged (\d+) (?:other )?pull request/i);
+      const mergedMatch = bodyText.match(/Merged (\d+) (?:other )?pull request/i);
       if (mergedMatch) {
-        const count = parseInt(mergedMatch[1], 10);
-        mergedPullRequests += count;
-        listItems.forEach(li => {
-          const link = li.querySelector('a.Link');
-          if (link) {
-            const repoName = link.textContent?.trim() || "";
-            if (repoName) repoCommits[repoName] = (repoCommits[repoName] || 0) + 1;
-          }
-        });
-      } else if (text.includes('Merged a pull request')) {
+        mergedPullRequests += parseInt(mergedMatch[1], 10);
+      } else if (bodyText.includes('Merged a pull request')) {
         mergedPullRequests += 1;
-        const link = body.querySelector('a.Link');
-        if (link) {
-          const repoName = link.textContent?.trim() || "";
-          if (repoName) repoCommits[repoName] = (repoCommits[repoName] || 0) + 1;
-        }
       }
 
       // 4c. Reviewed
-      const reviewedMatch = text.match(/Reviewed (\d+) (?:other )?pull request/i);
+      const reviewedMatch = bodyText.match(/Reviewed (\d+) (?:other )?pull request/i);
       if (reviewedMatch) {
         pullRequestReviews += parseInt(reviewedMatch[1], 10);
-      } else if (text.includes('Reviewed a pull request')) {
+      } else if (bodyText.includes('Reviewed a pull request')) {
         pullRequestReviews += 1;
       }
     }
@@ -877,7 +852,6 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
           ${advanced.topRepos.map((r: any) => `
             <div class="d-flex flex-justify-between text-small">
               <span>${r.name}</span>
-              <span class="color-fg-muted">${r.commits} commits</span>
             </div>
           `).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}
         </div>
@@ -888,7 +862,6 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
           ${advanced.createdRepoList.slice(0, 5).map((r: any) => `
             <div class="d-flex flex-justify-between text-small">
               <span>${r.name}</span>
-              <span class="color-fg-muted">${r.language || ''}</span>
             </div>
           `).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}
         </div>
