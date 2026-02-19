@@ -143,7 +143,7 @@ function generateCustomScale(start: string, stop: string): string[] {
   return scale;
 }
 
-async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green') {
+async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', thresholds: any) {
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
   let colors: string[];
@@ -312,38 +312,48 @@ function init() {
   });
 
   // Listen for storage changes to update theme instantly
-  chrome.storage.onChanged.addListener((changes) => {
+  chrome.storage.onChanged.addListener(async (changes) => {
     if (changes.theme || changes.customStart || changes.customStop) {
       const data = parseContributionGraph();
       if (data) {
         const percentiles = calculatePercentiles(data);
-        chrome.storage.local.get('theme').then(settings => {
-          applyDeepRecoloring(data, percentiles, settings.theme as string || 'green');
-        });
+        const thresholds = calculateThresholds(data);
+        const settings = await chrome.storage.local.get('theme');
+        await applyDeepRecoloring(data, percentiles, (settings.theme as string) || 'green', thresholds);
       }
     }
   });
 
   // Wait for the graph to load for injection
-  const observer = new MutationObserver((mutations, obs) => {
-    const graph = document.querySelector('.js-yearly-contributions');
-    if (graph) {
-      setTimeout(async () => {
-        const data = parseContributionGraph();
-        if (data) {
-          const thresholds = calculateThresholds(data);
-          const percentiles = calculatePercentiles(data);
-          
-          const settings = await chrome.storage.local.get('theme');
-          const theme = (settings.theme as string) || 'green';
-          const advanced = calculateAdvancedStats(data);
-          
-          injectStats(thresholds, data, advanced);
-          extendLegend(thresholds);
-          await applyDeepRecoloring(data, percentiles, theme);
+  const runAnalysis = async () => {
+    const data = parseContributionGraph();
+    if (data) {
+      const thresholds = calculateThresholds(data);
+      const percentiles = calculatePercentiles(data);
+      
+      const settings = await chrome.storage.local.get('theme');
+      const theme = (settings.theme as string) || 'green';
+      const advanced = calculateAdvancedStats(data);
+      
+      injectStats(thresholds, data, advanced);
+      extendLegend(thresholds);
+      await applyDeepRecoloring(data, percentiles, theme, thresholds);
+    }
+  };
+
+  const observer = new MutationObserver((mutations) => {
+    // Check if the graph container was added or updated
+    for (const mutation of mutations) {
+      if (mutation.type === 'childList') {
+        const graph = document.querySelector('.js-yearly-contributions');
+        if (graph) {
+          // If our stats panel is missing, it means the year was likely switched
+          if (!document.getElementById('git-heat-stats')) {
+            console.log("GitHeat: Graph update detected, re-running analysis...");
+            runAnalysis();
+          }
         }
-      }, 500);
-      obs.disconnect();
+      }
     }
   });
 
@@ -351,6 +361,9 @@ function init() {
     childList: true,
     subtree: true
   });
+
+  // Initial run
+  runAnalysis();
 }
 
 function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
@@ -440,13 +453,16 @@ function extendLegend(thresholds: any) {
   const legend = document.querySelector('.ContributionCalendar-footer');
   if (!legend) return;
 
+  // Clear existing GitHeat labels
+  legend.querySelectorAll('.git-heat-legend-label').forEach(el => el.remove());
+
   const squares = legend.querySelectorAll('.ContributionCalendar-day');
   squares.forEach(square => {
     const level = parseInt(square.getAttribute('data-level') || '0', 10);
     if (level > 0 && thresholds[level]) {
       const range = level === 4 ? `${thresholds[level].min}+` : `${thresholds[level].min}-${thresholds[level].max}`;
       const span = document.createElement('span');
-      span.className = 'text-small color-fg-muted ml-1';
+      span.className = 'text-small color-fg-muted ml-1 git-heat-legend-label';
       span.style.fontSize = '10px';
       span.style.marginLeft = '2px';
       span.style.marginRight = '4px';
