@@ -102,25 +102,22 @@ function calculatePercentiles(data: ContributionDay[]) {
   return percentiles;
 }
 
-function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>) {
-  const days = document.querySelectorAll('.ContributionCalendar-day');
-  
-  // Custom Color Scale (Flame/Heat inspired)
-  const colors = [
-    '#ebedf0', // 0: empty
-    '#ffeecc', // 10%
-    '#ffdd99', // 20%
-    '#ffcc66', // 30%
-    '#ffbb44', // 40%
-    '#ff9922', // 50%
-    '#ff7711', // 60%
-    '#ff5500', // 70%
-    '#dd3300', // 80%
-    '#bb1100', // 90%
-    '#880000', // Top 5%
-    '#550000'  // Top 1%
-  ];
+// Color Themes
+const THEMES: Record<string, string[]> = {
+  flame: [
+    '#ebedf0', '#ffeecc', '#ffdd99', '#ffcc66', '#ffbb44', '#ff9922', 
+    '#ff7711', '#ff5500', '#dd3300', '#bb1100', '#880000', '#550000'
+  ],
+  green: [
+    '#ebedf0', '#e6ffed', '#d1f2d9', '#9be9a8', '#7bc96f', '#40c463',
+    '#30a14e', '#216e39', '#196127', '#124d1f', '#0c3a17', '#06250e'
+  ]
+};
 
+function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green') {
+  const days = document.querySelectorAll('.ContributionCalendar-day');
+  const colors = THEMES[themeName] || THEMES.green;
+  
   const getGranularLevel = (count: number) => {
     if (count === 0) return 0;
     if (count >= (percentiles[99] || 999)) return 11;
@@ -138,10 +135,9 @@ function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number
     const dayData = data.find(d => d.date === date);
     if (dayData && dayData.count > 0) {
       const level = getGranularLevel(dayData.count);
-      day.style.fill = colors[level]; // For SVG squares
-      day.style.backgroundColor = colors[level]; // For Table-based squares
-      day.style.setProperty('background-color', colors[level], 'important');
-      day.style.setProperty('fill', colors[level], 'important');
+      const color = colors[level];
+      day.style.setProperty('background-color', color, 'important');
+      day.style.setProperty('fill', color, 'important');
       day.style.outline = 'none';
       day.style.border = 'none';
     }
@@ -167,20 +163,33 @@ function init() {
     return true; // Keep channel open for async
   });
 
+  // Listen for storage changes to update theme instantly
+  chrome.storage.onChanged.addListener((changes) => {
+    if (changes.theme) {
+      const data = parseContributionGraph();
+      if (data) {
+        const percentiles = calculatePercentiles(data);
+        applyDeepRecoloring(data, percentiles, changes.theme.newValue as string);
+      }
+    }
+  });
+
   // Wait for the graph to load for injection
   const observer = new MutationObserver((mutations, obs) => {
     const graph = document.querySelector('.js-yearly-contributions');
     if (graph) {
-      // Small delay to ensure tooltips/labels are rendered
-      setTimeout(() => {
+      setTimeout(async () => {
         const data = parseContributionGraph();
         if (data) {
           const thresholds = calculateThresholds(data);
           const percentiles = calculatePercentiles(data);
-          console.log("GitHeat Thresholds:", thresholds);
+          
+          const settings = await chrome.storage.local.get('theme');
+          const theme = (settings.theme as string) || 'green';
+          
           injectStats(thresholds, data);
           extendLegend(thresholds);
-          applyDeepRecoloring(data, percentiles);
+          applyDeepRecoloring(data, percentiles, theme);
         }
       }, 500);
       obs.disconnect();

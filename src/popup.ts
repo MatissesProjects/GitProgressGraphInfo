@@ -3,6 +3,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const error = document.getElementById('error')!;
   const content = document.getElementById('content')!;
   const totalCount = document.getElementById('total-count')!;
+  const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
+
+  // Load saved theme
+  const settings = await chrome.storage.local.get('theme');
+  if (settings.theme) {
+    themeSelect.value = settings.theme as string;
+  }
+
+  themeSelect.addEventListener('change', async () => {
+    await chrome.storage.local.set({ theme: themeSelect.value });
+  });
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
