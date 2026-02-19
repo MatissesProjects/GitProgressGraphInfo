@@ -392,10 +392,21 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
     if (dayData && dayData.count > 0) {
       const level = getGranularLevel(dayData.count);
       const color = colors[level];
+      
+      // Only apply inline styles if NOT highlighted, 
+      // or we handle it via CSS class specificity.
+      // To be safe, we'll use setProperty.
       day.style.setProperty('background-color', color, 'important');
       day.style.setProperty('fill', color, 'important');
-      day.style.outline = 'none';
-      day.style.border = 'none';
+      
+      // Remove the hardcoded outline: none if it's highlighted
+      if (day.classList.contains('gh-highlight')) {
+        day.style.outline = '';
+        day.style.border = '';
+      } else {
+        day.style.outline = 'none';
+        day.style.border = 'none';
+      }
     }
   });
 
@@ -504,8 +515,11 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   const ytdStartStr = `${currentYear}-01-01`;
   
   let currentStreak = 0;
+  let currentStreakDates: string[] = [];
   let longestStreak = 0;
+  let longestStreakDates: string[] = [];
   let tempStreak = 0;
+  let tempStreakDates: string[] = [];
   let activeDays = 0;
   let longestSlump = 0;
   let tempSlump = 0;
@@ -537,6 +551,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     if (day.count > 0) {
       activeDays++;
       tempStreak++;
+      tempStreakDates.push(day.date);
       if (tempSlump > longestSlump) longestSlump = tempSlump;
       tempSlump = 0;
 
@@ -552,13 +567,20 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
       
       weekdayCounts[weekday] += day.count;
     } else {
-      if (tempStreak > longestStreak) longestStreak = tempStreak;
+      if (tempStreak > longestStreak) {
+        longestStreak = tempStreak;
+        longestStreakDates = [...tempStreakDates];
+      }
       tempStreak = 0;
+      tempStreakDates = [];
       tempSlump++;
     }
   });
   
-  if (tempStreak > longestStreak) longestStreak = tempStreak;
+  if (tempStreak > longestStreak) {
+    longestStreak = tempStreak;
+    longestStreakDates = [...tempStreakDates];
+  }
   if (tempSlump > longestSlump) longestSlump = tempSlump;
   
   // Calculate current streak
@@ -566,6 +588,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     const day = pastAndPresentData[i];
     if (day.count > 0) {
       currentStreak++;
+      currentStreakDates.unshift(day.date);
     } else if (day.date !== todayStr) {
       break;
     }
@@ -639,15 +662,19 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
 
   return {
     currentStreak,
+    currentStreakDates,
     longestStreak,
+    longestStreakDates,
     longestSlump,
     consistency,
     velocity,
     weekendScore,
     persona,
     bestDay: daysOfWeek[bestDayIndex],
+    bestDayIndex,
     bestDayCount: maxCount,
     worstDay: daysOfWeek[worstDayIndex],
+    worstDayIndex,
     worstDayCount: minCount,
     activeDays,
     isYTD: ytdTotalDays > 0,
@@ -831,7 +858,9 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
         <span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span>
         <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
       </div>
-      <div class="stat-card" id="gh-streak">
+      <div class="stat-card highlightable" id="gh-streak" 
+           data-current-streak="${advanced.currentStreakDates.join(',')}" 
+           data-longest-streak="${advanced.longestStreakDates.join(',')}">
         <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
         <strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong>
       </div>
@@ -851,11 +880,11 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
         <span class="color-fg-muted d-block text-small">Longest Slump</span>
         <strong class="f3-light">${advanced.longestSlump} days</strong>
       </div>
-      <div class="stat-card" id="gh-best-day">
+      <div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}">
         <span class="color-fg-muted d-block text-small">Best Weekday</span>
         <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
       </div>
-      <div class="stat-card" id="gh-worst-day">
+      <div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}">
         <span class="color-fg-muted d-block text-small">Worst Weekday</span>
         <strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong>
       </div>
@@ -942,6 +971,84 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
   `;
 
   container.prepend(statsDiv);
+
+  // Add Highlight Logic
+  const highlightDates = (dates: string[]) => {
+    dates.forEach(date => {
+      const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
+      if (dayEl) {
+        dayEl.classList.add('gh-highlight');
+        dayEl.style.outline = '';
+        dayEl.style.border = '';
+      }
+    });
+  };
+
+  const highlightWeekday = (weekdayIndex: number) => {
+    const days = document.querySelectorAll('.ContributionCalendar-day[data-date]');
+    days.forEach((day: any) => {
+      const date = day.getAttribute('data-date');
+      const d = new Date(date + 'T00:00:00');
+      if (d.getDay() === weekdayIndex) {
+        day.classList.add('gh-highlight');
+        day.style.outline = '';
+        day.style.border = '';
+      }
+    });
+  };
+
+  const clearHighlights = () => {
+    document.querySelectorAll('.gh-highlight').forEach((el: any) => {
+      el.classList.remove('gh-highlight');
+      // If it's a contribution day with count > 0, restore the outline: none
+      // This is slightly complex without passing data, but we can check if it has a count/level
+      const level = parseInt(el.getAttribute('data-level') || '0', 10);
+      if (level > 0) {
+        el.style.outline = 'none';
+        el.style.border = 'none';
+      }
+    });
+  };
+
+  const streakCard = statsDiv.querySelector('#gh-streak');
+  if (streakCard) {
+    streakCard.addEventListener('mouseenter', () => {
+      streakCard.classList.add('highlighting');
+      const longest = (streakCard as HTMLElement).dataset.longestStreak?.split(',') || [];
+      const current = (streakCard as HTMLElement).dataset.currentStreak?.split(',') || [];
+      highlightDates([...new Set([...longest, ...current])]);
+    });
+    streakCard.addEventListener('mouseleave', () => {
+      streakCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
+  const bestDayCard = statsDiv.querySelector('#gh-best-day');
+  if (bestDayCard) {
+    bestDayCard.addEventListener('mouseenter', () => {
+      bestDayCard.classList.add('highlighting');
+      const idx = parseInt((bestDayCard as HTMLElement).dataset.weekday || '0', 10);
+      highlightWeekday(idx);
+    });
+    bestDayCard.addEventListener('mouseleave', () => {
+      bestDayCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
+  const worstDayCard = statsDiv.querySelector('#gh-worst-day');
+  if (worstDayCard) {
+    worstDayCard.addEventListener('mouseenter', () => {
+      worstDayCard.classList.add('highlighting');
+      const idx = parseInt((worstDayCard as HTMLElement).dataset.weekday || '0', 10);
+      highlightWeekday(idx);
+    });
+    worstDayCard.addEventListener('mouseleave', () => {
+      worstDayCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
 }
 
 function extendLegend(thresholds: any) {

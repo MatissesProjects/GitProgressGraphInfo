@@ -111,3 +111,28 @@
 .gap-1 {
   gap: 4px;
 }
+
+.gh-highlight {
+  outline: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+  outline-offset: -1px !important;
+  stroke: rgba(255, 255, 255, 0.4) !important;
+  stroke-width: 1.5px !important;
+  filter: brightness(1.15) drop-shadow(0 0 2px var(--color-accent-muted)) !important;
+  z-index: 20;
+}
+
+.ContributionCalendar-day.gh-highlight {
+  outline: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+  border: none !important;
+}
+
+.stat-card.highlightable {
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+
+.stat-card.highlighting {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--color-accent-muted) !important;
+  transform: translateY(-2px);
+  background-color: var(--color-canvas-subtle) !important;
+}
