@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
         document.getElementById('velocity')!.textContent = `${adv.velocity} c/d`;
         document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
-        document.getElementById('best-day')!.textContent = adv.bestDay;
+        document.getElementById('best-day')!.textContent = `${adv.bestDay} (${adv.bestDayCount})`;
       } else {
         loading.style.display = 'none';
         error.textContent = response?.error || "Could not find contribution graph.";

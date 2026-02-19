@@ -358,30 +358,7 @@ function calculateAdvancedStats(data: ContributionDay[]) {
     weekendScore,
     persona,
     bestDay: daysOfWeek[bestDayIndex],
-    activeDays,
-    isYTD: ytdTotalDays > 0
-  };
-}
-
-  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  let bestDayIndex = 0;
-  let maxCount = -1;
-  for (let i = 0; i < 7; i++) {
-    if (weekdayCounts[i] > maxCount) {
-      maxCount = weekdayCounts[i];
-      bestDayIndex = i;
-    }
-  }
-
-  return {
-    currentStreak,
-    longestStreak,
-    longestSlump,
-    consistency,
-    velocity,
-    weekendScore,
-    persona,
-    bestDay: daysOfWeek[bestDayIndex],
+    bestDayCount: maxCount,
     activeDays,
     isYTD: ytdTotalDays > 0
   };
@@ -550,6 +527,10 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
       <div class="stat-card">
         <span class="color-fg-muted d-block text-small">Longest Slump</span>
         <strong class="f3-light">${advanced.longestSlump} days</strong>
+      </div>
+      <div class="stat-card">
+        <span class="color-fg-muted d-block text-small">Best Weekday</span>
+        <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
       </div>
     </div>
 
