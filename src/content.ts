@@ -87,6 +87,21 @@ function calculateThresholds(data: ContributionDay[]) {
   return thresholds;
 }
 
+function calculatePercentiles(data: ContributionDay[]) {
+  const activeDays = data.filter(d => d.count > 0).map(d => d.count).sort((a, b) => a - b);
+  if (activeDays.length === 0) return {};
+
+  const percentiles: Record<number, number> = {};
+  const markers = [10, 25, 50, 75, 90, 95, 99];
+  
+  markers.forEach(m => {
+    const index = Math.ceil((m / 100) * activeDays.length) - 1;
+    percentiles[m] = activeDays[Math.min(index, activeDays.length - 1)];
+  });
+
+  return percentiles;
+}
+
 function init() {
   console.log("GitHeat: Initializing...");
   
@@ -96,8 +111,9 @@ function init() {
       const data = parseContributionGraph();
       if (data) {
         const thresholds = calculateThresholds(data);
+        const percentiles = calculatePercentiles(data);
         const total = data.reduce((sum, day) => sum + day.count, 0);
-        sendResponse({ thresholds, total, success: true });
+        sendResponse({ thresholds, percentiles, total, success: true });
       } else {
         sendResponse({ success: false, error: "No graph found" });
       }

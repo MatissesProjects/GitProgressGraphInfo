@@ -30,6 +30,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('l2-range')!.textContent = `${t[2]?.min ?? '?'}-${t[2]?.max ?? '?'}`;
         document.getElementById('l3-range')!.textContent = `${t[3]?.min ?? '?'}-${t[3]?.max ?? '?'}`;
         document.getElementById('l4-range')!.textContent = `${t[4]?.min ?? '?'}+`;
+
+        // Render Percentiles
+        const raritySection = document.getElementById('rarity-section')!;
+        const p = response.percentiles;
+        const markers = [99, 95, 90, 75, 50];
+        
+        const existingRows = raritySection.querySelectorAll('.rarity-row');
+        existingRows.forEach(r => r.remove());
+
+        markers.forEach(m => {
+          if (p[m] !== undefined) {
+            const row = document.createElement('div');
+            row.className = 'rarity-row';
+            row.innerHTML = `
+              <span class="rarity-label">Top ${100-m}%:</span>
+              <div class="rarity-bar">
+                <div class="rarity-fill" style="width: ${m}%"></div>
+              </div>
+              <span class="rarity-value">${p[m]}+</span>
+            `;
+            raritySection.appendChild(row);
+          }
+        });
       } else {
         loading.style.display = 'none';
         error.textContent = response?.error || "Could not find contribution graph.";
