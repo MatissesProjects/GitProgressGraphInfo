@@ -134,6 +134,9 @@
           <input type="checkbox" id="toggle-total" checked> Total Contribs
         </label>
         <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
+          <input type="checkbox" id="toggle-today" checked> Today's Contribs
+        </label>
+        <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
           <input type="checkbox" id="toggle-streak" checked> Streak
         </label>
         <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
@@ -153,6 +156,12 @@
         </label>
         <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
           <input type="checkbox" id="toggle-worst-day" checked> Worst Day
+        </label>
+        <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
+          <input type="checkbox" id="toggle-current-weekday" checked> Current Weekday
+        </label>
+        <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
+          <input type="checkbox" id="toggle-most-active-day" checked> Most Active Day
         </label>
         <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
           <input type="checkbox" id="toggle-stars" checked> Pinned Stats
@@ -186,6 +195,11 @@
     <div class="stat-row" style="margin-top: 10px;">
       <span>Total Contributions:</span>
       <strong id="total-count">-</strong>
+    </div>
+
+    <div class="stat-row">
+      <span>Today's Contributions:</span>
+      <strong id="today-count">-</strong>
     </div>
 
     <div class="level-list">
@@ -257,6 +271,14 @@
       <div class="stat-row">
         <span>Worst Weekday:</span>
         <strong id="worst-day">-</strong>
+      </div>
+      <div class="stat-row">
+        <span>Current Weekday:</span>
+        <strong id="current-weekday">-</strong>
+      </div>
+      <div class="stat-row">
+        <span>Most Active Day:</span>
+        <strong id="most-active-day">-</strong>
       </div>
       <div class="stat-row">
         <span>Pinned Stars/Forks:</span>

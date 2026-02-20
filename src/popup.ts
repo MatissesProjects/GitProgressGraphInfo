@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Visibility Toggles - Grid Items
   const toggleTotal = document.getElementById('toggle-total') as HTMLInputElement;
+  const toggleToday = document.getElementById('toggle-today') as HTMLInputElement;
   const toggleStreak = document.getElementById('toggle-streak') as HTMLInputElement;
   const toggleVelocity = document.getElementById('toggle-velocity') as HTMLInputElement;
   const toggleConsistency = document.getElementById('toggle-consistency') as HTMLInputElement;
@@ -26,6 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleSlump = document.getElementById('toggle-slump') as HTMLInputElement;
   const toggleBestDay = document.getElementById('toggle-best-day') as HTMLInputElement;
   const toggleWorstDay = document.getElementById('toggle-worst-day') as HTMLInputElement;
+  const toggleCurrentWeekday = document.getElementById('toggle-current-weekday') as HTMLInputElement;
+  const toggleMostActiveDay = document.getElementById('toggle-most-active-day') as HTMLInputElement;
   const toggleStars = document.getElementById('toggle-stars') as HTMLInputElement;
   const togglePR = document.getElementById('toggle-pr') as HTMLInputElement;
   const toggleIssueCreated = document.getElementById('toggle-issue-created') as HTMLInputElement;
@@ -37,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showMostActiveDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
   ]);
 
   if (settings.theme) {
@@ -61,6 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleLegendNums, settings.showLegendNumbers);
 
   setChecked(toggleTotal, settings.showTotal);
+  setChecked(toggleToday, settings.showTodayCount);
   setChecked(toggleStreak, settings.showStreak);
   setChecked(toggleVelocity, settings.showVelocity);
   setChecked(toggleConsistency, settings.showConsistency);
@@ -68,6 +72,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleSlump, settings.showSlump);
   setChecked(toggleBestDay, settings.showBestDay);
   setChecked(toggleWorstDay, settings.showWorstDay);
+  setChecked(toggleCurrentWeekday, settings.showCurrentWeekday);
+  setChecked(toggleMostActiveDay, settings.showMostActiveDay);
   setChecked(toggleStars, settings.showStars);
   setChecked(togglePR, settings.showPR);
   setChecked(toggleIssueCreated, settings.showIssueCreated);
@@ -103,6 +109,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleLegendNums, 'showLegendNumbers');
 
   addToggleListener(toggleTotal, 'showTotal');
+  addToggleListener(toggleToday, 'showTodayCount');
   addToggleListener(toggleStreak, 'showStreak');
   addToggleListener(toggleVelocity, 'showVelocity');
   addToggleListener(toggleConsistency, 'showConsistency');
@@ -110,6 +117,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleSlump, 'showSlump');
   addToggleListener(toggleBestDay, 'showBestDay');
   addToggleListener(toggleWorstDay, 'showWorstDay');
+  addToggleListener(toggleCurrentWeekday, 'showCurrentWeekday');
+  addToggleListener(toggleMostActiveDay, 'showMostActiveDay');
   addToggleListener(toggleStars, 'showStars');
   addToggleListener(togglePR, 'showPR');
   addToggleListener(toggleIssueCreated, 'showIssueCreated');
@@ -145,6 +154,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
         totalCount.textContent = response.total.toLocaleString();
+        document.getElementById('today-count')!.textContent = adv.todayCount.toLocaleString();
         
         const t = response.thresholds;
         document.getElementById('l1-range')!.textContent = `${t[1]?.min ?? '?'}-${t[1]?.max ?? '?'}`;
@@ -187,6 +197,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
         document.getElementById('best-day')!.textContent = `${adv.bestDay} (${adv.bestDayCount})`;
         document.getElementById('worst-day')!.textContent = `${adv.worstDay} (${adv.worstDayCount})`;
+        document.getElementById('current-weekday')!.textContent = `${adv.currentWeekday} (${adv.currentWeekdayCount})`;
+        document.getElementById('most-active-day')!.textContent = `${adv.mostActiveDay} (${adv.mostActiveDayCount})`;
         document.getElementById('pinned-stats')!.textContent = `${adv.totalStars} / ${adv.totalForks}`;
         document.getElementById('top-langs')!.textContent = adv.topLangs.join(', ') || 'N/A';
         document.getElementById('socials')!.textContent = `${adv.socials.followers} Follow / ${adv.socials.organizations} Orgs`;

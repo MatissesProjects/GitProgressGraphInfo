@@ -454,7 +454,7 @@ async function applyVisibility() {
   if (!chrome.runtime?.id) return;
   const settings = await chrome.storage.local.get([
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
+    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
   ]);
 
   const grid = document.getElementById('gh-grid-stats');
@@ -475,6 +475,7 @@ async function applyVisibility() {
   // Granular Grid Toggles
   const toggleMap: Record<string, any> = {
     'gh-total': settings.showTotal,
+    'gh-today': settings.showTodayCount,
     'gh-streak': settings.showStreak,
     'gh-velocity': settings.showVelocity,
     'gh-consistency': settings.showConsistency,
@@ -482,6 +483,8 @@ async function applyVisibility() {
     'gh-slump': settings.showSlump,
     'gh-best-day': settings.showBestDay,
     'gh-worst-day': settings.showWorstDay,
+    'gh-current-weekday': settings.showCurrentWeekday,
+    'gh-most-active-day': settings.showMostActiveDay,
     'gh-stars': settings.showStars,
     'gh-pr': settings.showPR,
     'gh-issue-created': settings.showIssueCreated,
@@ -645,20 +648,34 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   let bestDayIndex = 0;
-  let maxCount = -1;
+  let maxWeekdayCount = -1;
   let worstDayIndex = 0;
-  let minCount = Infinity;
+  let minWeekdayCount = Infinity;
 
   for (let i = 0; i < 7; i++) {
-    if (weekdayCounts[i] > maxCount) {
-      maxCount = weekdayCounts[i];
+    if (weekdayCounts[i] > maxWeekdayCount) {
+      maxWeekdayCount = weekdayCounts[i];
       bestDayIndex = i;
     }
-    if (weekdayCounts[i] < minCount) {
-      minCount = weekdayCounts[i];
+    if (weekdayCounts[i] < minWeekdayCount) {
+      minWeekdayCount = weekdayCounts[i];
       worstDayIndex = i;
     }
   }
+
+  // Find Most Active Day (Specific Date)
+  let mostActiveDay = "N/A";
+  let mostActiveDayCount = 0;
+  pastAndPresentData.forEach(day => {
+    if (day.count > mostActiveDayCount) {
+      mostActiveDayCount = day.count;
+      mostActiveDay = day.date;
+    }
+  });
+
+  // Today's specific metrics
+  const todayWeekday = now.getDay();
+  const todayCount = data.find(d => d.date === todayStr)?.count || 0;
 
   return {
     currentStreak,
@@ -672,10 +689,16 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     persona,
     bestDay: daysOfWeek[bestDayIndex],
     bestDayIndex,
-    bestDayCount: maxCount,
+    bestDayCount: maxWeekdayCount,
     worstDay: daysOfWeek[worstDayIndex],
     worstDayIndex,
-    worstDayCount: minCount,
+    worstDayCount: minWeekdayCount,
+    currentWeekday: daysOfWeek[todayWeekday],
+    currentWeekdayIndex: todayWeekday,
+    currentWeekdayCount: weekdayCounts[todayWeekday],
+    todayCount,
+    mostActiveDay,
+    mostActiveDayCount,
     activeDays,
     isYTD: ytdTotalDays > 0,
     totalStars,
@@ -860,6 +883,10 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
         <span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span>
         <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
       </div>
+      <div class="stat-card highlightable" id="gh-today" data-date="${todayStr}">
+        <span class="color-fg-muted d-block text-small">Today's Contribs</span>
+        <strong class="f3-light">${advanced.todayCount}</strong>
+      </div>
       <div class="stat-card highlightable" id="gh-streak" 
            data-current-streak="${advanced.currentStreakDates.join(',')}" 
            data-longest-streak="${advanced.longestStreakDates.join(',')}">
@@ -889,6 +916,10 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
       <div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}">
         <span class="color-fg-muted d-block text-small">Worst Weekday</span>
         <strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong>
+      </div>
+      <div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}">
+        <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
+        <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
       </div>
       <div class="stat-card" id="gh-stars">
         <span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span>
