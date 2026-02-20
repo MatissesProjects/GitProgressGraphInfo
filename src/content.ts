@@ -667,10 +667,12 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   // Find Most Active Day (Specific Date)
   let mostActiveDay = "N/A";
   let mostActiveDayCount = 0;
+  let mostActiveDayWeekday = -1;
   pastAndPresentData.forEach(day => {
     if (day.count > mostActiveDayCount) {
       mostActiveDayCount = day.count;
       mostActiveDay = day.date;
+      mostActiveDayWeekday = new Date(day.date + 'T00:00:00').getDay();
     }
   });
 
@@ -700,6 +702,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     todayCount,
     mostActiveDay,
     mostActiveDayCount,
+    mostActiveDayWeekday,
     activeDays,
     isYTD: ytdTotalDays > 0,
     totalStars,
@@ -922,11 +925,11 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
         <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
         <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
       </div>
-      <div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}">
+      <div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
         <span class="color-fg-muted d-block text-small">Most Active Day</span>
         <strong class="f3-light">${advanced.mostActiveDay}</strong>
       </div>
-      <div class="stat-card highlightable" id="gh-max-commits" data-date="${advanced.mostActiveDay}">
+      <div class="stat-card highlightable" id="gh-max-commits" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
         <span class="color-fg-muted d-block text-small">Max Daily Commits</span>
         <strong class="f3-light">${advanced.mostActiveDayCount}</strong>
       </div>
@@ -1015,11 +1018,11 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
   container.prepend(statsDiv);
 
   // Add Highlight Logic
-  const highlightDates = (dates: string[]) => {
+  const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
     dates.forEach(date => {
       const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
       if (dayEl) {
-        dayEl.classList.add('gh-highlight');
+        dayEl.classList.add(className);
         dayEl.style.outline = '';
         dayEl.style.border = '';
       }
@@ -1044,10 +1047,9 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
   };
 
   const clearHighlights = () => {
-    document.querySelectorAll('.gh-highlight').forEach((el: any) => {
-      el.classList.remove('gh-highlight');
+    document.querySelectorAll('.gh-highlight, .gh-highlight-special').forEach((el: any) => {
+      el.classList.remove('gh-highlight', 'gh-highlight-special');
       // If it's a contribution day with count > 0, restore the outline: none
-      // This is slightly complex without passing data, but we can check if it has a count/level
       const level = parseInt(el.getAttribute('data-level') || '0', 10);
       if (level > 0) {
         el.style.outline = 'none';
@@ -1126,7 +1128,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     mostActiveDayCard.addEventListener('mouseenter', () => {
       mostActiveDayCard.classList.add('highlighting');
       const date = (mostActiveDayCard as HTMLElement).dataset.date;
-      if (date) highlightDates([date]);
+      if (date) highlightDates([date], 'gh-highlight-special');
     });
     mostActiveDayCard.addEventListener('mouseleave', () => {
       mostActiveDayCard.classList.remove('highlighting');
@@ -1139,7 +1141,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     maxCommitsCard.addEventListener('mouseenter', () => {
       maxCommitsCard.classList.add('highlighting');
       const date = (maxCommitsCard as HTMLElement).dataset.date;
-      if (date) highlightDates([date]);
+      if (date) highlightDates([date], 'gh-highlight-special');
     });
     maxCommitsCard.addEventListener('mouseleave', () => {
       maxCommitsCard.classList.remove('highlighting');

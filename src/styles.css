@@ -136,3 +136,24 @@
   transform: translateY(-2px);
   background-color: var(--color-canvas-subtle) !important;
 }
+
+@keyframes gh-pulse-special {
+  0% { transform: scale(1); filter: brightness(1.2) drop-shadow(0 0 2px #dbab09); }
+  50% { transform: scale(1.4); filter: brightness(1.5) drop-shadow(0 0 10px #f1e05a); z-index: 100; }
+  100% { transform: scale(1); filter: brightness(1.2) drop-shadow(0 0 2px #dbab09); }
+}
+
+.gh-highlight-special {
+  animation: gh-pulse-special 0.8s infinite ease-in-out;
+  outline: 2px solid #dbab09 !important;
+  outline-offset: 1px !important;
+  z-index: 100 !important;
+  position: relative;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+/* Ensure the transform works on SVG elements if needed */
+.ContributionCalendar-day.gh-highlight-special {
+  transform-box: fill-box;
+}
