@@ -36,13 +36,105 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleLangs = document.getElementById('toggle-langs') as HTMLInputElement;
   const toggleNetwork = document.getElementById('toggle-network') as HTMLInputElement;
 
+  const sortableList = document.getElementById('sortable-grid-list')!;
+
+  const ITEM_LABELS: Record<string, string> = {
+    'gh-total': 'Total Contributions',
+    'gh-today': 'Today\'s Contribs',
+    'gh-streak': 'Current / Best Streak',
+    'gh-velocity': 'Average Velocity',
+    'gh-consistency': 'Consistency %',
+    'gh-weekend': 'Weekend Score',
+    'gh-slump': 'Longest Slump',
+    'gh-best-day': 'Best Weekday',
+    'gh-worst-day': 'Worst Weekday',
+    'gh-current-weekday': 'Current Weekday',
+    'gh-most-active-day': 'Most Active Day',
+    'gh-max-commits': 'Max Daily Commits',
+    'gh-stars': 'Pinned Stars / Forks',
+    'gh-pr': 'PR Activity',
+    'gh-issue-created': 'Issues / Created Repos',
+    'gh-langs': 'Top Languages',
+    'gh-network': 'Network Stats'
+  };
+
+  const defaultOrder = Object.keys(ITEM_LABELS);
+
   // Load saved theme and colors
   const settings = await chrome.storage.local.get([
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showMostActiveDay', 'showMaxCommits', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showMostActiveDay', 'showMaxCommits', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork',
+    'gridOrder'
   ]);
+
+  let currentOrder: string[] = (settings.gridOrder as string[]) || defaultOrder;
+  // Ensure all current items are present
+  defaultOrder.forEach(id => {
+    if (!currentOrder.includes(id)) currentOrder.push(id);
+  });
+
+  const renderSortableList = () => {
+    sortableList.innerHTML = '';
+    currentOrder.forEach((id: string) => {
+      const label = ITEM_LABELS[id];
+      if (!label) return;
+
+      const item = document.createElement('div');
+      item.className = 'sortable-item';
+      item.draggable = true;
+      item.dataset.id = id;
+      item.style.cssText = `
+        padding: 4px 8px;
+        background: #ffffff;
+        border: 1px solid #d0d7de;
+        border-radius: 4px;
+        font-size: 10px;
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      `;
+      item.innerHTML = `
+        <span style="color: #57606a;">⋮⋮</span>
+        <span>${label}</span>
+      `;
+
+      item.addEventListener('dragstart', () => {
+        item.classList.add('dragging');
+        item.style.opacity = '0.5';
+      });
+
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        item.style.opacity = '1';
+        saveOrder();
+      });
+
+      sortableList.appendChild(item);
+    });
+  };
+
+  sortableList.addEventListener('dragover', (e: any) => {
+    e.preventDefault();
+    const draggingItem = sortableList.querySelector('.dragging')!;
+    const siblings = [...sortableList.querySelectorAll('.sortable-item:not(.dragging)')];
+    
+    let nextSibling = siblings.find(sibling => {
+      return e.clientY <= (sibling as HTMLElement).offsetTop + (sibling as HTMLElement).offsetHeight / 2;
+    });
+
+    sortableList.insertBefore(draggingItem, nextSibling as Node);
+  });
+
+  const saveOrder = () => {
+    const items = [...sortableList.querySelectorAll('.sortable-item')];
+    currentOrder = items.map(item => (item as HTMLElement).dataset.id!);
+    chrome.storage.local.set({ gridOrder: currentOrder });
+  };
+
+  renderSortableList();
 
   if (settings.theme) {
     themeSelect.value = settings.theme as string;

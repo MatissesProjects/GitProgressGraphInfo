@@ -764,12 +764,21 @@ function init() {
     if (!isContextValid()) return;
     
     // Handle visibility changes
-    if (changes.showGrid || changes.showActiveRepos || changes.showCreatedRepos || changes.showAchievements || 
-        changes.showPersona || changes.showFooter || changes.showLegendNumbers ||
-        changes.showTotal || changes.showStreak || changes.showVelocity || changes.showConsistency ||
-        changes.showWeekend || changes.showSlump || changes.showBestDay || changes.showWorstDay ||
-        changes.showStars || changes.showPR || changes.showIssueCreated || changes.showLangs || changes.showNetwork) {
+    const visibilityKeys = [
+      'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 
+      'showPersona', 'showFooter', 'showLegendNumbers',
+      'showTotal', 'showStreak', 'showVelocity', 'showConsistency',
+      'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay',
+      'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits',
+      'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
+    ];
+
+    if (visibilityKeys.some(key => changes[key])) {
       applyVisibility();
+    }
+
+    if (changes.gridOrder) {
+      runAnalysis().catch(() => {});
     }
 
     if (changes.theme || changes.customStart || changes.customStop) {
@@ -806,7 +815,7 @@ function init() {
         const theme = (settings.theme as string) || 'green';
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
         
-        injectStats(thresholds, data, advanced);
+        await injectStats(thresholds, data, advanced);
         extendLegend(thresholds);
         await applyDeepRecoloring(data, percentiles, theme, thresholds);
         await applyVisibility();
@@ -850,12 +859,12 @@ function init() {
   });
 }
 
-function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
+async function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
 
-  // Check if we already injected
-  if (document.getElementById('git-heat-stats')) return;
+  const existing = document.getElementById('git-heat-stats');
+  if (existing) existing.remove();
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -873,6 +882,117 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
 
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
+  const defaultOrder = [
+    'gh-total', 'gh-today', 'gh-streak', 'gh-velocity', 'gh-consistency', 
+    'gh-weekend', 'gh-slump', 'gh-best-day', 'gh-worst-day', 'gh-current-weekday',
+    'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created',
+    'gh-langs', 'gh-network'
+  ];
+
+  let gridOrder = defaultOrder;
+  try {
+    const settings = await chrome.storage.local.get(['gridOrder']);
+    if (settings.gridOrder && Array.isArray(settings.gridOrder)) {
+      gridOrder = settings.gridOrder;
+      // Ensure all current items are present, even if not in saved order
+      defaultOrder.forEach(id => {
+        if (!gridOrder.includes(id)) gridOrder.push(id);
+      });
+    }
+  } catch (e) {}
+
+  const itemMap: Record<string, string> = {
+    'gh-total': `
+      <div class="stat-card" id="gh-total">
+        <span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span>
+        <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
+      </div>`,
+    'gh-today': `
+      <div class="stat-card highlightable" id="gh-today" data-date="${todayStr}">
+        <span class="color-fg-muted d-block text-small">Today's Contribs</span>
+        <strong class="f3-light">${advanced.todayCount}</strong>
+      </div>`,
+    'gh-streak': `
+      <div class="stat-card highlightable" id="gh-streak" 
+           data-current-streak="${advanced.currentStreakDates.join(',')}" 
+           data-longest-streak="${advanced.longestStreakDates.join(',')}">
+        <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
+        <strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong>
+      </div>`,
+    'gh-velocity': `
+      <div class="stat-card" id="gh-velocity">
+        <span class="color-fg-muted d-block text-small">Average Velocity</span>
+        <strong class="f3-light">${advanced.velocity} commits/day</strong>
+      </div>`,
+    'gh-consistency': `
+      <div class="stat-card" id="gh-consistency">
+        <span class="color-fg-muted d-block text-small">Consistency</span>
+        <strong class="f3-light">${advanced.consistency}%</strong>
+      </div>`,
+    'gh-weekend': `
+      <div class="stat-card" id="gh-weekend">
+        <span class="color-fg-muted d-block text-small">Weekend Score</span>
+        <strong class="f3-light">${advanced.weekendScore}%</strong>
+      </div>`,
+    'gh-slump': `
+      <div class="stat-card" id="gh-slump">
+        <span class="color-fg-muted d-block text-small">Longest Slump</span>
+        <strong class="f3-light">${advanced.longestSlump} days</strong>
+      </div>`,
+    'gh-best-day': `
+      <div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}">
+        <span class="color-fg-muted d-block text-small">Best Weekday</span>
+        <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
+      </div>`,
+    'gh-worst-day': `
+      <div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}">
+        <span class="color-fg-muted d-block text-small">Worst Weekday</span>
+        <strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong>
+      </div>`,
+    'gh-current-weekday': `
+      <div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}">
+        <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
+        <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
+      </div>`,
+    'gh-most-active-day': `
+      <div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
+        <span class="color-fg-muted d-block text-small">Most Active Day</span>
+        <strong class="f3-light">${advanced.mostActiveDay}</strong>
+      </div>`,
+    'gh-max-commits': `
+      <div class="stat-card highlightable" id="gh-max-commits" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
+        <span class="color-fg-muted d-block text-small">Max Daily Commits</span>
+        <strong class="f3-light">${advanced.mostActiveDayCount}</strong>
+      </div>`,
+    'gh-stars': `
+      <div class="stat-card" id="gh-stars">
+        <span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span>
+        <strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong>
+      </div>`,
+    'gh-pr': `
+      <div class="stat-card" id="gh-pr">
+        <span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span>
+        <strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong>
+      </div>`,
+    'gh-issue-created': `
+      <div class="stat-card" id="gh-issue-created">
+        <span class="color-fg-muted d-block text-small">Issues / Created Repos</span>
+        <strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong>
+      </div>`,
+    'gh-langs': `
+      <div class="stat-card" id="gh-langs">
+        <span class="color-fg-muted d-block text-small">Top Languages</span>
+        <strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong>
+      </div>`,
+    'gh-network': `
+      <div class="stat-card" id="gh-network">
+        <span class="color-fg-muted d-block text-small">Network</span>
+        <strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong>
+      </div>`
+  };
+
+  const gridHtml = gridOrder.map(id => itemMap[id] || '').join('');
+
   statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-center mb-3">
       <div class="d-flex flex-items-center gap-2">
@@ -883,76 +1003,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     </div>
     
     <div class="git-heat-grid" id="gh-grid-stats">
-      <div class="stat-card" id="gh-total">
-        <span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span>
-        <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
-      </div>
-      <div class="stat-card highlightable" id="gh-today" data-date="${todayStr}">
-        <span class="color-fg-muted d-block text-small">Today's Contribs</span>
-        <strong class="f3-light">${advanced.todayCount}</strong>
-      </div>
-      <div class="stat-card highlightable" id="gh-streak" 
-           data-current-streak="${advanced.currentStreakDates.join(',')}" 
-           data-longest-streak="${advanced.longestStreakDates.join(',')}">
-        <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
-        <strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong>
-      </div>
-      <div class="stat-card" id="gh-velocity">
-        <span class="color-fg-muted d-block text-small">Average Velocity</span>
-        <strong class="f3-light">${advanced.velocity} commits/day</strong>
-      </div>
-      <div class="stat-card" id="gh-consistency">
-        <span class="color-fg-muted d-block text-small">Consistency</span>
-        <strong class="f3-light">${advanced.consistency}%</strong>
-      </div>
-      <div class="stat-card" id="gh-weekend">
-        <span class="color-fg-muted d-block text-small">Weekend Score</span>
-        <strong class="f3-light">${advanced.weekendScore}%</strong>
-      </div>
-      <div class="stat-card" id="gh-slump">
-        <span class="color-fg-muted d-block text-small">Longest Slump</span>
-        <strong class="f3-light">${advanced.longestSlump} days</strong>
-      </div>
-      <div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}">
-        <span class="color-fg-muted d-block text-small">Best Weekday</span>
-        <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
-      </div>
-      <div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}">
-        <span class="color-fg-muted d-block text-small">Worst Weekday</span>
-        <strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong>
-      </div>
-      <div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}">
-        <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
-        <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
-      </div>
-      <div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
-        <span class="color-fg-muted d-block text-small">Most Active Day</span>
-        <strong class="f3-light">${advanced.mostActiveDay}</strong>
-      </div>
-      <div class="stat-card highlightable" id="gh-max-commits" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
-        <span class="color-fg-muted d-block text-small">Max Daily Commits</span>
-        <strong class="f3-light">${advanced.mostActiveDayCount}</strong>
-      </div>
-      <div class="stat-card" id="gh-stars">
-        <span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span>
-        <strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong>
-      </div>
-      <div class="stat-card" id="gh-pr">
-        <span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span>
-        <strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong>
-      </div>
-      <div class="stat-card" id="gh-issue-created">
-        <span class="color-fg-muted d-block text-small">Issues / Created Repos</span>
-        <strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong>
-      </div>
-      <div class="stat-card" id="gh-langs">
-        <span class="color-fg-muted d-block text-small">Top Languages</span>
-        <strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong>
-      </div>
-      <div class="stat-card" id="gh-network">
-        <span class="color-fg-muted d-block text-small">Network</span>
-        <strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong>
-      </div>
+      ${gridHtml}
     </div>
 
     <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4" id="gh-detailed-stats">
