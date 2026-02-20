@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleWorstDay = document.getElementById('toggle-worst-day') as HTMLInputElement;
   const toggleCurrentWeekday = document.getElementById('toggle-current-weekday') as HTMLInputElement;
   const toggleMostActiveDay = document.getElementById('toggle-most-active-day') as HTMLInputElement;
+  const toggleMaxCommits = document.getElementById('toggle-max-commits') as HTMLInputElement;
   const toggleStars = document.getElementById('toggle-stars') as HTMLInputElement;
   const togglePR = document.getElementById('toggle-pr') as HTMLInputElement;
   const toggleIssueCreated = document.getElementById('toggle-issue-created') as HTMLInputElement;
@@ -40,7 +41,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showMostActiveDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showMostActiveDay', 'showMaxCommits', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
   ]);
 
   if (settings.theme) {
@@ -74,6 +75,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleWorstDay, settings.showWorstDay);
   setChecked(toggleCurrentWeekday, settings.showCurrentWeekday);
   setChecked(toggleMostActiveDay, settings.showMostActiveDay);
+  setChecked(toggleMaxCommits, settings.showMaxCommits);
   setChecked(toggleStars, settings.showStars);
   setChecked(togglePR, settings.showPR);
   setChecked(toggleIssueCreated, settings.showIssueCreated);
@@ -119,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleWorstDay, 'showWorstDay');
   addToggleListener(toggleCurrentWeekday, 'showCurrentWeekday');
   addToggleListener(toggleMostActiveDay, 'showMostActiveDay');
+  addToggleListener(toggleMaxCommits, 'showMaxCommits');
   addToggleListener(toggleStars, 'showStars');
   addToggleListener(togglePR, 'showPR');
   addToggleListener(toggleIssueCreated, 'showIssueCreated');
@@ -198,7 +201,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('best-day')!.textContent = `${adv.bestDay} (${adv.bestDayCount})`;
         document.getElementById('worst-day')!.textContent = `${adv.worstDay} (${adv.worstDayCount})`;
         document.getElementById('current-weekday')!.textContent = `${adv.currentWeekday} (${adv.currentWeekdayCount})`;
-        document.getElementById('most-active-day')!.textContent = `${adv.mostActiveDay} (${adv.mostActiveDayCount})`;
+        document.getElementById('most-active-day')!.textContent = `${adv.mostActiveDay}`;
+        document.getElementById('max-commits')!.textContent = `${adv.mostActiveDayCount}`;
         document.getElementById('pinned-stats')!.textContent = `${adv.totalStars} / ${adv.totalForks}`;
         document.getElementById('top-langs')!.textContent = adv.topLangs.join(', ') || 'N/A';
         document.getElementById('socials')!.textContent = `${adv.socials.followers} Follow / ${adv.socials.organizations} Orgs`;

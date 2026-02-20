@@ -454,7 +454,7 @@ async function applyVisibility() {
   if (!chrome.runtime?.id) return;
   const settings = await chrome.storage.local.get([
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
+    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showMaxCommits', 'showTodayCount', 'showCurrentWeekday', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
   ]);
 
   const grid = document.getElementById('gh-grid-stats');
@@ -485,6 +485,7 @@ async function applyVisibility() {
     'gh-worst-day': settings.showWorstDay,
     'gh-current-weekday': settings.showCurrentWeekday,
     'gh-most-active-day': settings.showMostActiveDay,
+    'gh-max-commits': settings.showMaxCommits,
     'gh-stars': settings.showStars,
     'gh-pr': settings.showPR,
     'gh-issue-created': settings.showIssueCreated,
@@ -921,6 +922,14 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
         <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
         <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
       </div>
+      <div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}">
+        <span class="color-fg-muted d-block text-small">Most Active Day</span>
+        <strong class="f3-light">${advanced.mostActiveDay}</strong>
+      </div>
+      <div class="stat-card highlightable" id="gh-max-commits" data-date="${advanced.mostActiveDay}">
+        <span class="color-fg-muted d-block text-small">Max Daily Commits</span>
+        <strong class="f3-light">${advanced.mostActiveDayCount}</strong>
+      </div>
       <div class="stat-card" id="gh-stars">
         <span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span>
         <strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong>
@@ -1047,6 +1056,18 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     });
   };
 
+  const todayCard = statsDiv.querySelector('#gh-today');
+  if (todayCard) {
+    todayCard.addEventListener('mouseenter', () => {
+      todayCard.classList.add('highlighting');
+      highlightDates([todayStr]);
+    });
+    todayCard.addEventListener('mouseleave', () => {
+      todayCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
   const streakCard = statsDiv.querySelector('#gh-streak');
   if (streakCard) {
     streakCard.addEventListener('mouseenter', () => {
@@ -1083,6 +1104,45 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
     });
     worstDayCard.addEventListener('mouseleave', () => {
       worstDayCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
+  const currentWeekdayCard = statsDiv.querySelector('#gh-current-weekday');
+  if (currentWeekdayCard) {
+    currentWeekdayCard.addEventListener('mouseenter', () => {
+      currentWeekdayCard.classList.add('highlighting');
+      const idx = parseInt((currentWeekdayCard as HTMLElement).dataset.weekday || '0', 10);
+      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
+    });
+    currentWeekdayCard.addEventListener('mouseleave', () => {
+      currentWeekdayCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
+  const mostActiveDayCard = statsDiv.querySelector('#gh-most-active-day');
+  if (mostActiveDayCard) {
+    mostActiveDayCard.addEventListener('mouseenter', () => {
+      mostActiveDayCard.classList.add('highlighting');
+      const date = (mostActiveDayCard as HTMLElement).dataset.date;
+      if (date) highlightDates([date]);
+    });
+    mostActiveDayCard.addEventListener('mouseleave', () => {
+      mostActiveDayCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
+  const maxCommitsCard = statsDiv.querySelector('#gh-max-commits');
+  if (maxCommitsCard) {
+    maxCommitsCard.addEventListener('mouseenter', () => {
+      maxCommitsCard.classList.add('highlighting');
+      const date = (maxCommitsCard as HTMLElement).dataset.date;
+      if (date) highlightDates([date]);
+    });
+    maxCommitsCard.addEventListener('mouseleave', () => {
+      maxCommitsCard.classList.remove('highlighting');
       clearHighlights();
     });
   }
