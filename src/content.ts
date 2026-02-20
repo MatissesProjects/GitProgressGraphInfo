@@ -796,9 +796,13 @@ function init() {
     }
   });
 
+  // Concurrency guard
+  let isAnalysisRunning = false;
+
   // Wait for the graph to load for injection
   const runAnalysis = async () => {
-    if (!isContextValid()) return;
+    if (!isContextValid() || isAnalysisRunning) return;
+    isAnalysisRunning = true;
     
     try {
       const data = parseContributionGraph();
@@ -811,17 +815,20 @@ function init() {
         const thresholds = calculateThresholds(data);
         const percentiles = calculatePercentiles(data);
         
-        const settings = await chrome.storage.local.get(['theme']);
+        const settings = await chrome.storage.local.get(['theme', 'gridOrder']);
         const theme = (settings.theme as string) || 'green';
+        const gridOrder = (settings.gridOrder as string[]) || null;
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
         
-        await injectStats(thresholds, data, advanced);
+        injectStats(thresholds, data, advanced, gridOrder);
         extendLegend(thresholds);
         await applyDeepRecoloring(data, percentiles, theme, thresholds);
         await applyVisibility();
       }
     } catch (e) {
       console.log("GitHeat: Analysis skipped or failed (likely extension context invalidated)");
+    } finally {
+      isAnalysisRunning = false;
     }
   };
 
@@ -859,7 +866,7 @@ function init() {
   });
 }
 
-async function injectStats(thresholds: any, data: ContributionDay[], advanced: any) {
+function injectStats(thresholds: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null) {
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
 
@@ -889,17 +896,11 @@ async function injectStats(thresholds: any, data: ContributionDay[], advanced: a
     'gh-langs', 'gh-network'
   ];
 
-  let gridOrder = defaultOrder;
-  try {
-    const settings = await chrome.storage.local.get(['gridOrder']);
-    if (settings.gridOrder && Array.isArray(settings.gridOrder)) {
-      gridOrder = settings.gridOrder;
-      // Ensure all current items are present, even if not in saved order
-      defaultOrder.forEach(id => {
-        if (!gridOrder.includes(id)) gridOrder.push(id);
-      });
-    }
-  } catch (e) {}
+  let gridOrder = savedOrder || defaultOrder;
+  // Ensure all current items are present, even if not in saved order
+  defaultOrder.forEach(id => {
+    if (!gridOrder.includes(id)) gridOrder.push(id);
+  });
 
   const itemMap: Record<string, string> = {
     'gh-total': `
