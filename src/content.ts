@@ -406,7 +406,7 @@ async function applyVisibility() {
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
     'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
     'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
+    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth'
   ]);
 
   const grid = document.getElementById('gh-grid-stats');
@@ -428,6 +428,7 @@ async function applyVisibility() {
     'gh-total': settings.showTotal,
     'gh-today': settings.showTodayCount,
     'gh-streak': settings.showStreak,
+    'gh-best-month': settings.showBestMonth,
     'gh-island': settings.showIsland,
     'gh-slump-island': settings.showSlumpIsland,
     'gh-velocity': settings.showVelocity,
@@ -560,6 +561,39 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     }
   });
 
+  // Calculate Best Month
+  const monthData: Record<string, { count: number, activeDays: number, totalDays: number, maxStreak: number, tempStreak: number, dates: string[] }> = {};
+  pastAndPresentData.forEach(day => {
+    const monthKey = day.date.substring(0, 7); // YYYY-MM
+    if (!monthData[monthKey]) {
+      monthData[monthKey] = { count: 0, activeDays: 0, totalDays: 0, maxStreak: 0, tempStreak: 0, dates: [] };
+    }
+    const m = monthData[monthKey];
+    m.totalDays++;
+    m.dates.push(day.date);
+    if (day.count > 0) {
+      m.count += day.count;
+      m.activeDays++;
+      m.tempStreak++;
+      if (m.tempStreak > m.maxStreak) m.maxStreak = m.tempStreak;
+    } else {
+      m.tempStreak = 0;
+    }
+  });
+
+  let bestMonthName = "N/A", bestMonthScore = -1, bestMonthDates: string[] = [], bestMonthStats = { score: 0 };
+  Object.entries(monthData).forEach(([month, data]) => {
+    const consistency = data.activeDays / data.totalDays;
+    // Score formula: commits * consistency * streak
+    const score = Math.round(data.count * consistency * (data.maxStreak || 1));
+    if (score > bestMonthScore) {
+      bestMonthScore = score;
+      bestMonthName = new Date(month + '-01T00:00:00').toLocaleString('default', { month: 'long', year: 'numeric' });
+      bestMonthDates = data.dates;
+      bestMonthStats = { score };
+    }
+  });
+
   const todayWeekday = now.getDay();
   const todayCount = data.find(d => d.date === todayStr)?.count || 0;
 
@@ -621,6 +655,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     peakWeekday: daysOfWeek[peakWeekdayIndex], peakWeekdayIndex, peakWeekdayCount: maxHighFreq,
     biggestIslandSize: biggestIslandDates.length, biggestIslandDates,
     biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
+    bestMonthName, bestMonthDates, bestMonthStats,
     activeDays, isYTD: ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
     issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,
@@ -727,7 +762,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
   statsDiv.style.marginTop = '16px';
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
-  const defaultOrder = ['gh-total', 'gh-today', 'gh-streak', 'gh-island', 'gh-slump-island', 'gh-velocity', 'gh-consistency', 'gh-weekend', 'gh-slump', 'gh-best-day', 'gh-worst-day', 'gh-current-weekday', 'gh-power-day', 'gh-peak-day', 'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'];
+  const defaultOrder = ['gh-total', 'gh-today', 'gh-streak', 'gh-best-month', 'gh-island', 'gh-slump-island', 'gh-velocity', 'gh-consistency', 'gh-weekend', 'gh-slump', 'gh-best-day', 'gh-worst-day', 'gh-current-weekday', 'gh-power-day', 'gh-peak-day', 'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'];
   let gridOrder = savedOrder || defaultOrder;
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
@@ -735,6 +770,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
     'gh-total': `<div class="stat-card" id="gh-total"><span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span><strong class="f3-light">${totalContributions.toLocaleString()}</strong></div>`,
     'gh-today': `<div class="stat-card highlightable" id="gh-today" data-date="${todayStr}"><span class="color-fg-muted d-block text-small">Today's Contribs</span><strong class="f3-light">${advanced.todayCount}</strong></div>`,
     'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${advanced.currentStreakDates.join(',')}" data-longest-streak="${advanced.longestStreakDates.join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
+    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${advanced.bestMonthDates.join(',')}"><span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span><strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong></div>`,
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
     'gh-velocity': `<div class="stat-card" id="gh-velocity"><span class="color-fg-muted d-block text-small">Average Velocity</span><strong class="f3-light">${advanced.velocity} commits/day</strong></div>`,
@@ -787,6 +823,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
 
   addHover('#gh-today', () => highlightDates([todayStr]));
   addHover('#gh-streak', () => highlightDates([...new Set([...advanced.longestStreakDates, ...advanced.currentStreakDates])]));
+  addHover('#gh-best-month', () => highlightDates(advanced.bestMonthDates));
   addHover('#gh-island', () => highlightDates(advanced.biggestIslandDates, 'gh-highlight-special'));
   addHover('#gh-slump-island', () => highlightDates(advanced.biggestSlumpIslandDates, 'gh-highlight-sad'));
   addHover('#gh-best-day', () => highlightWeekday(advanced.bestDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
