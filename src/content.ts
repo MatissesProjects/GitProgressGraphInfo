@@ -680,6 +680,91 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   const todayWeekday = now.getDay();
   const todayCount = data.find(d => d.date === todayStr)?.count || 0;
 
+  // Find Largest Contiguous Island (Level 2, 3 & 4)
+  const highActivityDays = data.filter(d => d.level >= 2);
+  const dateMap = new Map(data.map(d => [d.date, d]));
+  const visited = new Set<string>();
+  let biggestIslandDates: string[] = [];
+
+  const getNeighbors = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    const neighbors: string[] = [];
+    
+    // Day before/after (Up/Down in grid)
+    const prevDay = new Date(d);
+    prevDay.setDate(d.getDate() - 1);
+    const nextDay = new Date(d);
+    nextDay.setDate(d.getDate() + 1);
+    
+    // Week before/after (Left/Right in grid)
+    const prevWeek = new Date(d);
+    prevWeek.setDate(d.getDate() - 7);
+    const nextWeek = new Date(d);
+    nextWeek.setDate(d.getDate() + 7);
+
+    const format = (date: Date) => date.toISOString().split('T')[0];
+    
+    [prevDay, nextDay, prevWeek, nextWeek].forEach(n => {
+      const s = format(n);
+      if (dateMap.has(s) && dateMap.get(s)!.level >= 2) {
+        neighbors.push(s);
+      }
+    });
+    return neighbors;
+  };
+
+  highActivityDays.forEach(day => {
+    if (!visited.has(day.date)) {
+      const currentIsland: string[] = [];
+      const queue = [day.date];
+      visited.add(day.date);
+
+      while (queue.length > 0) {
+        const current = queue.shift()!;
+        currentIsland.push(current);
+        
+        getNeighbors(current).forEach(neighbor => {
+          if (!visited.has(neighbor)) {
+            visited.add(neighbor);
+            queue.push(neighbor);
+          }
+        });
+      }
+
+      if (currentIsland.length > biggestIslandDates.length) {
+        biggestIslandDates = currentIsland;
+      }
+    }
+  });
+
+  // Calculate Weekday Averages and Peak Frequency
+  const weekdayHighActivityCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+  const weekdayTotalDays: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
+
+  pastAndPresentData.forEach(day => {
+    const d = new Date(day.date + 'T00:00:00');
+    const wd = d.getDay();
+    weekdayTotalDays[wd]++;
+    if (day.level >= 2) weekdayHighActivityCounts[wd]++;
+  });
+
+  let powerDayIndex = 0;
+  let maxAvg = -1;
+  let peakWeekdayIndex = 0;
+  let maxHighFreq = -1;
+
+  for (let i = 0; i < 7; i++) {
+    const avg = weekdayTotalDays[i] > 0 ? (weekdayCounts[i] / weekdayTotalDays[i]) : 0;
+    if (avg > maxAvg) {
+      maxAvg = avg;
+      powerDayIndex = i;
+    }
+    if (weekdayHighActivityCounts[i] > maxHighFreq) {
+      maxHighFreq = weekdayHighActivityCounts[i];
+      peakWeekdayIndex = i;
+    }
+  }
+
   return {
     currentStreak,
     currentStreakDates,
@@ -703,6 +788,14 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     mostActiveDay,
     mostActiveDayCount,
     mostActiveDayWeekday,
+    powerDay: daysOfWeek[powerDayIndex],
+    powerDayIndex,
+    powerDayAvg: maxAvg.toFixed(1),
+    peakWeekday: daysOfWeek[peakWeekdayIndex],
+    peakWeekdayIndex,
+    peakWeekdayCount: maxHighFreq,
+    biggestIslandSize: biggestIslandDates.length,
+    biggestIslandDates,
     activeDays,
     isYTD: ytdTotalDays > 0,
     totalStars,
@@ -890,7 +983,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
   const defaultOrder = [
-    'gh-total', 'gh-today', 'gh-streak', 'gh-velocity', 'gh-consistency', 
+    'gh-total', 'gh-today', 'gh-streak', 'gh-island', 'gh-velocity', 'gh-consistency', 
     'gh-weekend', 'gh-slump', 'gh-best-day', 'gh-worst-day', 'gh-current-weekday',
     'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created',
     'gh-langs', 'gh-network'
@@ -919,6 +1012,11 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
            data-longest-streak="${advanced.longestStreakDates.join(',')}">
         <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
         <strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong>
+      </div>`,
+    'gh-island': `
+      <div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}">
+        <span class="color-fg-muted d-block text-small">Biggest Island (L3+)</span>
+        <strong class="f3-light">${advanced.biggestIslandSize} days</strong>
       </div>`,
     'gh-velocity': `
       <div class="stat-card" id="gh-velocity">
@@ -1132,6 +1230,19 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
     });
     streakCard.addEventListener('mouseleave', () => {
       streakCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
+  const islandCard = statsDiv.querySelector('#gh-island');
+  if (islandCard) {
+    islandCard.addEventListener('mouseenter', () => {
+      islandCard.classList.add('highlighting');
+      const dates = (islandCard as HTMLElement).dataset.island?.split(',') || [];
+      highlightDates(dates, 'gh-highlight-special');
+    });
+    islandCard.addEventListener('mouseleave', () => {
+      islandCard.classList.remove('highlighting');
       clearHighlights();
     });
   }

@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleTotal = document.getElementById('toggle-total') as HTMLInputElement;
   const toggleToday = document.getElementById('toggle-today') as HTMLInputElement;
   const toggleStreak = document.getElementById('toggle-streak') as HTMLInputElement;
+  const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
   const toggleVelocity = document.getElementById('toggle-velocity') as HTMLInputElement;
   const toggleConsistency = document.getElementById('toggle-consistency') as HTMLInputElement;
   const toggleWeekend = document.getElementById('toggle-weekend') as HTMLInputElement;
@@ -42,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-total': 'Total Contributions',
     'gh-today': 'Today\'s Contribs',
     'gh-streak': 'Current / Best Streak',
+    'gh-island': 'Biggest Island',
     'gh-velocity': 'Average Velocity',
     'gh-consistency': 'Consistency %',
     'gh-weekend': 'Weekend Score',
@@ -65,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showMostActiveDay', 'showMaxCommits', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork',
     'gridOrder'
   ]);
 
@@ -159,6 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleTotal, settings.showTotal);
   setChecked(toggleToday, settings.showTodayCount);
   setChecked(toggleStreak, settings.showStreak);
+  setChecked(toggleIsland, settings.showIsland);
   setChecked(toggleVelocity, settings.showVelocity);
   setChecked(toggleConsistency, settings.showConsistency);
   setChecked(toggleWeekend, settings.showWeekend);
@@ -205,6 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleTotal, 'showTotal');
   addToggleListener(toggleToday, 'showTodayCount');
   addToggleListener(toggleStreak, 'showStreak');
+  addToggleListener(toggleIsland, 'showIsland');
   addToggleListener(toggleVelocity, 'showVelocity');
   addToggleListener(toggleConsistency, 'showConsistency');
   addToggleListener(toggleWeekend, 'showWeekend');
