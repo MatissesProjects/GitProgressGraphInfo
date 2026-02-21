@@ -154,6 +154,22 @@
 }
 
 /* Ensure the transform works on SVG elements if needed */
-.ContributionCalendar-day.gh-highlight-special {
+@keyframes gh-shrink-sad {
+  0% { transform: scale(1); filter: saturate(0.5) drop-shadow(0 0 2px #0052cc); }
+  50% { transform: scale(0.7); filter: saturate(0.2) drop-shadow(0 0 8px #0052cc); opacity: 0.8; }
+  100% { transform: scale(1); filter: saturate(0.5) drop-shadow(0 0 2px #0052cc); }
+}
+
+.gh-highlight-sad {
+  animation: gh-shrink-sad 1.2s infinite ease-in-out;
+  outline: 2px solid #0052cc !important;
+  outline-offset: 1px !important;
+  z-index: 50 !important;
+  position: relative;
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.ContributionCalendar-day.gh-highlight-sad {
   transform-box: fill-box;
 }

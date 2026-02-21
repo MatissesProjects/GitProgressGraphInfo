@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleToday = document.getElementById('toggle-today') as HTMLInputElement;
   const toggleStreak = document.getElementById('toggle-streak') as HTMLInputElement;
   const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
+  const toggleSlumpIsland = document.getElementById('toggle-slump-island') as HTMLInputElement;
   const toggleVelocity = document.getElementById('toggle-velocity') as HTMLInputElement;
   const toggleConsistency = document.getElementById('toggle-consistency') as HTMLInputElement;
   const toggleWeekend = document.getElementById('toggle-weekend') as HTMLInputElement;
@@ -45,9 +46,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-total': 'Total Contributions',
     'gh-today': 'Today\'s Contribs',
     'gh-streak': 'Current / Best Streak',
-    'gh-island': 'Biggest Island',
-    'gh-velocity': 'Average Velocity',
-    'gh-consistency': 'Consistency %',
+    'gh-island': 'Biggest Island (L2+)',
+    'gh-slump-island': 'Biggest Island (0-1)',
+    'gh-velocity': 'Average Velocity',    'gh-consistency': 'Consistency %',
     'gh-weekend': 'Weekend Score',
     'gh-slump': 'Longest Slump',
     'gh-best-day': 'Best Weekday',
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork',
     'gridOrder'
   ]);
 
@@ -166,6 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleToday, settings.showTodayCount);
   setChecked(toggleStreak, settings.showStreak);
   setChecked(toggleIsland, settings.showIsland);
+  setChecked(toggleSlumpIsland, settings.showSlumpIsland);
   setChecked(toggleVelocity, settings.showVelocity);
   setChecked(toggleConsistency, settings.showConsistency);
   setChecked(toggleWeekend, settings.showWeekend);
@@ -215,6 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleToday, 'showTodayCount');
   addToggleListener(toggleStreak, 'showStreak');
   addToggleListener(toggleIsland, 'showIsland');
+  addToggleListener(toggleSlumpIsland, 'showSlumpIsland');
   addToggleListener(toggleVelocity, 'showVelocity');
   addToggleListener(toggleConsistency, 'showConsistency');
   addToggleListener(toggleWeekend, 'showWeekend');
@@ -307,6 +310,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('current-weekday')!.textContent = `${adv.currentWeekday} (${adv.currentWeekdayCount})`;
         document.getElementById('power-day')!.textContent = `${adv.powerDay} (${adv.powerDayAvg})`;
         document.getElementById('peak-day')!.textContent = `${adv.peakWeekday} (${adv.peakWeekdayCount})`;
+        document.getElementById('biggest-island')!.textContent = `${adv.biggestIslandSize} days`;
+        document.getElementById('slump-island')!.textContent = `${adv.biggestSlumpIslandSize} days`;
         document.getElementById('most-active-day')!.textContent = `${adv.mostActiveDay}`;
         document.getElementById('max-commits')!.textContent = `${adv.mostActiveDayCount}`;
         document.getElementById('pinned-stats')!.textContent = `${adv.totalStars} / ${adv.totalForks}`;
