@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-today': 'Today\'s Contribs',
     'gh-streak': 'Current / Best Streak',
     'gh-island': 'Biggest Island (L2+)',
-    'gh-slump-island': 'Biggest Island (0-1)',
+    'gh-slump-island': 'Worst Island (0-1)',
     'gh-velocity': 'Average Velocity',    'gh-consistency': 'Consistency %',
     'gh-weekend': 'Weekend Score',
     'gh-slump': 'Longest Slump',
