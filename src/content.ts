@@ -55,8 +55,6 @@ function parseActivityTimeline(): TimelineActivity {
 
     const bodyText = body.textContent?.trim() || "";
 
-    // 1. Commits / Most Active Repos
-    // Example: "Created 290 commits in 5 repositories"
     if (bodyText.includes('commits in')) {
       const listItems = body.querySelectorAll('li');
       listItems.forEach(li => {
@@ -72,8 +70,6 @@ function parseActivityTimeline(): TimelineActivity {
       });
     }
 
-    // 2. Created Repositories Section
-    // Header: "Created 4 repositories"
     if (bodyText.includes('Created') && bodyText.includes('repositor') && !bodyText.includes('commits in')) {
       const match = bodyText.match(/Created (\d+) repositor/i);
       if (match) {
@@ -97,7 +93,6 @@ function parseActivityTimeline(): TimelineActivity {
       });
     }
 
-    // 3. Parse Issues
     if (bodyText.includes('Opened') && bodyText.includes('issue')) {
       const match = bodyText.match(/Opened (\d+) (?:other )?issue/i);
       if (match) {
@@ -110,9 +105,7 @@ function parseActivityTimeline(): TimelineActivity {
       issuesOpened += 1;
     }
 
-    // 4. Parse Pull Requests (Opened, Merged, Reviewed)
     if (bodyText.includes('pull request')) {
-      // 4a. Opened / Proposed
       const proposedMatch = bodyText.match(/(?:Proposed|Opened) (\d+) (?:other )?pull request/i);
       if (proposedMatch) {
         pullRequests += parseInt(proposedMatch[1], 10);
@@ -120,7 +113,6 @@ function parseActivityTimeline(): TimelineActivity {
         pullRequests += 1;
       }
 
-      // 4b. Merged
       const mergedMatch = bodyText.match(/Merged (\d+) (?:other )?pull request/i);
       if (mergedMatch) {
         mergedPullRequests += parseInt(mergedMatch[1], 10);
@@ -128,7 +120,6 @@ function parseActivityTimeline(): TimelineActivity {
         mergedPullRequests += 1;
       }
 
-      // 4c. Reviewed
       const reviewedMatch = bodyText.match(/Reviewed (\d+) (?:other )?pull request/i);
       if (reviewedMatch) {
         pullRequestReviews += parseInt(reviewedMatch[1], 10);
@@ -159,7 +150,6 @@ function parseAchievements(): string[] {
   badges.forEach(badge => {
     const alt = badge.getAttribute('alt') || "";
     if (alt && !achievements.includes(alt)) {
-      // Clean up alt text: "Achievement: Pull Shark" -> "Pull Shark"
       achievements.push(alt.replace("Achievement: ", ""));
     }
   });
@@ -192,7 +182,6 @@ function parsePinnedProjects(): PinnedProject[] {
     const language = item.querySelector('[itemprop="programmingLanguage"]')?.textContent?.trim() || "Unknown";
     const languageColor = (item.querySelector('.repo-language-color') as HTMLElement)?.style?.backgroundColor || "";
     
-    // Stars and Forks
     let stars = 0;
     let forks = 0;
     
@@ -218,8 +207,6 @@ function parsePinnedProjects(): PinnedProject[] {
 }
 
 function parseContributionGraph() {
-  console.log("GitHeat: Starting to parse contribution graph...");
-
   const days = document.querySelectorAll('.ContributionCalendar-day');
   const contributionData: ContributionDay[] = [];
 
@@ -228,10 +215,7 @@ function parseContributionGraph() {
     const level = parseInt(day.getAttribute('data-level') || '0', 10);
     
     if (date) {
-      // Find the contribution count.
       let count = 0;
-      
-      // Method 1: Check for tool-tip element (Modern GitHub)
       const id = day.getAttribute('id');
       if (id) {
         const tooltip = document.querySelector(`tool-tip[for="${id}"]`);
@@ -240,44 +224,33 @@ function parseContributionGraph() {
         }
       }
 
-      // Method 2: Check aria-label or title as fallback
       if (count === 0 && level > 0) {
         const ariaLabel = day.getAttribute('aria-label');
         const title = day.getAttribute('title');
         count = parseCountText(ariaLabel || title || "");
       }
 
-      // Method 3: Check for sr-only text inside or nearby
-      // (Some versions of GitHub have hidden text for screen readers)
-
       contributionData.push({ date, level, count });
     }
   });
 
   if (contributionData.length === 0) {
-    // console.warn("GitHeat: No contribution data found. Is this a GitHub profile page?");
     return null;
   }
 
-  console.log(`GitHeat: Parsed ${contributionData.length} days.`);
   return contributionData;
 }
 
 function parseCountText(text: string): number {
   if (!text) return 0;
-  // Matches "12 contributions", "1 contribution", "No contributions"
   if (text.toLowerCase().includes("no contribution")) return 0;
   const match = text.match(/(\d+)/);
   return match ? parseInt(match[1], 10) : 0;
 }
 
 function calculateThresholds(data: ContributionDay[]) {
-  const levels: Record<number, number[]> = {
-    1: [],
-    2: [],
-    3: [],
-    4: []
-  };
+  const thresholds: Record<number, { min: number; max: number }> = {};
+  const levels: Record<number, number[]> = { 1: [], 2: [], 3: [], 4: [] };
 
   data.forEach(day => {
     if (day.level > 0 && day.count > 0) {
@@ -285,18 +258,12 @@ function calculateThresholds(data: ContributionDay[]) {
     }
   });
 
-  const thresholds: Record<number, { min: number; max: number }> = {};
-
   for (let l = 1; l <= 4; l++) {
     const counts = levels[l].sort((a, b) => a - b);
     if (counts.length > 0) {
-      thresholds[l] = {
-        min: counts[0],
-        max: counts[counts.length - 1]
-      };
+      thresholds[l] = { min: counts[0], max: counts[counts.length - 1] };
     }
   }
-
   return thresholds;
 }
 
@@ -366,7 +333,6 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
       const settings = await chrome.storage.local.get(['customStart', 'customStop']);
       colors = generateCustomScale((settings.customStart as string) || '#ebedf0', (settings.customStop as string) || '#216e39');
     } catch (e) {
-      // Context invalidated
       return;
     }
   } else {
@@ -385,22 +351,16 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
     return 1;
   };
 
-  // Recolor main graph days
   days.forEach((day: any) => {
     const date = day.getAttribute('data-date');
     const dayData = data.find(d => d.date === date);
     if (dayData && dayData.count > 0) {
       const level = getGranularLevel(dayData.count);
       const color = colors[level];
-      
-      // Only apply inline styles if NOT highlighted, 
-      // or we handle it via CSS class specificity.
-      // To be safe, we'll use setProperty.
       day.style.setProperty('background-color', color, 'important');
       day.style.setProperty('fill', color, 'important');
       
-      // Remove the hardcoded outline: none if it's highlighted
-      if (day.classList.contains('gh-highlight')) {
+      if (day.classList.contains('gh-highlight') || day.classList.contains('gh-highlight-special') || day.classList.contains('gh-highlight-sad')) {
         day.style.outline = '';
         day.style.border = '';
       } else {
@@ -410,13 +370,10 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
     }
   });
 
-  // Recolor the legend squares (Less -> More)
   const footer = document.querySelector('.ContributionCalendar-footer');
   if (footer) {
     const legendSquares = footer.querySelectorAll('.ContributionCalendar-day');
     legendSquares.forEach((sq: any, i) => {
-      // Legend usually has 5 squares (0, 1, 2, 3, 4)
-      // Map these to our 12-level scale: 0=0, 1=3, 2=6, 3=9, 4=11
       const levelMap = [0, 3, 6, 9, 11];
       const color = colors[levelMap[i]];
       if (color) {
@@ -426,26 +383,19 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
     });
   }
 
-  // Update injected stats colors
   const statsPanel = document.getElementById('git-heat-stats');
   if (statsPanel) {
-    // 1. Color the granular legend bar
     const legendSquares = statsPanel.querySelectorAll('.square-legend');
     legendSquares.forEach((sq: any, i) => {
       const color = colors[i];
-      if (color) {
-        sq.style.setProperty('background-color', color, 'important');
-      }
+      if (color) sq.style.setProperty('background-color', color, 'important');
     });
 
-    // 2. Color the threshold badges
     const badges = statsPanel.querySelectorAll('.badge');
-    const badgeLevels = [3, 6, 9, 11]; // L1, L2, L3, L4 mapped to 12-scale
+    const badgeLevels = [3, 6, 9, 11];
     badges.forEach((badge: any, i) => {
       const color = colors[badgeLevels[i]];
-      if (color) {
-        badge.style.setProperty('background-color', color, 'important');
-      }
+      if (color) badge.style.setProperty('background-color', color, 'important');
     });
   }
 }
@@ -454,7 +404,9 @@ async function applyVisibility() {
   if (!chrome.runtime?.id) return;
   const settings = await chrome.storage.local.get([
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showMaxCommits', 'showTodayCount', 'showCurrentWeekday', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
+    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
+    'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
+    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
   ]);
 
   const grid = document.getElementById('gh-grid-stats');
@@ -472,11 +424,12 @@ async function applyVisibility() {
   if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
   if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
 
-  // Granular Grid Toggles
   const toggleMap: Record<string, any> = {
     'gh-total': settings.showTotal,
     'gh-today': settings.showTodayCount,
     'gh-streak': settings.showStreak,
+    'gh-island': settings.showIsland,
+    'gh-slump-island': settings.showSlumpIsland,
     'gh-velocity': settings.showVelocity,
     'gh-consistency': settings.showConsistency,
     'gh-weekend': settings.showWeekend,
@@ -500,48 +453,29 @@ async function applyVisibility() {
     if (el) el.style.display = (val !== false) ? 'block' : 'none';
   });
 
-  // Toggle legend labels
   document.querySelectorAll('.git-heat-legend-label').forEach((el: any) => {
     el.style.display = (settings.showLegendNumbers !== false) ? 'inline' : 'none';
   });
 
-  // If all detailed sections are hidden, hide the container too
   if (detailed) {
-    const anyDetailedVisible = (settings.showActiveRepos !== false) || 
-                              (settings.showCreatedRepos !== false) || 
-                              (settings.showAchievements !== false);
+    const anyDetailedVisible = (settings.showActiveRepos !== false) || (settings.showCreatedRepos !== false) || (settings.showAchievements !== false);
     detailed.style.display = anyDetailedVisible ? 'flex' : 'none';
   }
 }
 
 function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats) {
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const todayStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const ytdStartStr = `${currentYear}-01-01`;
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const ytdStartStr = `${now.getFullYear()}-01-01`;
   
-  let currentStreak = 0;
-  let currentStreakDates: string[] = [];
-  let longestStreak = 0;
-  let longestStreakDates: string[] = [];
-  let tempStreak = 0;
-  let tempStreakDates: string[] = [];
-  let activeDays = 0;
-  let longestSlump = 0;
-  let tempSlump = 0;
-  
-  // YTD specific metrics
-  let ytdWeekendContributions = 0;
-  let ytdWeekdayContributions = 0;
-  let ytdActiveWeekendDays = 0;
-  let ytdTotalWeekendDays = 0;
-  let ytdActiveDays = 0;
-  let ytdTotalDays = 0;
-
-  const weekdayCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
-
   const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
   const pastAndPresentData = sortedData.filter(d => d.date <= todayStr);
+  const dateMap = new Map(data.map(d => [d.date, d]));
+
+  let currentStreak = 0, currentStreakDates: string[] = [], longestStreak = 0, longestStreakDates: string[] = [];
+  let tempStreak = 0, tempStreakDates: string[] = [], activeDays = 0, longestSlump = 0, tempSlump = 0;
+  let ytdWeekendContributions = 0, ytdWeekdayContributions = 0, ytdActiveWeekendDays = 0, ytdTotalWeekendDays = 0, ytdActiveDays = 0, ytdTotalDays = 0;
+  const weekdayCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
 
   pastAndPresentData.forEach(day => {
     const dateObj = new Date(day.date + 'T00:00:00');
@@ -549,99 +483,61 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     const isWeekend = (weekday === 0 || weekday === 6);
     const isYTD = day.date >= ytdStartStr;
 
-    if (isYTD) {
-      ytdTotalDays++;
-      if (isWeekend) ytdTotalWeekendDays++;
-    }
+    if (isYTD) { ytdTotalDays++; if (isWeekend) ytdTotalWeekendDays++; }
 
     if (day.count > 0) {
-      activeDays++;
-      tempStreak++;
-      tempStreakDates.push(day.date);
+      activeDays++; tempStreak++; tempStreakDates.push(day.date);
       if (tempSlump > longestSlump) longestSlump = tempSlump;
       tempSlump = 0;
-
       if (isYTD) {
         ytdActiveDays++;
-        if (isWeekend) {
-          ytdActiveWeekendDays++;
-          ytdWeekendContributions += day.count;
-        } else {
-          ytdWeekdayContributions += day.count;
-        }
+        if (isWeekend) { ytdActiveWeekendDays++; ytdWeekendContributions += day.count; }
+        else { ytdWeekdayContributions += day.count; }
       }
-      
       weekdayCounts[weekday] += day.count;
     } else {
-      if (tempStreak > longestStreak) {
-        longestStreak = tempStreak;
-        longestStreakDates = [...tempStreakDates];
-      }
-      tempStreak = 0;
-      tempStreakDates = [];
-      tempSlump++;
+      if (tempStreak > longestStreak) { longestStreak = tempStreak; longestStreakDates = [...tempStreakDates]; }
+      tempStreak = 0; tempStreakDates = []; tempSlump++;
     }
   });
   
-  if (tempStreak > longestStreak) {
-    longestStreak = tempStreak;
-    longestStreakDates = [...tempStreakDates];
-  }
+  if (tempStreak > longestStreak) { longestStreak = tempStreak; longestStreakDates = [...tempStreakDates]; }
   if (tempSlump > longestSlump) longestSlump = tempSlump;
   
-  // Calculate current streak
   for (let i = pastAndPresentData.length - 1; i >= 0; i--) {
     const day = pastAndPresentData[i];
-    if (day.count > 0) {
-      currentStreak++;
-      currentStreakDates.unshift(day.date);
-    } else if (day.date !== todayStr) {
-      break;
-    }
+    if (day.count > 0) { currentStreak++; currentStreakDates.unshift(day.date); }
+    else if (day.date !== todayStr) break;
   }
 
-  // Calculate Weekend Score (Frequency)
-  let weekendScore = 0;
-  let weekendVolumeShare = 0;
-  let velocity = "0";
-  let consistency = "0";
-  
   const ytdTotalContributions = ytdWeekendContributions + ytdWeekdayContributions;
+  let weekendScore = 0, weekendVolumeShare = 0, velocity = "0", consistency = "0";
   
   if (ytdTotalDays > 0) {
-    // We have YTD data (current year)
     weekendScore = ytdTotalWeekendDays > 0 ? Math.round((ytdActiveWeekendDays / ytdTotalWeekendDays) * 100) : 0;
     weekendVolumeShare = ytdTotalContributions > 0 ? (ytdWeekendContributions / ytdTotalContributions) : 0;
     velocity = ytdActiveDays > 0 ? (ytdTotalContributions / ytdActiveDays).toFixed(1) : "0";
     consistency = ((ytdActiveDays / ytdTotalDays) * 100).toFixed(1);
   } else {
-    // Fallback to full dataset (e.g. looking at a past year)
     const weekendDaysData = pastAndPresentData.filter(d => {
       const day = new Date(d.date + 'T00:00:00').getDay();
       return day === 0 || day === 6;
     });
-    
     const activeWeekendDaysCount = weekendDaysData.filter(d => d.count > 0).length;
     weekendScore = weekendDaysData.length > 0 ? Math.round((activeWeekendDaysCount / weekendDaysData.length) * 100) : 0;
-    
     const totalWeekendVol = weekendDaysData.reduce((sum, d) => sum + d.count, 0);
     const totalVol = pastAndPresentData.reduce((sum, d) => sum + d.count, 0);
     weekendVolumeShare = totalVol > 0 ? (totalWeekendVol / totalVol) : 0;
-    
     velocity = activeDays > 0 ? (totalVol / activeDays).toFixed(1) : "0";
     consistency = ((activeDays / pastAndPresentData.length) * 100).toFixed(1);
   }
 
-  // Pinned Data Insights
   const totalStars = pinned.reduce((sum, p) => sum + p.stars, 0);
   const totalForks = pinned.reduce((sum, p) => sum + p.forks, 0);
   const langFreq: Record<string, number> = {};
-  pinned.forEach(p => {
-    if (p.language !== "Unknown") langFreq[p.language] = (langFreq[p.language] || 0) + 1;
-  });
+  pinned.forEach(p => { if (p.language !== "Unknown") langFreq[p.language] = (langFreq[p.language] || 0) + 1; });
   const topLangs = Object.entries(langFreq).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]);
 
-  // Determine Persona
   let persona = "Consistent Coder";
   if (weekendVolumeShare > 0.4) persona = "Weekend Warrior";
   else if (parseFloat(consistency) < 20) persona = "Burst Developer";
@@ -650,178 +546,91 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   else if (totalStars > 100) persona = "Popular Maintainer";
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  let bestDayIndex = 0;
-  let maxWeekdayCount = -1;
-  let worstDayIndex = 0;
-  let minWeekdayCount = Infinity;
-
+  let bestDayIndex = 0, maxWeekdayCount = -1, worstDayIndex = 0, minWeekdayCount = Infinity;
   for (let i = 0; i < 7; i++) {
-    if (weekdayCounts[i] > maxWeekdayCount) {
-      maxWeekdayCount = weekdayCounts[i];
-      bestDayIndex = i;
-    }
-    if (weekdayCounts[i] < minWeekdayCount) {
-      minWeekdayCount = weekdayCounts[i];
-      worstDayIndex = i;
-    }
+    if (weekdayCounts[i] > maxWeekdayCount) { maxWeekdayCount = weekdayCounts[i]; bestDayIndex = i; }
+    if (weekdayCounts[i] < minWeekdayCount) { minWeekdayCount = weekdayCounts[i]; worstDayIndex = i; }
   }
 
-  // Find Most Active Day (Specific Date)
-  let mostActiveDay = "N/A";
-  let mostActiveDayCount = 0;
-  let mostActiveDayWeekday = -1;
+  let mostActiveDay = "N/A", mostActiveDayCount = 0, mostActiveDayWeekday = -1;
   pastAndPresentData.forEach(day => {
     if (day.count > mostActiveDayCount) {
-      mostActiveDayCount = day.count;
-      mostActiveDay = day.date;
+      mostActiveDayCount = day.count; mostActiveDay = day.date;
       mostActiveDayWeekday = new Date(day.date + 'T00:00:00').getDay();
     }
   });
 
-  // Today's specific metrics
   const todayWeekday = now.getDay();
   const todayCount = data.find(d => d.date === todayStr)?.count || 0;
 
-  // Find Largest Contiguous Island (Level 2, 3 & 4)
-  const highActivityDays = data.filter(d => d.level >= 2);
-  const dateMap = new Map(data.map(d => [d.date, d]));
-  const visited = new Set<string>();
-  let biggestIslandDates: string[] = [];
-
-  const getNeighbors = (dateStr: string) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    const neighbors: string[] = [];
+  // Islands (Restricted to past and present data to avoid future empty days)
+  const findIsland = (targetData: ContributionDay[], thresholdFn: (d: ContributionDay) => boolean) => {
+    const visited = new Set<string>();
+    let biggest: string[] = [];
     
-    // Day before/after (Up/Down in grid)
-    const prevDay = new Date(d);
-    prevDay.setDate(d.getDate() - 1);
-    const nextDay = new Date(d);
-    nextDay.setDate(d.getDate() + 1);
-    
-    // Week before/after (Left/Right in grid)
-    const prevWeek = new Date(d);
-    prevWeek.setDate(d.getDate() - 7);
-    const nextWeek = new Date(d);
-    nextWeek.setDate(d.getDate() + 7);
-
-    const format = (date: Date) => date.toISOString().split('T')[0];
-    
-    [prevDay, nextDay, prevWeek, nextWeek].forEach(n => {
-      const s = format(n);
-      if (dateMap.has(s) && dateMap.get(s)!.level >= 2) {
-        neighbors.push(s);
+    targetData.filter(thresholdFn).forEach(day => {
+      if (!visited.has(day.date)) {
+        const current: string[] = [], queue = [day.date];
+        visited.add(day.date);
+        while (queue.length > 0) {
+          const curr = queue.shift()!;
+          current.push(curr);
+          const d = new Date(curr + 'T00:00:00');
+          [-1, 1, -7, 7].forEach(diff => {
+            const n = new Date(d); n.setDate(d.getDate() + diff);
+            const s = n.toISOString().split('T')[0];
+            const node = dateMap.get(s);
+            // Only consider neighbors that are in the past/present data AND match the threshold
+            if (node && node.date <= todayStr && thresholdFn(node) && !visited.has(s)) {
+              visited.add(s);
+              queue.push(s);
+            }
+          });
+        }
+        if (current.length > biggest.length) biggest = current;
       }
     });
-    return neighbors;
+    return biggest;
   };
 
-  highActivityDays.forEach(day => {
-    if (!visited.has(day.date)) {
-      const currentIsland: string[] = [];
-      const queue = [day.date];
-      visited.add(day.date);
+  const biggestIslandDates = findIsland(pastAndPresentData, d => d.level >= 2);
+  const biggestSlumpIslandDates = findIsland(pastAndPresentData, d => d.count <= 1);
 
-      while (queue.length > 0) {
-        const current = queue.shift()!;
-        currentIsland.push(current);
-        
-        getNeighbors(current).forEach(neighbor => {
-          if (!visited.has(neighbor)) {
-            visited.add(neighbor);
-            queue.push(neighbor);
-          }
-        });
-      }
-
-      if (currentIsland.length > biggestIslandDates.length) {
-        biggestIslandDates = currentIsland;
-      }
-    }
-  });
-
-  // Calculate Weekday Averages and Peak Frequency
   const weekdayHighActivityCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
   const weekdayTotalDays: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
-
   pastAndPresentData.forEach(day => {
-    const d = new Date(day.date + 'T00:00:00');
-    const wd = d.getDay();
+    const wd = new Date(day.date + 'T00:00:00').getDay();
     weekdayTotalDays[wd]++;
     if (day.level >= 2) weekdayHighActivityCounts[wd]++;
   });
 
-  let powerDayIndex = 0;
-  let maxAvg = -1;
-  let peakWeekdayIndex = 0;
-  let maxHighFreq = -1;
-
+  let powerDayIndex = 0, maxAvg = -1, peakWeekdayIndex = 0, maxHighFreq = -1;
   for (let i = 0; i < 7; i++) {
     const avg = weekdayTotalDays[i] > 0 ? (weekdayCounts[i] / weekdayTotalDays[i]) : 0;
-    if (avg > maxAvg) {
-      maxAvg = avg;
-      powerDayIndex = i;
-    }
-    if (weekdayHighActivityCounts[i] > maxHighFreq) {
-      maxHighFreq = weekdayHighActivityCounts[i];
-      peakWeekdayIndex = i;
-    }
+    if (avg > maxAvg) { maxAvg = avg; powerDayIndex = i; }
+    if (weekdayHighActivityCounts[i] > maxHighFreq) { maxHighFreq = weekdayHighActivityCounts[i]; peakWeekdayIndex = i; }
   }
 
   return {
-    currentStreak,
-    currentStreakDates,
-    longestStreak,
-    longestStreakDates,
-    longestSlump,
-    consistency,
-    velocity,
-    weekendScore,
-    persona,
-    bestDay: daysOfWeek[bestDayIndex],
-    bestDayIndex,
-    bestDayCount: maxWeekdayCount,
-    worstDay: daysOfWeek[worstDayIndex],
-    worstDayIndex,
-    worstDayCount: minWeekdayCount,
-    currentWeekday: daysOfWeek[todayWeekday],
-    currentWeekdayIndex: todayWeekday,
-    currentWeekdayCount: weekdayCounts[todayWeekday],
-    todayCount,
-    mostActiveDay,
-    mostActiveDayCount,
-    mostActiveDayWeekday,
-    powerDay: daysOfWeek[powerDayIndex],
-    powerDayIndex,
-    powerDayAvg: maxAvg.toFixed(1),
-    peakWeekday: daysOfWeek[peakWeekdayIndex],
-    peakWeekdayIndex,
-    peakWeekdayCount: maxHighFreq,
-    biggestIslandSize: biggestIslandDates.length,
-    biggestIslandDates,
-    activeDays,
-    isYTD: ytdTotalDays > 0,
-    totalStars,
-    totalForks,
-    topLangs,
-    topRepos: timeline.topRepos.slice(0, 3),
-    createdRepos: timeline.createdRepos,
-    createdRepoList: timeline.createdRepoList,
-    issuesOpened: timeline.issuesOpened,
-    pullRequests: timeline.pullRequests,
-    pullRequestReviews: timeline.pullRequestReviews,
-    mergedPullRequests: timeline.mergedPullRequests,
-    achievements: achievements.slice(0, 4),
-    socials
+    currentStreak, currentStreakDates, longestStreak, longestStreakDates, longestSlump, consistency, velocity, weekendScore, persona,
+    bestDay: daysOfWeek[bestDayIndex], bestDayIndex, bestDayCount: maxWeekdayCount,
+    worstDay: daysOfWeek[worstDayIndex], worstDayIndex, worstDayCount: minWeekdayCount,
+    currentWeekday: daysOfWeek[todayWeekday], currentWeekdayIndex: todayWeekday, currentWeekdayCount: weekdayCounts[todayWeekday],
+    todayCount, mostActiveDay, mostActiveDayCount, mostActiveDayWeekday,
+    powerDay: daysOfWeek[powerDayIndex], powerDayIndex, powerDayAvg: maxAvg.toFixed(1),
+    peakWeekday: daysOfWeek[peakWeekdayIndex], peakWeekdayIndex, peakWeekdayCount: maxHighFreq,
+    biggestIslandSize: biggestIslandDates.length, biggestIslandDates,
+    biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
+    activeDays, isYTD: ytdTotalDays > 0, totalStars, totalForks, topLangs,
+    topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
+    issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,
+    achievements: achievements.slice(0, 4), socials
   };
 }
-
 function init() {
   console.log("GitHeat: Initializing...");
-  
-  // Helper to check if extension context is still valid
   const isContextValid = () => !!chrome.runtime?.id;
 
-  // Listen for messages from the popup
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!isContextValid()) return;
     if (request.action === "getStats") {
@@ -830,546 +639,176 @@ function init() {
       const timeline = parseActivityTimeline();
       const achievements = parseAchievements();
       const socials = parseSocials();
-      
       if (data) {
         const thresholds = calculateThresholds(data);
         const percentiles = calculatePercentiles(data);
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
-        
         let total = data.reduce((sum, day) => sum + day.count, 0);
         if (advanced.isYTD) {
           const currentYear = new Date().getFullYear();
-          const ytdStartStr = `${currentYear}-01-01`;
-          const ytdData = data.filter(d => d.date >= ytdStartStr);
-          if (ytdData.length > 0) {
-            total = ytdData.reduce((sum, day) => sum + day.count, 0);
-          }
+          const ytdData = data.filter(d => d.date >= `${currentYear}-01-01`);
+          if (ytdData.length > 0) total = ytdData.reduce((sum, day) => sum + day.count, 0);
         }
-        
         sendResponse({ thresholds, percentiles, total, advanced, success: true });
       } else {
         sendResponse({ success: false, error: "No graph found" });
       }
     }
-    return true; // Keep channel open for async
+    return true;
   });
 
-  // Listen for storage changes to update theme instantly
   chrome.storage.onChanged.addListener(async (changes) => {
     if (!isContextValid()) return;
-    
-    // Handle visibility changes
-    const visibilityKeys = [
-      'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 
-      'showPersona', 'showFooter', 'showLegendNumbers',
-      'showTotal', 'showStreak', 'showVelocity', 'showConsistency',
-      'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay',
-      'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits',
-      'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'
-    ];
-
-    if (visibilityKeys.some(key => changes[key])) {
-      applyVisibility();
-    }
-
-    if (changes.gridOrder) {
-      runAnalysis().catch(() => {});
-    }
-
+    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork'];
+    if (visibilityKeys.some(key => changes[key])) applyVisibility();
+    if (changes.gridOrder) runAnalysis().catch(() => {});
     if (changes.theme || changes.customStart || changes.customStop) {
       const data = parseContributionGraph();
       if (data) {
-        const percentiles = calculatePercentiles(data);
-        const thresholds = calculateThresholds(data);
-        try {
-          const settings = await chrome.storage.local.get('theme');
-          await applyDeepRecoloring(data, percentiles, (settings.theme as string) || 'green', thresholds);
-        } catch (e) {
-          // Context might have been invalidated during await
-        }
+        const p = calculatePercentiles(data);
+        const t = calculateThresholds(data);
+        const s = await chrome.storage.local.get('theme');
+        await applyDeepRecoloring(data, p, (s.theme as string) || 'green', t);
       }
     }
   });
 
-  // Concurrency guard
   let isAnalysisRunning = false;
-
-  // Wait for the graph to load for injection
   const runAnalysis = async () => {
     if (!isContextValid() || isAnalysisRunning) return;
     isAnalysisRunning = true;
-    
     try {
       const data = parseContributionGraph();
       const pinned = parsePinnedProjects();
       const timeline = parseActivityTimeline();
       const achievements = parseAchievements();
       const socials = parseSocials();
-
       if (data) {
-        const thresholds = calculateThresholds(data);
-        const percentiles = calculatePercentiles(data);
-        
-        const settings = await chrome.storage.local.get(['theme', 'gridOrder']);
-        const theme = (settings.theme as string) || 'green';
-        const gridOrder = (settings.gridOrder as string[]) || null;
+        const t = calculateThresholds(data), p = calculatePercentiles(data);
+        const s = await chrome.storage.local.get(['theme', 'gridOrder']);
+        const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
-        
-        injectStats(thresholds, data, advanced, gridOrder);
-        extendLegend(thresholds);
-        await applyDeepRecoloring(data, percentiles, theme, thresholds);
+        injectStats(t, data, advanced, order);
+        extendLegend(t);
+        await applyDeepRecoloring(data, p, theme, t);
         await applyVisibility();
       }
-    } catch (e) {
-      console.log("GitHeat: Analysis skipped or failed (likely extension context invalidated)");
-    } finally {
-      isAnalysisRunning = false;
-    }
+    } catch (e) {} finally { isAnalysisRunning = false; }
   };
 
   const observer = new MutationObserver((mutations) => {
-    if (!isContextValid()) {
-      observer.disconnect();
-      return;
-    }
-    
-    // Check if the graph container was added or updated
+    if (!isContextValid()) { observer.disconnect(); return; }
     for (const mutation of mutations) {
       if (mutation.type === 'childList') {
-        const graph = document.querySelector('.js-yearly-contributions');
-        if (graph) {
-          // If our stats panel is missing, it means the year was likely switched
-          if (!document.getElementById('git-heat-stats')) {
-            console.log("GitHeat: Graph update detected, re-running analysis...");
-            runAnalysis().catch(() => {
-              // Ignore errors from invalidated context
-            });
-          }
+        if (document.querySelector('.js-yearly-contributions') && !document.getElementById('git-heat-stats')) {
+          runAnalysis().catch(() => {});
         }
       }
     }
   });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-
-  // Initial run
-  runAnalysis().catch(() => {
-    // Ignore errors from invalidated context
-  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  runAnalysis().catch(() => {});
 }
 
 function injectStats(thresholds: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null) {
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
-
   const existing = document.getElementById('git-heat-stats');
   if (existing) existing.remove();
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const currentYear = now.getFullYear();
-  const ytdStartStr = `${currentYear}-01-01`;
-  const ytdData = data.filter(d => d.date >= ytdStartStr);
-  const totalContributions = (advanced.isYTD && ytdData.length > 0) 
-    ? ytdData.reduce((sum, day) => sum + day.count, 0)
-    : data.reduce((sum, day) => sum + day.count, 0);
+  const ytdData = data.filter(d => d.date >= `${now.getFullYear()}-01-01`);
+  const totalContributions = (advanced.isYTD && ytdData.length > 0) ? ytdData.reduce((sum, day) => sum + day.count, 0) : data.reduce((sum, day) => sum + day.count, 0);
 
   const statsDiv = document.createElement('div');
   statsDiv.id = 'git-heat-stats';
   statsDiv.className = 'git-heat-panel border color-border-muted color-bg-subtle rounded-2 p-3 mb-3';
   statsDiv.style.marginTop = '16px';
-
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
-  const defaultOrder = [
-    'gh-total', 'gh-today', 'gh-streak', 'gh-island', 'gh-velocity', 'gh-consistency', 
-    'gh-weekend', 'gh-slump', 'gh-best-day', 'gh-worst-day', 'gh-current-weekday',
-    'gh-power-day', 'gh-peak-day',
-    'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created',
-    'gh-langs', 'gh-network'
-  ];
-
+  const defaultOrder = ['gh-total', 'gh-today', 'gh-streak', 'gh-island', 'gh-slump-island', 'gh-velocity', 'gh-consistency', 'gh-weekend', 'gh-slump', 'gh-best-day', 'gh-worst-day', 'gh-current-weekday', 'gh-power-day', 'gh-peak-day', 'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'];
   let gridOrder = savedOrder || defaultOrder;
-  // Ensure all current items are present, even if not in saved order
-  defaultOrder.forEach(id => {
-    if (!gridOrder.includes(id)) gridOrder.push(id);
-  });
+  defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
   const itemMap: Record<string, string> = {
-    'gh-total': `
-      <div class="stat-card" id="gh-total">
-        <span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span>
-        <strong class="f3-light">${totalContributions.toLocaleString()}</strong>
-      </div>`,
-    'gh-today': `
-      <div class="stat-card highlightable" id="gh-today" data-date="${todayStr}">
-        <span class="color-fg-muted d-block text-small">Today's Contribs</span>
-        <strong class="f3-light">${advanced.todayCount}</strong>
-      </div>`,
-    'gh-streak': `
-      <div class="stat-card highlightable" id="gh-streak" 
-           data-current-streak="${advanced.currentStreakDates.join(',')}" 
-           data-longest-streak="${advanced.longestStreakDates.join(',')}">
-        <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
-        <strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong>
-      </div>`,
-    'gh-island': `
-      <div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}">
-        <span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span>
-        <strong class="f3-light">${advanced.biggestIslandSize} days</strong>
-      </div>`,
-    'gh-velocity': `
-      <div class="stat-card" id="gh-velocity">
-        <span class="color-fg-muted d-block text-small">Average Velocity</span>
-        <strong class="f3-light">${advanced.velocity} commits/day</strong>
-      </div>`,
-    'gh-consistency': `
-      <div class="stat-card" id="gh-consistency">
-        <span class="color-fg-muted d-block text-small">Consistency</span>
-        <strong class="f3-light">${advanced.consistency}%</strong>
-      </div>`,
-    'gh-weekend': `
-      <div class="stat-card" id="gh-weekend">
-        <span class="color-fg-muted d-block text-small">Weekend Score</span>
-        <strong class="f3-light">${advanced.weekendScore}%</strong>
-      </div>`,
-    'gh-slump': `
-      <div class="stat-card" id="gh-slump">
-        <span class="color-fg-muted d-block text-small">Longest Slump</span>
-        <strong class="f3-light">${advanced.longestSlump} days</strong>
-      </div>`,
-    'gh-best-day': `
-      <div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}">
-        <span class="color-fg-muted d-block text-small">Best Weekday</span>
-        <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
-      </div>`,
-    'gh-worst-day': `
-      <div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}">
-        <span class="color-fg-muted d-block text-small">Worst Weekday</span>
-        <strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong>
-      </div>`,
-    'gh-current-weekday': `
-      <div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}">
-        <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
-        <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
-      </div>`,
-    'gh-power-day': `
-      <div class="stat-card highlightable" id="gh-power-day" data-weekday="${advanced.powerDayIndex}">
-        <span class="color-fg-muted d-block text-small">Most Productive (Avg)</span>
-        <strong class="f3-light">${advanced.powerDay} (${advanced.powerDayAvg})</strong>
-      </div>`,
-    'gh-peak-day': `
-      <div class="stat-card highlightable" id="gh-peak-day" data-weekday="${advanced.peakWeekdayIndex}">
-        <span class="color-fg-muted d-block text-small">Peak Frequency (L2+)</span>
-        <strong class="f3-light">${advanced.peakWeekday} (${advanced.peakWeekdayCount})</strong>
-      </div>`,
-    'gh-most-active-day': `
-      <div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
-        <span class="color-fg-muted d-block text-small">Most Active Day</span>
-        <strong class="f3-light">${advanced.mostActiveDay}</strong>
-      </div>`,
-    'gh-max-commits': `
-      <div class="stat-card highlightable" id="gh-max-commits" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
-        <span class="color-fg-muted d-block text-small">Max Daily Commits</span>
-        <strong class="f3-light">${advanced.mostActiveDayCount}</strong>
-      </div>`,
-    'gh-stars': `
-      <div class="stat-card" id="gh-stars">
-        <span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span>
-        <strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong>
-      </div>`,
-    'gh-pr': `
-      <div class="stat-card" id="gh-pr">
-        <span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span>
-        <strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong>
-      </div>`,
-    'gh-issue-created': `
-      <div class="stat-card" id="gh-issue-created">
-        <span class="color-fg-muted d-block text-small">Issues / Created Repos</span>
-        <strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong>
-      </div>`,
-    'gh-langs': `
-      <div class="stat-card" id="gh-langs">
-        <span class="color-fg-muted d-block text-small">Top Languages</span>
-        <strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong>
-      </div>`,
-    'gh-network': `
-      <div class="stat-card" id="gh-network">
-        <span class="color-fg-muted d-block text-small">Network</span>
-        <strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong>
-      </div>`
+    'gh-total': `<div class="stat-card" id="gh-total"><span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span><strong class="f3-light">${totalContributions.toLocaleString()}</strong></div>`,
+    'gh-today': `<div class="stat-card highlightable" id="gh-today" data-date="${todayStr}"><span class="color-fg-muted d-block text-small">Today's Contribs</span><strong class="f3-light">${advanced.todayCount}</strong></div>`,
+    'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${advanced.currentStreakDates.join(',')}" data-longest-streak="${advanced.longestStreakDates.join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
+    'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
+    'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
+    'gh-velocity': `<div class="stat-card" id="gh-velocity"><span class="color-fg-muted d-block text-small">Average Velocity</span><strong class="f3-light">${advanced.velocity} commits/day</strong></div>`,
+    'gh-consistency': `<div class="stat-card" id="gh-consistency"><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
+    'gh-weekend': `<div class="stat-card" id="gh-weekend"><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
+    'gh-slump': `<div class="stat-card" id="gh-slump"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
+    'gh-best-day': `<div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}"><span class="color-fg-muted d-block text-small">Best Weekday</span><strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong></div>`,
+    'gh-worst-day': `<div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}"><span class="color-fg-muted d-block text-small">Worst Weekday</span><strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong></div>`,
+    'gh-current-weekday': `<div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}"><span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span><strong class="f3-light">${advanced.currentWeekdayCount}</strong></div>`,
+    'gh-power-day': `<div class="stat-card highlightable" id="gh-power-day" data-weekday="${advanced.powerDayIndex}"><span class="color-fg-muted d-block text-small">Most Productive (Avg)</span><strong class="f3-light">${advanced.powerDay} (${advanced.powerDayAvg})</strong></div>`,
+    'gh-peak-day': `<div class="stat-card highlightable" id="gh-peak-day" data-weekday="${advanced.peakWeekdayIndex}"><span class="color-fg-muted d-block text-small">Peak Frequency (L2+)</span><strong class="f3-light">${advanced.peakWeekday} (${advanced.peakWeekdayCount})</strong></div>`,
+    'gh-most-active-day': `<div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}"><span class="color-fg-muted d-block text-small">Most Active Day</span><strong class="f3-light">${advanced.mostActiveDay}</strong></div>`,
+    'gh-max-commits': `<div class="stat-card highlightable" id="gh-max-commits" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}"><span class="color-fg-muted d-block text-small">Max Daily Commits</span><strong class="f3-light">${advanced.mostActiveDayCount}</strong></div>`,
+    'gh-stars': `<div class="stat-card" id="gh-stars"><span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span><strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong></div>`,
+    'gh-pr': `<div class="stat-card" id="gh-pr"><span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span><strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong></div>`,
+    'gh-issue-created': `<div class="stat-card" id="gh-issue-created"><span class="color-fg-muted d-block text-small">Issues / Created Repos</span><strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong></div>`,
+    'gh-langs': `<div class="stat-card" id="gh-langs"><span class="color-fg-muted d-block text-small">Top Languages</span><strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong></div>`,
+    'gh-network': `<div class="stat-card" id="gh-network"><span class="color-fg-muted d-block text-small">Network</span><strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong></div>`
   };
 
-  const gridHtml = gridOrder.map(id => itemMap[id] || '').join('');
-
-  statsDiv.innerHTML = `
-    <div class="d-flex flex-justify-between flex-items-center mb-3">
-      <div class="d-flex flex-items-center gap-2">
-        <h3 class="h4 mb-0">GitHeat Analytics ${titleSuffix}</h3>
-        <span id="gh-persona" class="Label Label--info">${advanced.persona}</span>
-      </div>
-      <span class="Label Label--secondary">Deep Dive Mode</span>
-    </div>
-    
-    <div class="git-heat-grid" id="gh-grid-stats">
-      ${gridHtml}
-    </div>
-
-    <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4" id="gh-detailed-stats">
-      <div style="flex: 1; min-width: 200px;" id="gh-active-repos">
-        <span class="color-fg-muted text-small d-block mb-2">Most Active Repos (Commits)</span>
-        <div class="d-flex flex-column gap-1">
-          ${advanced.topRepos.map((r: any) => `
-            <div class="d-flex flex-justify-between text-small">
-              <span>${r.name}</span>
-            </div>
-          `).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}
-        </div>
-      </div>
-      <div style="flex: 1; min-width: 200px;" id="gh-created-repos">
-        <span class="color-fg-muted text-small d-block mb-2">Created Repositories</span>
-        <div class="d-flex flex-column gap-1">
-          ${advanced.createdRepoList.slice(0, 5).map((r: any) => `
-            <div class="d-flex flex-justify-between text-small">
-              <span>${r.name}</span>
-            </div>
-          `).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}
-        </div>
-      </div>
-      <div style="flex: 1; min-width: 200px;" id="gh-achievements">
-        <span class="color-fg-muted text-small d-block mb-2">Recent Achievements</span>
-        <div class="d-flex flex-wrap gap-1">
-          ${advanced.achievements.map((a: string) => `
-            <span class="Label Label--secondary" title="${a}">${a}</span>
-          `).join('') || '<span class="text-small color-fg-muted">None found</span>'}
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-3 pt-3 border-top color-border-muted" id="gh-footer">
-      <div class="d-flex flex-items-center flex-wrap">
-        <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
-        <div id="granular-legend" class="d-flex gap-1 mr-3">
-          <!-- 12 squares will be injected here -->
-          <div class="square-legend" style="background-color: var(--color-calendar-graph-day-bg)"></div>
-          <div class="square-legend level-1"></div>
-          <div class="square-legend level-2"></div>
-          <div class="square-legend level-3"></div>
-          <div class="square-legend level-4"></div>
-          <div class="square-legend level-5"></div>
-          <div class="square-legend level-6"></div>
-          <div class="square-legend level-7"></div>
-          <div class="square-legend level-8"></div>
-          <div class="square-legend level-9"></div>
-          <div class="square-legend level-10"></div>
-          <div class="square-legend level-11"></div>
-        </div>
-        <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
-          <span class="color-fg-muted text-small mr-1">Thresholds: </span>
-          <span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
-          <span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
-          <span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
-          <span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span>
-        </div>
-      </div>
-    </div>
-  `;
-
+  statsDiv.innerHTML = `<div class="d-flex flex-justify-between flex-items-center mb-3"><div class="d-flex flex-items-center gap-2"><h3 class="h4 mb-0">GitHeat Analytics ${titleSuffix}</h3><span id="gh-persona" class="Label Label--info">${advanced.persona}</span></div><span class="Label Label--secondary">Deep Dive Mode</span></div><div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div><div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4" id="gh-detailed-stats"><div style="flex: 1; min-width: 200px;" id="gh-active-repos"><span class="color-fg-muted text-small d-block mb-2">Most Active Repos (Commits)</span><div class="d-flex flex-column gap-1">${advanced.topRepos.map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div></div><div style="flex: 1; min-width: 200px;" id="gh-created-repos"><span class="color-fg-muted text-small d-block mb-2">Created Repositories</span><div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 5).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div></div><div style="flex: 1; min-width: 200px;" id="gh-achievements"><span class="color-fg-muted text-small d-block mb-2">Recent Achievements</span><div class="d-flex flex-wrap gap-1">${advanced.achievements.map((a: string) => `<span class="Label Label--secondary" title="${a}">${a}</span>`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div></div></div><div class="mt-3 pt-3 border-top color-border-muted" id="gh-footer"><div class="d-flex flex-items-center flex-wrap"><span class="color-fg-muted text-small mr-2">Deep Scale: </span><div id="granular-legend" class="d-flex gap-1 mr-3"><div class="square-legend" style="background-color: var(--color-calendar-graph-day-bg)"></div><div class="square-legend level-1"></div><div class="square-legend level-2"></div><div class="square-legend level-3"></div><div class="square-legend level-4"></div><div class="square-legend level-5"></div><div class="square-legend level-6"></div><div class="square-legend level-7"></div><div class="square-legend level-8"></div><div class="square-legend level-9"></div><div class="square-legend level-10"></div><div class="square-legend level-11"></div></div><div class="d-flex flex-items-center flex-wrap gap-2 ml-auto"><span class="color-fg-muted text-small mr-1">Thresholds: </span><span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span></div></div></div>`;
   container.prepend(statsDiv);
 
-  // Add Highlight Logic
   const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
     dates.forEach(date => {
       const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
-      if (dayEl) {
-        dayEl.classList.add(className);
-        dayEl.style.outline = '';
-        dayEl.style.border = '';
-      }
+      if (dayEl) { dayEl.classList.add(className); dayEl.style.outline = ''; dayEl.style.border = ''; }
     });
   };
 
   const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string) => {
-    const days = document.querySelectorAll('.ContributionCalendar-day[data-date]');
-    days.forEach((day: any) => {
+    document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: any) => {
       const date = day.getAttribute('data-date');
-      if (!date) return;
-      if (startDate && date < startDate) return;
-      if (endDate && date > endDate) return;
-
-      const d = new Date(date + 'T00:00:00');
-      if (d.getDay() === weekdayIndex) {
-        day.classList.add('gh-highlight');
-        day.style.outline = '';
-        day.style.border = '';
-      }
+      if (!date || (startDate && date < startDate) || (endDate && date > endDate)) return;
+      if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { day.classList.add('gh-highlight'); day.style.outline = ''; day.style.border = ''; }
     });
   };
 
   const clearHighlights = () => {
-    document.querySelectorAll('.gh-highlight, .gh-highlight-special').forEach((el: any) => {
-      el.classList.remove('gh-highlight', 'gh-highlight-special');
-      // If it's a contribution day with count > 0, restore the outline: none
-      const level = parseInt(el.getAttribute('data-level') || '0', 10);
-      if (level > 0) {
-        el.style.outline = 'none';
-        el.style.border = 'none';
-      }
+    document.querySelectorAll('.gh-highlight, .gh-highlight-special, .gh-highlight-sad').forEach((el: any) => {
+      el.classList.remove('gh-highlight', 'gh-highlight-special', 'gh-highlight-sad');
+      if (parseInt(el.getAttribute('data-level') || '0', 10) > 0) { el.style.outline = 'none'; el.style.border = 'none'; }
     });
   };
 
-  const todayCard = statsDiv.querySelector('#gh-today');
-  if (todayCard) {
-    todayCard.addEventListener('mouseenter', () => {
-      todayCard.classList.add('highlighting');
-      highlightDates([todayStr]);
-    });
-    todayCard.addEventListener('mouseleave', () => {
-      todayCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
+  const addHover = (id: string, fn: () => void) => {
+    const el = statsDiv.querySelector(id);
+    if (el) { el.addEventListener('mouseenter', () => { el.classList.add('highlighting'); fn(); }); el.addEventListener('mouseleave', () => { el.classList.remove('highlighting'); clearHighlights(); }); }
+  };
 
-  const streakCard = statsDiv.querySelector('#gh-streak');
-  if (streakCard) {
-    streakCard.addEventListener('mouseenter', () => {
-      streakCard.classList.add('highlighting');
-      const longest = (streakCard as HTMLElement).dataset.longestStreak?.split(',') || [];
-      const current = (streakCard as HTMLElement).dataset.currentStreak?.split(',') || [];
-      highlightDates([...new Set([...longest, ...current])]);
-    });
-    streakCard.addEventListener('mouseleave', () => {
-      streakCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
-
-  const islandCard = statsDiv.querySelector('#gh-island');
-  if (islandCard) {
-    islandCard.addEventListener('mouseenter', () => {
-      islandCard.classList.add('highlighting');
-      const dates = (islandCard as HTMLElement).dataset.island?.split(',') || [];
-      highlightDates(dates, 'gh-highlight-special');
-    });
-    islandCard.addEventListener('mouseleave', () => {
-      islandCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
-
-  const bestDayCard = statsDiv.querySelector('#gh-best-day');
-  if (bestDayCard) {
-    bestDayCard.addEventListener('mouseenter', () => {
-      bestDayCard.classList.add('highlighting');
-      const idx = parseInt((bestDayCard as HTMLElement).dataset.weekday || '0', 10);
-      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
-    });
-    bestDayCard.addEventListener('mouseleave', () => {
-      bestDayCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
-
-  const worstDayCard = statsDiv.querySelector('#gh-worst-day');
-  if (worstDayCard) {
-    worstDayCard.addEventListener('mouseenter', () => {
-      worstDayCard.classList.add('highlighting');
-      const idx = parseInt((worstDayCard as HTMLElement).dataset.weekday || '0', 10);
-      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
-    });
-    worstDayCard.addEventListener('mouseleave', () => {
-      worstDayCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
-
-  const currentWeekdayCard = statsDiv.querySelector('#gh-current-weekday');
-  if (currentWeekdayCard) {
-    currentWeekdayCard.addEventListener('mouseenter', () => {
-      currentWeekdayCard.classList.add('highlighting');
-      const idx = parseInt((currentWeekdayCard as HTMLElement).dataset.weekday || '0', 10);
-      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
-    });
-    currentWeekdayCard.addEventListener('mouseleave', () => {
-      currentWeekdayCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
-
-  const powerDayCard = statsDiv.querySelector('#gh-power-day');
-  if (powerDayCard) {
-    powerDayCard.addEventListener('mouseenter', () => {
-      powerDayCard.classList.add('highlighting');
-      const idx = parseInt((powerDayCard as HTMLElement).dataset.weekday || '0', 10);
-      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
-    });
-    powerDayCard.addEventListener('mouseleave', () => {
-      powerDayCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
-
-  const peakDayCard = statsDiv.querySelector('#gh-peak-day');
-  if (peakDayCard) {
-    peakDayCard.addEventListener('mouseenter', () => {
-      peakDayCard.classList.add('highlighting');
-      const idx = parseInt((peakDayCard as HTMLElement).dataset.weekday || '0', 10);
-      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
-    });
-    peakDayCard.addEventListener('mouseleave', () => {
-      peakDayCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
-
-  const mostActiveDayCard = statsDiv.querySelector('#gh-most-active-day');
-  if (mostActiveDayCard) {
-    mostActiveDayCard.addEventListener('mouseenter', () => {
-      mostActiveDayCard.classList.add('highlighting');
-      const date = (mostActiveDayCard as HTMLElement).dataset.date;
-      if (date) highlightDates([date], 'gh-highlight-special');
-    });
-    mostActiveDayCard.addEventListener('mouseleave', () => {
-      mostActiveDayCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
-
-  const maxCommitsCard = statsDiv.querySelector('#gh-max-commits');
-  if (maxCommitsCard) {
-    maxCommitsCard.addEventListener('mouseenter', () => {
-      maxCommitsCard.classList.add('highlighting');
-      const date = (maxCommitsCard as HTMLElement).dataset.date;
-      if (date) highlightDates([date], 'gh-highlight-special');
-    });
-    maxCommitsCard.addEventListener('mouseleave', () => {
-      maxCommitsCard.classList.remove('highlighting');
-      clearHighlights();
-    });
-  }
+  addHover('#gh-today', () => highlightDates([todayStr]));
+  addHover('#gh-streak', () => highlightDates([...new Set([...advanced.longestStreakDates, ...advanced.currentStreakDates])]));
+  addHover('#gh-island', () => highlightDates(advanced.biggestIslandDates, 'gh-highlight-special'));
+  addHover('#gh-slump-island', () => highlightDates(advanced.biggestSlumpIslandDates, 'gh-highlight-sad'));
+  addHover('#gh-best-day', () => highlightWeekday(advanced.bestDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
+  addHover('#gh-worst-day', () => highlightWeekday(advanced.worstDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
+  addHover('#gh-current-weekday', () => highlightWeekday(advanced.currentWeekdayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
+  addHover('#gh-power-day', () => highlightWeekday(advanced.powerDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
+  addHover('#gh-peak-day', () => highlightWeekday(advanced.peakWeekdayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
+  addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
+  addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
 }
 
 function extendLegend(thresholds: any) {
-  // GitHub legend is usually at the bottom of the graph
   const legend = document.querySelector('.ContributionCalendar-footer');
   if (!legend) return;
-
-  // Clear existing GitHeat labels
   legend.querySelectorAll('.git-heat-legend-label').forEach(el => el.remove());
-
-  const squares = legend.querySelectorAll('.ContributionCalendar-day');
-  squares.forEach(square => {
+  legend.querySelectorAll('.ContributionCalendar-day').forEach(square => {
     const level = parseInt(square.getAttribute('data-level') || '0', 10);
     if (level > 0 && thresholds[level]) {
       const range = level === 4 ? `${thresholds[level].min}+` : `${thresholds[level].min}-${thresholds[level].max}`;
       const span = document.createElement('span');
       span.className = 'text-small color-fg-muted ml-1 git-heat-legend-label';
-      span.style.fontSize = '10px';
-      span.style.marginLeft = '2px';
-      span.style.marginRight = '4px';
+      span.style.cssText = 'font-size: 10px; margin-left: 2px; margin-right: 4px;';
       span.textContent = range;
       square.after(span);
     }
