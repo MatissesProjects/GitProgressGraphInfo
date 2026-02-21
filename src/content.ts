@@ -484,6 +484,8 @@ async function applyVisibility() {
     'gh-best-day': settings.showBestDay,
     'gh-worst-day': settings.showWorstDay,
     'gh-current-weekday': settings.showCurrentWeekday,
+    'gh-power-day': settings.showPowerDay,
+    'gh-peak-day': settings.showPeakDay,
     'gh-most-active-day': settings.showMostActiveDay,
     'gh-max-commits': settings.showMaxCommits,
     'gh-stars': settings.showStars,
@@ -985,6 +987,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
   const defaultOrder = [
     'gh-total', 'gh-today', 'gh-streak', 'gh-island', 'gh-velocity', 'gh-consistency', 
     'gh-weekend', 'gh-slump', 'gh-best-day', 'gh-worst-day', 'gh-current-weekday',
+    'gh-power-day', 'gh-peak-day',
     'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created',
     'gh-langs', 'gh-network'
   ];
@@ -1015,7 +1018,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
       </div>`,
     'gh-island': `
       <div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}">
-        <span class="color-fg-muted d-block text-small">Biggest Island (L3+)</span>
+        <span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span>
         <strong class="f3-light">${advanced.biggestIslandSize} days</strong>
       </div>`,
     'gh-velocity': `
@@ -1052,6 +1055,16 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
       <div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}">
         <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
         <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
+      </div>`,
+    'gh-power-day': `
+      <div class="stat-card highlightable" id="gh-power-day" data-weekday="${advanced.powerDayIndex}">
+        <span class="color-fg-muted d-block text-small">Most Productive (Avg)</span>
+        <strong class="f3-light">${advanced.powerDay} (${advanced.powerDayAvg})</strong>
+      </div>`,
+    'gh-peak-day': `
+      <div class="stat-card highlightable" id="gh-peak-day" data-weekday="${advanced.peakWeekdayIndex}">
+        <span class="color-fg-muted d-block text-small">Peak Frequency (L2+)</span>
+        <strong class="f3-light">${advanced.peakWeekday} (${advanced.peakWeekdayCount})</strong>
       </div>`,
     'gh-most-active-day': `
       <div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}">
@@ -1282,6 +1295,32 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
     });
     currentWeekdayCard.addEventListener('mouseleave', () => {
       currentWeekdayCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
+  const powerDayCard = statsDiv.querySelector('#gh-power-day');
+  if (powerDayCard) {
+    powerDayCard.addEventListener('mouseenter', () => {
+      powerDayCard.classList.add('highlighting');
+      const idx = parseInt((powerDayCard as HTMLElement).dataset.weekday || '0', 10);
+      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
+    });
+    powerDayCard.addEventListener('mouseleave', () => {
+      powerDayCard.classList.remove('highlighting');
+      clearHighlights();
+    });
+  }
+
+  const peakDayCard = statsDiv.querySelector('#gh-peak-day');
+  if (peakDayCard) {
+    peakDayCard.addEventListener('mouseenter', () => {
+      peakDayCard.classList.add('highlighting');
+      const idx = parseInt((peakDayCard as HTMLElement).dataset.weekday || '0', 10);
+      highlightWeekday(idx, advanced.isYTD ? ytdStartStr : undefined, todayStr);
+    });
+    peakDayCard.addEventListener('mouseleave', () => {
+      peakDayCard.classList.remove('highlighting');
       clearHighlights();
     });
   }

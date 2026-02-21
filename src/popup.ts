@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleBestDay = document.getElementById('toggle-best-day') as HTMLInputElement;
   const toggleWorstDay = document.getElementById('toggle-worst-day') as HTMLInputElement;
   const toggleCurrentWeekday = document.getElementById('toggle-current-weekday') as HTMLInputElement;
+  const togglePowerDay = document.getElementById('toggle-power-day') as HTMLInputElement;
+  const togglePeakDay = document.getElementById('toggle-peak-day') as HTMLInputElement;
   const toggleMostActiveDay = document.getElementById('toggle-most-active-day') as HTMLInputElement;
   const toggleMaxCommits = document.getElementById('toggle-max-commits') as HTMLInputElement;
   const toggleStars = document.getElementById('toggle-stars') as HTMLInputElement;
@@ -51,6 +53,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-best-day': 'Best Weekday',
     'gh-worst-day': 'Worst Weekday',
     'gh-current-weekday': 'Current Weekday',
+    'gh-power-day': 'Most Productive (Avg)',
+    'gh-peak-day': 'Peak Frequency (L2+)',
     'gh-most-active-day': 'Most Active Day',
     'gh-max-commits': 'Max Daily Commits',
     'gh-stars': 'Pinned Stars / Forks',
@@ -67,7 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork',
     'gridOrder'
   ]);
 
@@ -169,6 +173,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleBestDay, settings.showBestDay);
   setChecked(toggleWorstDay, settings.showWorstDay);
   setChecked(toggleCurrentWeekday, settings.showCurrentWeekday);
+  setChecked(togglePowerDay, settings.showPowerDay);
+  setChecked(togglePeakDay, settings.showPeakDay);
   setChecked(toggleMostActiveDay, settings.showMostActiveDay);
   setChecked(toggleMaxCommits, settings.showMaxCommits);
   setChecked(toggleStars, settings.showStars);
@@ -216,6 +222,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleBestDay, 'showBestDay');
   addToggleListener(toggleWorstDay, 'showWorstDay');
   addToggleListener(toggleCurrentWeekday, 'showCurrentWeekday');
+  addToggleListener(togglePowerDay, 'showPowerDay');
+  addToggleListener(togglePeakDay, 'showPeakDay');
   addToggleListener(toggleMostActiveDay, 'showMostActiveDay');
   addToggleListener(toggleMaxCommits, 'showMaxCommits');
   addToggleListener(toggleStars, 'showStars');
@@ -297,6 +305,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('best-day')!.textContent = `${adv.bestDay} (${adv.bestDayCount})`;
         document.getElementById('worst-day')!.textContent = `${adv.worstDay} (${adv.worstDayCount})`;
         document.getElementById('current-weekday')!.textContent = `${adv.currentWeekday} (${adv.currentWeekdayCount})`;
+        document.getElementById('power-day')!.textContent = `${adv.powerDay} (${adv.powerDayAvg})`;
+        document.getElementById('peak-day')!.textContent = `${adv.peakWeekday} (${adv.peakWeekdayCount})`;
         document.getElementById('most-active-day')!.textContent = `${adv.mostActiveDay}`;
         document.getElementById('max-commits')!.textContent = `${adv.mostActiveDayCount}`;
         document.getElementById('pinned-stats')!.textContent = `${adv.totalStars} / ${adv.totalForks}`;
