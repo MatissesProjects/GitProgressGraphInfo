@@ -67,7 +67,7 @@ export function calculateRPGStats(pastAndPresentData: ContributionDay[], timelin
   const todayComboMath = `Score: ${todayScore} ((HeatmapCommits:${heatmapCommits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus}) + (VelocityBonus:${velocityBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
 
   return {
-    totalXPWithBonuses, currentLevel, levelTitle, xpProgress, xpNeeded, progressPercent,
+    totalXP: totalXPWithBonuses, level: currentLevel, levelTitle, levelProgressXP: xpProgress, levelTotalXP: xpNeeded, progressPercent,
     todayCombo, todayComboReason, todayComboMath, xpToNext: nextLevelXP - totalXPWithBonuses
   };
 }

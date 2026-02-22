@@ -161,7 +161,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
 
   return {
     ...base, ...timeBased, ...rpg,
-    weekendScore, persona,
+    weekendScore, persona, velocity, consistency,
     bestDay: daysOfWeek[bestDayIndex], bestDayIndex, bestDayCount: maxWeekdayCount,
     worstDay: daysOfWeek[worstDayIndex], worstDayIndex, worstDayCount: minWeekdayCount,
     currentWeekday: daysOfWeek[now.getDay()], currentWeekdayIndex: now.getDay(), currentWeekdayCount: base.weekdayCounts[now.getDay()],
