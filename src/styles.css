@@ -193,16 +193,18 @@
 }
 
 .gh-highlight {
-  outline: 1.5px solid rgba(255, 255, 255, 0.4) !important;
-  outline-offset: -1px !important;
-  stroke: rgba(255, 255, 255, 0.4) !important;
-  stroke-width: 1.5px !important;
-  filter: brightness(1.15) drop-shadow(0 0 2px var(--color-accent-muted)) !important;
-  z-index: 20;
+  outline: 1.5px solid #ffffff !important;
+  outline-offset: 1px !important;
+  filter: drop-shadow(0 0 1.5px rgba(0,0,0,0.8)) brightness(1.1) !important;
+  z-index: 50 !important;
+  position: relative;
+  transform: scale(1.1);
+  transform-origin: center;
+  transform-box: fill-box;
 }
 
 .ContributionCalendar-day.gh-highlight {
-  outline: 1.5px solid rgba(255, 255, 255, 0.4) !important;
+  outline: 1.5px solid #ffffff !important;
   border: none !important;
 }
 
@@ -218,35 +220,37 @@
 }
 
 @keyframes gh-pulse-special {
-  0% { transform: scale(1); filter: brightness(1.2) drop-shadow(0 0 2px #dbab09); }
-  50% { transform: scale(1.4); filter: brightness(1.5) drop-shadow(0 0 10px #f1e05a); z-index: 100; }
-  100% { transform: scale(1); filter: brightness(1.2) drop-shadow(0 0 2px #dbab09); }
+  0% { transform: scale(1); filter: brightness(1.1) drop-shadow(0 0 2px #dbab09); }
+  50% { transform: scale(1.2); filter: brightness(1.2) drop-shadow(0 0 4px rgba(0,0,0,0.6)); z-index: 100; }
+  100% { transform: scale(1); filter: brightness(1.1) drop-shadow(0 0 2px #dbab09); }
 }
 
 .gh-highlight-special {
   animation: gh-pulse-special 0.8s infinite ease-in-out;
-  outline: 2px solid #dbab09 !important;
+  outline: 1.5px solid #ffffff !important;
   outline-offset: 1px !important;
   z-index: 100 !important;
   position: relative;
   transform-origin: center;
+  transform-box: fill-box;
   pointer-events: none;
 }
 
 /* Ensure the transform works on SVG elements if needed */
 @keyframes gh-shrink-sad {
   0% { transform: scale(1); filter: saturate(0.5) drop-shadow(0 0 2px #0052cc); }
-  50% { transform: scale(0.7); filter: saturate(0.2) drop-shadow(0 0 8px #0052cc); opacity: 0.8; }
+  50% { transform: scale(0.85); filter: saturate(0.2) drop-shadow(0 0 4px rgba(0,0,0,0.6)); opacity: 0.8; }
   100% { transform: scale(1); filter: saturate(0.5) drop-shadow(0 0 2px #0052cc); }
 }
 
 .gh-highlight-sad {
   animation: gh-shrink-sad 1.2s infinite ease-in-out;
-  outline: 2px solid #0052cc !important;
+  outline: 1.5px solid #ffffff !important;
   outline-offset: 1px !important;
   z-index: 50 !important;
   position: relative;
   transform-origin: center;
+  transform-box: fill-box;
   pointer-events: none;
 }
 
