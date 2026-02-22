@@ -85,7 +85,14 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   statsDiv.style.marginTop = '16px';
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
-  const defaultOrder = ['gh-total', 'gh-today', 'gh-streak', 'gh-level', 'gh-slump', 'gh-best-month', 'gh-best-week', 'gh-island', 'gh-slump-island', 'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend', 'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'];
+  const defaultOrder = [
+    'gh-level', 'gh-total', 'gh-today', 'gh-streak', 
+    'gh-best-month', 'gh-best-week', 'gh-most-active-day', 'gh-max-commits',
+    'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
+    'gh-island', 'gh-slump-island', 'gh-slump',
+    'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
+    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
+  ];
   let gridOrder = savedOrder || defaultOrder;
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
@@ -217,7 +224,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-best-week', () => highlightDates(advanced.bestWeekDates));
   addHover('#gh-island', () => highlightDates(advanced.biggestIslandDates, 'gh-highlight-special'));
   addHover('#gh-slump-island', () => highlightDates(advanced.biggestSlumpIslandDates, 'gh-highlight-sad'));
-  addHover('#gh-velocity-above', () => highlightDates(advanced.aboveVelocityDates));
+  addHover('#gh-velocity-above', () => highlightDates(advanced.aboveVelocityDates, 'gh-highlight-special'));
   addHover('#gh-velocity-below', () => highlightDates(advanced.belowVelocityDates, 'gh-highlight-sad'));
   addHover('#gh-best-day', () => highlightWeekday(advanced.bestDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
   addHover('#gh-worst-day', () => highlightWeekday(advanced.worstDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));

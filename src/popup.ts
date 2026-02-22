@@ -47,6 +47,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleNetwork = document.getElementById('toggle-network') as HTMLInputElement;
 
   const sortableList = document.getElementById('sortable-grid-list')!;
+  const undoBtn = document.getElementById('undo-reorder') as HTMLButtonElement;
+  const resetBtn = document.getElementById('reset-reorder') as HTMLButtonElement;
 
   const ITEM_LABELS: Record<string, string> = {
     'gh-total': 'Total Contributions',
@@ -89,6 +91,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   ]);
 
   let currentOrder: string[] = (settings.gridOrder as string[]) || defaultOrder;
+  let orderHistory: string[][] = [];
+
   // Ensure all current items are present
   defaultOrder.forEach(id => {
     if (!currentOrder.includes(id)) currentOrder.push(id);
@@ -149,11 +153,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     sortableList.insertBefore(draggingItem, nextSibling || null);
   });
 
-  const saveOrder = () => {
+  const saveOrder = (isUserDrag = true) => {
     const items = [...sortableList.querySelectorAll('.sortable-item')];
-    currentOrder = items.map(item => (item as HTMLElement).dataset.id!);
+    const newOrder = items.map(item => (item as HTMLElement).dataset.id!);
+    
+    if (isUserDrag) {
+      orderHistory.push([...currentOrder]);
+      if (orderHistory.length > 10) orderHistory.shift();
+    }
+    
+    currentOrder = newOrder;
     chrome.storage.local.set({ gridOrder: currentOrder });
   };
+
+  undoBtn.addEventListener('click', () => {
+    const prev = orderHistory.pop();
+    if (prev) {
+      currentOrder = prev;
+      chrome.storage.local.set({ gridOrder: currentOrder });
+      renderSortableList();
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    if (confirm('Reset grid to default order?')) {
+      orderHistory.push([...currentOrder]);
+      currentOrder = [...defaultOrder];
+      chrome.storage.local.set({ gridOrder: currentOrder });
+      renderSortableList();
+    }
+  });
 
   renderSortableList();
 

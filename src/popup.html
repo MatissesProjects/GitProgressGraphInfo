@@ -217,7 +217,13 @@
         </label>
       </div>
 
-      <div style="font-size: 11px; font-weight: 600; margin-bottom: 5px; border-top: 1px solid #d0d7de; pt-1;">REORDER GRID (Drag items)</div>
+      <div style="font-size: 11px; font-weight: 600; margin-bottom: 5px; border-top: 1px solid #d0d7de; pt-1; display: flex; justify-content: space-between; align-items: center;">
+        <span>REORDER GRID (Drag items)</span>
+        <div style="display: flex; gap: 5px;">
+          <button id="undo-reorder" style="font-size: 9px; padding: 1px 4px; cursor: pointer;">Undo</button>
+          <button id="reset-reorder" style="font-size: 9px; padding: 1px 4px; cursor: pointer;">Reset</button>
+        </div>
+      </div>
       <div id="sortable-grid-list" style="display: flex; flex-direction: column; gap: 2px;">
         <!-- Sortable items will be injected here -->
       </div>
