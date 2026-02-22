@@ -8,6 +8,18 @@ export const THEMES: Record<string, string[]> = {
   green: [
     '#ebedf0', '#e6ffed', '#d1f2d9', '#9be9a8', '#7bc96f', '#40c463',
     '#30a14e', '#216e39', '#196127', '#124d1f', '#0c3a17', '#06250e'
+  ],
+  ocean: [
+    '#ebedf0', '#e1f5fe', '#b3e5fc', '#81d4fa', '#4fc3f7', '#29b6f6',
+    '#03a9f4', '#039be5', '#0288d1', '#0277bd', '#01579b', '#002f6c'
+  ],
+  sunset: [
+    '#ebedf0', '#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a',
+    '#ef3b2c', '#cb181d', '#a50f15', '#67000d', '#49000a', '#2d0006'
+  ],
+  monochrome: [
+    '#ebedf0', '#f6f8fa', '#e6edf0', '#d0d7de', '#afb8c1', '#8c959f',
+    '#6e7781', '#57606a', '#424a53', '#32383f', '#24292f', '#1b1f23'
   ]
 };
 
@@ -43,6 +55,23 @@ export function generateCustomScale(start: string, stop: string): string[] {
 export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green') {
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
+  if (themeName === 'none') {
+    days.forEach((day: any) => {
+      day.style.removeProperty('background-color');
+      day.style.removeProperty('fill');
+      day.style.outline = '';
+      day.style.border = '';
+    });
+    const footer = document.querySelector('.ContributionCalendar-footer');
+    if (footer) {
+      footer.querySelectorAll('.ContributionCalendar-day').forEach((sq: any) => {
+        sq.style.removeProperty('background-color');
+        sq.style.removeProperty('fill');
+      });
+    }
+    return;
+  }
+
   let colors: string[];
   if (themeName === 'custom') {
     try {
