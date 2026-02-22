@@ -690,18 +690,32 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     if (weekdayHighActivityCounts[i] > maxHighFreq) { maxHighFreq = weekdayHighActivityCounts[i]; peakWeekdayIndex = i; }
   }
 
-  // RPG Level System
-  const displayTotal = (ytdTotalDays > 0) ? ytdTotalContributions : pastAndPresentData.reduce((sum, d) => sum + d.count, 0);
+  // RPG Level System & Bonuses
+  // Base XP = Commits
+  // Combo Bonus: +2 XP for every 5 contributions in a single day
+  // Review Bonus: +3 XP per Code Review
+  let totalXPWithBonuses = 0;
+  pastAndPresentData.forEach(day => {
+    let dayXP = day.count;
+    if (day.count >= 5) {
+      dayXP += Math.floor(day.count / 5) * 2;
+    }
+    totalXPWithBonuses += dayXP;
+  });
+  totalXPWithBonuses += (timeline.pullRequestReviews * 3);
+
   const getLevelThreshold = (l: number) => 25 * l * l;
-  const currentLevel = Math.floor(Math.sqrt(displayTotal / 25));
+  const currentLevel = Math.floor(Math.sqrt(totalXPWithBonuses / 25));
   const nextLevel = currentLevel + 1;
   const currentLevelXP = getLevelThreshold(currentLevel);
   const nextLevelXP = getLevelThreshold(nextLevel);
-  const xpProgress = displayTotal - currentLevelXP;
+  const xpProgress = totalXPWithBonuses - currentLevelXP;
   const xpNeeded = nextLevelXP - currentLevelXP;
   const progressPercent = Math.min(100, Math.max(0, Math.round((xpProgress / xpNeeded) * 100)));
   const titles = ["Ghost", "Novice", "Script Kiddie", "Code Monkey", "Byte Basher", "Repo Ranger", "Commit Commander", "Git Guru", "Merge Master", "Branch Baron", "Pull Request Prince", "Octocat Overlord", "Code God"];
   const levelTitle = titles[Math.min(currentLevel, titles.length - 1)];
+
+  const todayCombo = todayCount >= 2 ? todayCount : 0;
 
   // Stats for tooltips
   const statsForTooltips = {
@@ -732,7 +746,8 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
     bestMonthName, bestMonthDates, bestMonthStats,
     bestWeekName, bestWeekDates, bestWeekStats,
-    level: currentLevel, levelTitle, levelTotalXP: xpNeeded, levelProgressXP: xpProgress, totalXP: displayTotal, xpToNext: nextLevelXP - displayTotal, progressPercent,
+    level: currentLevel, levelTitle, levelTotalXP: xpNeeded, levelProgressXP: xpProgress, totalXP: totalXPWithBonuses, xpToNext: nextLevelXP - totalXPWithBonuses, progressPercent,
+    todayCombo,
     statsForTooltips,
     activeDays, isYTD: ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
@@ -882,8 +897,9 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
         <div class="d-flex flex-items-center gap-2">
           <span class="gh-level-badge">LVL ${advanced.level}</span>
           <span class="gh-level-title">${advanced.levelTitle}</span>
+          ${advanced.todayCombo >= 2 ? `<span class="gh-combo-badge">${advanced.todayCombo}x COMBO</span>` : ''}
         </div>
-        <div class="gh-progress-container" title="${advanced.totalXP} / ${advanced.totalXP + advanced.xpToNext} total commits (${advanced.xpToNext} to level up)">
+        <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
           <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
         </div>
         <span class="gh-xp-text">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>

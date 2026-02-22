@@ -8,8 +8,11 @@ A Chrome extension that turns your GitHub contribution graph into a deep-dive an
 
 ### 🎮 RPG Gamification
 - **Leveling System:** Earn XP through commits. Progress through levels with titles from "Novice" to "Code God."
+- **Bonus XP:** 
+  - **Multi-Commit Bonus:** Get extra XP for 5+ contributions in a single day.
+  - **Reviewer Bonus:** Earn massive XP (+3 per review) for performing Code Reviews.
+- **Combo System:** Achieve a **COMBO x#** badge in the header for high daily activity (2+ contributions). The badge features a fiery animation to celebrate your momentum.
 - **Progress Tracking:** A sleek, high-contrast progress bar in the panel header shows exactly how much XP you need for the next level.
-- **Dynamic Titles:** Unlock new status titles as your total contributions grow.
 
 ### 📊 Advanced Analytics
 - **Best Month & Week:** Automatically identifies your peak performance periods using a smart score based on volume, consistency, and streaks.
