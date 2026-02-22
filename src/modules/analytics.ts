@@ -21,15 +21,18 @@ export function calculateThresholds(data: ContributionDay[]) {
 }
 
 export function calculatePercentiles(data: ContributionDay[]) {
-  const activeDays = data.filter(d => d.count > 0).map(d => d.count).sort((a, b) => a - b);
-  if (activeDays.length === 0) return {};
-
+  // Use linear distribution instead of density-based quantiles to match standard distance-based scaling perception
+  const max = data.reduce((m, d) => Math.max(m, d.count), 1);
   const percentiles: Record<number, number> = {};
   const markers = [20, 30, 40, 50, 60, 70, 80, 90, 95, 99];
   
-  markers.forEach(m => {
-    const index = Math.ceil((m / 100) * activeDays.length) - 1;
-    percentiles[m] = activeDays[Math.min(index, activeDays.length - 1)];
+  let last = 0;
+  markers.forEach((m, i) => {
+    const boundaryIndex = i + 1; // 10 boundaries for 11 levels
+    let val = Math.floor(boundaryIndex * (max / 11)) + 1;
+    if (val <= last) val = last + 1;
+    percentiles[m] = val;
+    last = val;
   });
 
   return percentiles;

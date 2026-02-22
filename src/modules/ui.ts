@@ -185,7 +185,13 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         <div id="granular-legend" class="d-flex gap-1 mr-3">
           ${legendRanges.map((range, i) => `<div class="square-legend ${i > 0 ? `level-${i}` : ''}" title="${range}" style="${i === 0 ? 'background-color: var(--color-calendar-graph-day-bg)' : ''}"></div>`).join('')}
         </div>
-        <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto"><span class="color-fg-muted text-small mr-1">Thresholds: </span><span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span></div>
+        <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
+          <span class="color-fg-muted text-small mr-1">Thresholds: </span>
+          <span id="gh-thresh-1" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
+          <span id="gh-thresh-2" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
+          <span id="gh-thresh-3" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
+          <span id="gh-thresh-4" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L4: ${thresholds[4]?.min ?? '?'}+</span>
+        </div>
       </div>
     </div>`;
   container.prepend(statsDiv);
@@ -194,6 +200,14 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     dates.forEach(date => {
       const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
       if (dayEl) { dayEl.classList.add(className); dayEl.style.outline = ''; dayEl.style.border = ''; }
+    });
+  };
+
+  const highlightLevel = (level: number) => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: any) => {
+      day.classList.add('gh-highlight');
+      day.style.outline = '';
+      day.style.border = '';
     });
   };
 
@@ -234,6 +248,10 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-peak-day', () => highlightWeekday(advanced.peakWeekdayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
   addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
+  addHover('#gh-thresh-1', () => highlightLevel(1));
+  addHover('#gh-thresh-2', () => highlightLevel(2));
+  addHover('#gh-thresh-3', () => highlightLevel(3));
+  addHover('#gh-thresh-4', () => highlightLevel(4));
 }
 
 export function extendLegend(thresholds: any) {
