@@ -306,7 +306,8 @@ function calculatePercentiles(data: ContributionDay[]) {
   if (activeDays.length === 0) return {};
 
   const percentiles: Record<number, number> = {};
-  const markers = [10, 25, 50, 75, 90, 95, 99];
+  // Use 10 markers to define boundaries for 11 active levels (Level 1 to 11)
+  const markers = [20, 30, 40, 50, 60, 70, 80, 90, 95, 99];
   
   markers.forEach(m => {
     const index = Math.ceil((m / 100) * activeDays.length) - 1;
@@ -374,15 +375,18 @@ async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<
   }
   
   const getGranularLevel = (count: number) => {
-    if (count === 0) return 0;
+    if (count <= 0) return 0;
     if (count >= (percentiles[99] || 999)) return 11;
     if (count >= (percentiles[95] || 999)) return 10;
     if (count >= (percentiles[90] || 999)) return 9;
-    if (count >= (percentiles[75] || 999)) return 8;
+    if (count >= (percentiles[80] || 999)) return 8;
+    if (count >= (percentiles[70] || 999)) return 7;
+    if (count >= (percentiles[60] || 999)) return 6;
     if (count >= (percentiles[50] || 999)) return 5;
-    if (count >= (percentiles[25] || 999)) return 3;
-    if (count >= (percentiles[10] || 999)) return 1;
-    return 1;
+    if (count >= (percentiles[40] || 999)) return 4;
+    if (count >= (percentiles[30] || 999)) return 3;
+    if (count >= (percentiles[20] || 999)) return 2;
+    return 1; // Anything >= 1 is at least Level 1
   };
 
   days.forEach((day: any) => {
@@ -879,7 +883,7 @@ function init() {
         const s = await chrome.storage.local.get(['theme', 'gridOrder']);
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
-        injectStats(t, data, advanced, order);
+        injectStats(t, p, data, advanced, order);
         extendLegend(t);
         await applyDeepRecoloring(data, p, theme, t);
         await applyVisibility();
@@ -901,7 +905,7 @@ function init() {
   runAnalysis().catch(() => {});
 }
 
-function injectStats(thresholds: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null) {
+function injectStats(thresholds: any, percentiles: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null) {
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
   const existing = document.getElementById('git-heat-stats');
@@ -918,7 +922,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
   statsDiv.style.marginTop = '16px';
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
-  const defaultOrder = ['gh-total', 'gh-today', 'gh-streak', 'gh-slump', 'gh-best-month', 'gh-best-week', 'gh-island', 'gh-slump-island', 'gh-velocity', 'gh-consistency', 'gh-weekend', 'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'];
+  const defaultOrder = ['gh-total', 'gh-today', 'gh-streak', 'gh-level', 'gh-slump', 'gh-best-month', 'gh-best-week', 'gh-island', 'gh-slump-island', 'gh-velocity', 'gh-consistency', 'gh-weekend', 'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'];
   let gridOrder = savedOrder || defaultOrder;
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
@@ -947,6 +951,22 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
     'gh-langs': `<div class="stat-card" id="gh-langs"><span class="color-fg-muted d-block text-small">Top Languages</span><strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong></div>`,
     'gh-network': `<div class="stat-card" id="gh-network"><span class="color-fg-muted d-block text-small">Network</span><strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong></div>`
   };
+
+  const p = percentiles;
+  const legendRanges = [
+    "0 commits",
+    `1 to ${p[20] > 1 ? p[20]-1 : 1} commits`,
+    `${p[20]} to ${p[30] > p[20] ? p[30]-1 : p[20]} commits`,
+    `${p[30]} to ${p[40] > p[30] ? p[40]-1 : p[30]} commits`,
+    `${p[40]} to ${p[50] > p[40] ? p[50]-1 : p[40]} commits`,
+    `${p[50]} to ${p[60] > p[50] ? p[60]-1 : p[50]} commits`,
+    `${p[60]} to ${p[70] > p[60] ? p[70]-1 : p[60]} commits`,
+    `${p[70]} to ${p[80] > p[70] ? p[80]-1 : p[70]} commits`,
+    `${p[80]} to ${p[90] > p[80] ? p[90]-1 : p[80]} commits`,
+    `${p[90]} to ${p[95] > p[90] ? p[95]-1 : p[90]} commits`,
+    `${p[95]} to ${p[99] > p[95] ? p[99]-1 : p[95]} commits`,
+    `${p[99]}+ commits`
+  ];
 
   statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-center mb-3">
@@ -987,7 +1007,15 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
         <div class="d-flex flex-wrap gap-1">${advanced.achievements.map((a: string) => `<span class="Label Label--secondary" title="${a}">${a}</span>`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div>
       </div>
     </div>
-    <div class="mt-3 pt-3 border-top color-border-muted" id="gh-footer"><div class="d-flex flex-items-center flex-wrap"><span class="color-fg-muted text-small mr-2">Deep Scale: </span><div id="granular-legend" class="d-flex gap-1 mr-3"><div class="square-legend" style="background-color: var(--color-calendar-graph-day-bg)"></div><div class="square-legend level-1"></div><div class="square-legend level-2"></div><div class="square-legend level-3"></div><div class="square-legend level-4"></div><div class="square-legend level-5"></div><div class="square-legend level-6"></div><div class="square-legend level-7"></div><div class="square-legend level-8"></div><div class="square-legend level-9"></div><div class="square-legend level-10"></div><div class="square-legend level-11"></div></div><div class="d-flex flex-items-center flex-wrap gap-2 ml-auto"><span class="color-fg-muted text-small mr-1">Thresholds: </span><span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span></div></div></div>`;
+    <div class="mt-3 pt-3 border-top color-border-muted" id="gh-footer">
+      <div class="d-flex flex-items-center flex-wrap">
+        <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
+        <div id="granular-legend" class="d-flex gap-1 mr-3">
+          ${legendRanges.map((range, i) => `<div class="square-legend ${i > 0 ? `level-${i}` : ''}" title="${range}" style="${i === 0 ? 'background-color: var(--color-calendar-graph-day-bg)' : ''}"></div>`).join('')}
+        </div>
+        <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto"><span class="color-fg-muted text-small mr-1">Thresholds: </span><span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span></div>
+      </div>
+    </div>`;
   container.prepend(statsDiv);
 
   const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
