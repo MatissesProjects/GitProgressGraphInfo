@@ -140,11 +140,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const draggingItem = sortableList.querySelector('.dragging')!;
     const siblings = [...sortableList.querySelectorAll('.sortable-item:not(.dragging)')];
     
-    let nextSibling = siblings.find(sibling => {
-      return e.clientY <= (sibling as HTMLElement).offsetTop + (sibling as HTMLElement).offsetHeight / 2;
+    const nextSibling = siblings.find(sibling => {
+      const box = (sibling as HTMLElement).getBoundingClientRect();
+      const offset = e.clientY - box.top - box.height / 2;
+      return offset < 0;
     });
 
-    sortableList.insertBefore(draggingItem, nextSibling as Node);
+    sortableList.insertBefore(draggingItem, nextSibling || null);
   });
 
   const saveOrder = () => {
