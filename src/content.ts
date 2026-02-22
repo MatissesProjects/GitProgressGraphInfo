@@ -63,28 +63,47 @@ function parseActivityTimeline(): TimelineActivity {
   const activityItems = document.querySelectorAll('.TimelineItem');
   let isTodaySection = false;
   
-  // GitHub timeline usually has items grouped by date. The first one is often "Today" or the latest date.
   const now = new Date();
-  const todayLabel = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // e.g. "Feb 20"
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayLabelShort = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // "Feb 20"
+  const todayLabelLong = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });   // "February 20"
 
   activityItems.forEach(item => {
-    // Check if this item starts a new date section
-    const dateHeader = item.querySelector('.TimelineItem-break')?.textContent?.trim();
-    if (dateHeader) {
-      // If we see "Today" or the current date, start tracking today's actions
-      isTodaySection = dateHeader.includes('Today') || dateHeader.includes(todayLabel);
+    // 1. Better Section Detection (Headers)
+    const breakEl = item.querySelector('.TimelineItem-break, .TimelineItem-section-title, h3');
+    if (breakEl) {
+      const text = breakEl.textContent?.trim() || "";
+      if (text.includes('Today') || text.includes(todayLabelShort) || text.includes(todayLabelLong)) {
+        isTodaySection = true;
+      } else if (text.match(/^[A-Z][a-z]+ \d+/) || text.includes('Yesterday')) {
+        isTodaySection = false;
+      }
     }
 
     const body = item.querySelector('.TimelineItem-body');
     if (!body) return;
 
+    // 2. Relative Time Detection (Sync with graph's todayStr)
+    const timeEl = body.querySelector('relative-time');
+    if (timeEl) {
+      const dt = timeEl.getAttribute('datetime');
+      if (dt) {
+        // Convert UTC datetime to local YYYY-MM-DD
+        const itemDate = new Date(dt);
+        const itemLocalDate = `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
+        if (itemLocalDate === todayStr) {
+          isTodaySection = true;
+        }
+      }
+    }
+
     const bodyText = body.textContent?.trim() || "";
 
-    // 1. Commits
+    // Commits
     if (bodyText.includes('commits in')) {
       const match = bodyText.match(/(\d+) commit/i);
-      const commitCount = match ? parseInt(match[1], 10) : 0;
-      if (isTodaySection) todayActions.commits += commitCount;
+      const count = match ? parseInt(match[1], 10) : 0;
+      if (isTodaySection) todayActions.commits += count;
 
       const listItems = body.querySelectorAll('li');
       listItems.forEach(li => {
@@ -100,7 +119,7 @@ function parseActivityTimeline(): TimelineActivity {
       });
     }
 
-    // 2. Created Repos
+    // Created Repos
     if (bodyText.includes('Created') && bodyText.includes('repositor') && !bodyText.includes('commits in')) {
       const match = bodyText.match(/Created (\d+) repositor/i);
       const count = match ? parseInt(match[1], 10) : (bodyText.includes('Created a repository') ? 1 : 0);
@@ -122,38 +141,34 @@ function parseActivityTimeline(): TimelineActivity {
       });
     }
 
-    // 3. Issues
-    if (bodyText.includes('Opened') && bodyText.includes('issue')) {
-      const match = bodyText.match(/Opened (\d+) (?:other )?issue/i);
-      const count = match ? parseInt(match[1], 10) : (bodyText.includes('Opened an issue') ? 1 : 0);
+    // Issues
+    if ((bodyText.includes('Opened') || bodyText.includes('Created')) && bodyText.includes('issue')) {
+      const match = bodyText.match(/(?:Opened|Created) (\d+) (?:other )?issue/i);
+      const count = match ? parseInt(match[1], 10) : 1;
       issuesOpened += count;
       if (isTodaySection) todayActions.issues += count;
     }
-    if (bodyText.includes('Created an issue')) {
-      issuesOpened += 1;
-      if (isTodaySection) todayActions.issues += 1;
-    }
 
-    // 4. Pull Requests
+    // PRs & Reviews
     if (bodyText.includes('pull request')) {
-      // Proposed/Opened
-      const proposedMatch = bodyText.match(/(?:Proposed|Opened) (\d+) (?:other )?pull request/i);
-      const pCount = proposedMatch ? parseInt(proposedMatch[1], 10) : ((bodyText.includes('Opened a pull request') || bodyText.includes('Proposed a pull request')) ? 1 : 0);
-      pullRequests += pCount;
-      if (isTodaySection) todayActions.prs += pCount;
-
-      // Merged
-      const mergedMatch = bodyText.match(/Merged (\d+) (?:other )?pull request/i);
-      const mCount = mergedMatch ? parseInt(mergedMatch[1], 10) : (bodyText.includes('Merged a pull request') ? 1 : 0);
-      mergedPullRequests += mCount;
-      // We'll count merged as a PR action for today too
-      if (isTodaySection) todayActions.prs += mCount;
-
-      // Reviewed
-      const reviewedMatch = bodyText.match(/Reviewed (\d+) (?:other )?pull request/i);
-      const rCount = reviewedMatch ? parseInt(reviewedMatch[1], 10) : (bodyText.includes('Reviewed a pull request') ? 1 : 0);
-      pullRequestReviews += rCount;
-      if (isTodaySection) todayActions.reviews += rCount;
+      if (bodyText.includes('Proposed') || bodyText.includes('Opened')) {
+        const match = bodyText.match(/(?:Proposed|Opened) (\d+) (?:other )?pull request/i);
+        const count = match ? parseInt(match[1], 10) : 1;
+        pullRequests += count;
+        if (isTodaySection) todayActions.prs += count;
+      }
+      if (bodyText.includes('Merged')) {
+        const match = bodyText.match(/Merged (\d+) (?:other )?pull request/i);
+        const count = match ? parseInt(match[1], 10) : 1;
+        mergedPullRequests += count;
+        if (isTodaySection) todayActions.prs += count;
+      }
+      if (bodyText.includes('Reviewed')) {
+        const match = bodyText.match(/Reviewed (\d+) (?:other )?pull request/i);
+        const count = match ? parseInt(match[1], 10) : 1;
+        pullRequestReviews += count;
+        if (isTodaySection) todayActions.reviews += count;
+      }
     }
   });
 
@@ -162,14 +177,7 @@ function parseActivityTimeline(): TimelineActivity {
     .sort((a, b) => b.commits - a.commits);
 
   return { 
-    topRepos, 
-    createdRepos, 
-    createdRepoList, 
-    issuesOpened, 
-    pullRequests, 
-    pullRequestReviews, 
-    mergedPullRequests,
-    todayActions
+    topRepos, createdRepos, createdRepoList, issuesOpened, pullRequests, pullRequestReviews, mergedPullRequests, todayActions
   };
 }
 
@@ -745,10 +753,11 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   const levelTitle = titles[Math.min(currentLevel, titles.length - 1)];
 
   // Dynamic Combo Multiplier (Fibonacci scaling)
-  // todayScore = (commits + reviews*2 + repos*3) + (streak bonus)
+  // todayScore = (heatmapCommits + reviews*2 + repos*3) + (streak bonus)
   const actions = timeline.todayActions;
+  const heatmapCommits = todayCount; // Use heatmap count as it's the source of truth for commits
   const streakBonus = Math.floor(currentStreak / 3);
-  const todayScore = (actions.commits + actions.reviews * 2 + actions.repos * 3) + streakBonus;
+  const todayScore = (heatmapCommits + actions.reviews * 2 + actions.repos * 3) + streakBonus;
   
   const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
   let todayCombo = 0;
@@ -757,7 +766,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     else break;
   }
 
-  const todayComboMath = `Score: ${todayScore} ((Commits:${actions.commits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
+  const todayComboMath = `Score: ${todayScore} ((HeatmapCommits:${heatmapCommits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
 
   let todayComboReason = "Activity Streak";
   if (todayCombo >= 2) {
@@ -962,7 +971,6 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
         <span class="gh-xp-text">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
       </div>
 
-      <span class="Label Label--secondary">Deep Dive Mode</span>
     </div>
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4" id="gh-detailed-stats">
