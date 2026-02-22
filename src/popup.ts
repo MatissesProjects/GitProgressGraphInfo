@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleAchievements = document.getElementById('toggle-achievements') as HTMLInputElement;
   const toggleFooter = document.getElementById('toggle-footer') as HTMLInputElement;
   const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
+  const toggleIslandWrap = document.getElementById('toggle-island-wrap') as HTMLInputElement;
 
   // Visibility Toggles - Grid Items
   const toggleTotal = document.getElementById('toggle-total') as HTMLInputElement;
@@ -77,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const settings = await chrome.storage.local.get([
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
-    'showPersona', 'showFooter', 'showLegendNumbers',
+    'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
     'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel',
     'gridOrder'
   ]);
@@ -168,6 +169,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleAchievements, settings.showAchievements);
   setChecked(toggleFooter, settings.showFooter);
   setChecked(toggleLegendNums, settings.showLegendNumbers);
+  setChecked(toggleIslandWrap, settings.islandWrapAround);
 
   setChecked(toggleTotal, settings.showTotal);
   setChecked(toggleToday, settings.showTodayCount);
@@ -221,6 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleAchievements, 'showAchievements');
   addToggleListener(toggleFooter, 'showFooter');
   addToggleListener(toggleLegendNums, 'showLegendNumbers');
+  addToggleListener(toggleIslandWrap, 'islandWrapAround');
 
   addToggleListener(toggleTotal, 'showTotal');
   addToggleListener(toggleToday, 'showTodayCount');

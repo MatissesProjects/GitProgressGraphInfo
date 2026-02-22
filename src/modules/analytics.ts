@@ -35,10 +35,12 @@ export function calculatePercentiles(data: ContributionDay[]) {
   return percentiles;
 }
 
-export function findIsland(targetData: ContributionDay[], thresholdFn: (d: ContributionDay) => boolean, dateMap: Map<string, ContributionDay>, todayStr: string) {
+export function findIsland(targetData: ContributionDay[], thresholdFn: (d: ContributionDay) => boolean, dateMap: Map<string, ContributionDay>, todayStr: string, wrapAround: boolean = true) {
   const visited = new Set<string>();
   let biggest: string[] = [];
   
+  const offsets = wrapAround ? [-1, 1, -7, 7] : [-1, 1];
+
   targetData.filter(thresholdFn).forEach(day => {
     if (!visited.has(day.date)) {
       const current: string[] = [], queue = [day.date];
@@ -47,7 +49,7 @@ export function findIsland(targetData: ContributionDay[], thresholdFn: (d: Contr
         const curr = queue.shift()!;
         current.push(curr);
         const d = new Date(curr + 'T00:00:00');
-        [-1, 1, -7, 7].forEach(diff => {
+        offsets.forEach(diff => {
           const n = new Date(d); n.setDate(d.getDate() + diff);
           const s = n.toISOString().split('T')[0];
           const node = dateMap.get(s);
@@ -63,7 +65,7 @@ export function findIsland(targetData: ContributionDay[], thresholdFn: (d: Contr
   return biggest;
 }
 
-export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats) {
+export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats, wrapAround: boolean = true) {
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const ytdStartStr = `${now.getFullYear()}-01-01`;
@@ -122,8 +124,8 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
   const timeBased = calculateTimeBasedStats(pastAndPresentData);
   const todayCount = data.find(d => d.date === todayStr)?.count || 0;
 
-  const biggestIslandDates = findIsland(pastAndPresentData, d => d.level >= 2, dateMap, todayStr);
-  const biggestSlumpIslandDates = findIsland(pastAndPresentData, d => d.count <= 1, dateMap, todayStr);
+  const biggestIslandDates = findIsland(pastAndPresentData, d => d.level >= 2, dateMap, todayStr, wrapAround);
+  const biggestSlumpIslandDates = findIsland(pastAndPresentData, d => d.count <= 1, dateMap, todayStr, wrapAround);
 
   const weekdayHighActivityCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
   const weekdayTotalDays: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };

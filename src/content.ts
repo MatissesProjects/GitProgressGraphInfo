@@ -47,7 +47,7 @@ function init() {
     if (!isContextValid()) return;
     const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel'];
     if (visibilityKeys.some(key => changes[key])) applyVisibility();
-    if (changes.gridOrder) runAnalysis().catch(() => {});
+    if (changes.gridOrder || changes.islandWrapAround) runAnalysis().catch(() => {});
     if (changes.theme || changes.customStart || changes.customStop) {
       const data = parseContributionGraph();
       if (data) {
@@ -70,9 +70,10 @@ function init() {
       const socials = parseSocials();
       if (data) {
         const t = calculateThresholds(data), p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(['theme', 'gridOrder']);
+        const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround']);
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
-        const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
+        const wrapAround = s.islandWrapAround !== false;
+        const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround);
         injectStats(t, p, data, advanced, order);
         extendLegend(t);
         await applyDeepRecoloring(data, p, theme);
