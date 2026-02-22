@@ -51,7 +51,7 @@ export function findIsland(targetData: ContributionDay[], thresholdFn: (d: Contr
         const d = new Date(curr + 'T00:00:00');
         offsets.forEach(diff => {
           const n = new Date(d); n.setDate(d.getDate() + diff);
-          const s = n.toISOString().split('T')[0];
+          const s = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
           const node = dateMap.get(s);
           if (node && node.date <= todayStr && thresholdFn(node) && !visited.has(s)) {
             visited.add(s);
@@ -125,7 +125,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
   const todayCount = data.find(d => d.date === todayStr)?.count || 0;
 
   const biggestIslandDates = findIsland(pastAndPresentData, d => d.level >= 2, dateMap, todayStr, wrapAround);
-  const biggestSlumpIslandDates = findIsland(pastAndPresentData, d => d.count <= 1, dateMap, todayStr, wrapAround);
+  const biggestSlumpIslandDates = findIsland(pastAndPresentData, d => d.count === 0, dateMap, todayStr, wrapAround);
 
   const weekdayHighActivityCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
   const weekdayTotalDays: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };

@@ -72,7 +72,7 @@ function init() {
         const t = calculateThresholds(data), p = calculatePercentiles(data);
         const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround']);
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
-        const wrapAround = s.islandWrapAround !== false;
+        const wrapAround = true; // Always true for now
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround);
         injectStats(t, p, data, advanced, order);
         extendLegend(t);

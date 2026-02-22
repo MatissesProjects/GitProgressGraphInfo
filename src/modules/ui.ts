@@ -1,4 +1,4 @@
-import { ContributionDay } from '../types';
+import { ContributionDay, AdvancedStats } from '../types';
 
 export async function applyVisibility() {
   const settings = await chrome.storage.local.get([
@@ -197,7 +197,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const clearHighlights = () => {
     document.querySelectorAll('.gh-highlight, .gh-highlight-special, .gh-highlight-sad').forEach((el: any) => {
       el.classList.remove('gh-highlight', 'gh-highlight-special', 'gh-highlight-sad');
-      if (parseInt(el.getAttribute('data-level') || '0', 10) > 0) { el.style.outline = 'none'; el.style.border = 'none'; }
+      el.style.outline = 'none';
+      el.style.border = 'none';
     });
   };
 
