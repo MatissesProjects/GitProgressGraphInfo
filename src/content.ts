@@ -474,7 +474,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   const dateMap = new Map(data.map(d => [d.date, d]));
 
   let currentStreak = 0, currentStreakDates: string[] = [], longestStreak = 0, longestStreakDates: string[] = [];
-  let tempStreak = 0, tempStreakDates: string[] = [], activeDays = 0, longestSlump = 0, tempSlump = 0;
+  let tempStreak = 0, tempStreakDates: string[] = [], activeDays = 0, longestSlump = 0, longestSlumpDates: string[] = [], tempSlump = 0, tempSlumpDates: string[] = [];
   let ytdWeekendContributions = 0, ytdWeekdayContributions = 0, ytdActiveWeekendDays = 0, ytdTotalWeekendDays = 0, ytdActiveDays = 0, ytdTotalDays = 0;
   const weekdayCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
 
@@ -488,8 +488,12 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
 
     if (day.count > 0) {
       activeDays++; tempStreak++; tempStreakDates.push(day.date);
-      if (tempSlump > longestSlump) longestSlump = tempSlump;
+      if (tempSlump > longestSlump) {
+        longestSlump = tempSlump;
+        longestSlumpDates = [...tempSlumpDates];
+      }
       tempSlump = 0;
+      tempSlumpDates = [];
       if (isYTD) {
         ytdActiveDays++;
         if (isWeekend) { ytdActiveWeekendDays++; ytdWeekendContributions += day.count; }
@@ -498,12 +502,17 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
       weekdayCounts[weekday] += day.count;
     } else {
       if (tempStreak > longestStreak) { longestStreak = tempStreak; longestStreakDates = [...tempStreakDates]; }
-      tempStreak = 0; tempStreakDates = []; tempSlump++;
+      tempStreak = 0; tempStreakDates = []; 
+      tempSlump++;
+      tempSlumpDates.push(day.date);
     }
   });
   
   if (tempStreak > longestStreak) { longestStreak = tempStreak; longestStreakDates = [...tempStreakDates]; }
-  if (tempSlump > longestSlump) longestSlump = tempSlump;
+  if (tempSlump > longestSlump) {
+    longestSlump = tempSlump;
+    longestSlumpDates = [...tempSlumpDates];
+  }
   
   for (let i = pastAndPresentData.length - 1; i >= 0; i--) {
     const day = pastAndPresentData[i];
@@ -581,7 +590,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     }
   });
 
-  let bestMonthName = "N/A", bestMonthScore = -1, bestMonthDates: string[] = [], bestMonthStats = { score: 0 };
+  let bestMonthName = "N/A", bestMonthScore = -1, bestMonthDates: string[] = [], bestMonthStats = { score: 0, count: 0, consistency: "0", streak: 0 };
   Object.entries(monthData).forEach(([month, data]) => {
     const consistency = data.activeDays / data.totalDays;
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
@@ -589,7 +598,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
       bestMonthScore = score;
       bestMonthName = new Date(month + '-01T00:00:00').toLocaleString('default', { month: 'long', year: 'numeric' });
       bestMonthDates = data.dates;
-      bestMonthStats = { score };
+      bestMonthStats = { score, count: data.count, consistency: (consistency * 100).toFixed(1), streak: data.maxStreak };
     }
   });
 
@@ -617,7 +626,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     }
   });
 
-  let bestWeekName = "N/A", bestWeekScore = -1, bestWeekDates: string[] = [], bestWeekStats = { score: 0 };
+  let bestWeekName = "N/A", bestWeekScore = -1, bestWeekDates: string[] = [], bestWeekStats = { score: 0, count: 0, consistency: "0", streak: 0 };
   Object.entries(weekData).forEach(([weekStart, data]) => {
     const consistency = data.activeDays / 7;
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
@@ -628,7 +637,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
       end.setDate(start.getDate() + 6);
       bestWeekName = `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
       bestWeekDates = data.dates;
-      bestWeekStats = { score };
+      bestWeekStats = { score, count: data.count, consistency: (consistency * 100).toFixed(1), streak: data.maxStreak };
     }
   });
 
@@ -694,8 +703,25 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   const titles = ["Ghost", "Novice", "Script Kiddie", "Code Monkey", "Byte Basher", "Repo Ranger", "Commit Commander", "Git Guru", "Merge Master", "Branch Baron", "Pull Request Prince", "Octocat Overlord", "Code God"];
   const levelTitle = titles[Math.min(currentLevel, titles.length - 1)];
 
+  // Stats for tooltips
+  const statsForTooltips = {
+    consistency: { active: (ytdTotalDays > 0 ? ytdActiveDays : activeDays), total: (ytdTotalDays > 0 ? ytdTotalDays : pastAndPresentData.length) },
+    weekend: { active: 0, total: 0 },
+    velocity: { count: (ytdTotalDays > 0 ? ytdTotalContributions : pastAndPresentData.reduce((sum, d) => sum + d.count, 0)), active: (ytdTotalDays > 0 ? ytdActiveDays : activeDays) },
+    slumpDates: longestSlumpDates
+  };
+  if (ytdTotalDays > 0) {
+    statsForTooltips.weekend = { active: ytdActiveWeekendDays, total: ytdTotalWeekendDays };
+  } else {
+    const weekendDaysData = pastAndPresentData.filter(d => {
+      const day = new Date(d.date + 'T00:00:00').getDay();
+      return day === 0 || day === 6;
+    });
+    statsForTooltips.weekend = { active: weekendDaysData.filter(d => d.count > 0).length, total: weekendDaysData.length };
+  }
+
   return {
-    currentStreak, currentStreakDates, longestStreak, longestStreakDates, longestSlump, consistency, velocity, weekendScore, persona,
+    currentStreak, currentStreakDates, longestStreak, longestStreakDates, longestSlump, longestSlumpDates, consistency, velocity, weekendScore, persona,
     bestDay: daysOfWeek[bestDayIndex], bestDayIndex, bestDayCount: maxWeekdayCount,
     worstDay: daysOfWeek[worstDayIndex], worstDayIndex, worstDayCount: minWeekdayCount,
     currentWeekday: daysOfWeek[todayWeekday], currentWeekdayIndex: todayWeekday, currentWeekdayCount: weekdayCounts[todayWeekday],
@@ -706,7 +732,8 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
     bestMonthName, bestMonthDates, bestMonthStats,
     bestWeekName, bestWeekDates, bestWeekStats,
-    level: currentLevel, levelTitle, nextLevelXP: nextLevelXP - displayTotal, progressPercent,
+    level: currentLevel, levelTitle, nextLevelXP: nextLevelXP, currentXP: displayTotal, xpToNext: nextLevelXP - displayTotal, progressPercent,
+    statsForTooltips,
     activeDays, isYTD: ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
     issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,
@@ -822,14 +849,14 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
     'gh-total': `<div class="stat-card" id="gh-total"><span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span><strong class="f3-light">${totalContributions.toLocaleString()}</strong></div>`,
     'gh-today': `<div class="stat-card highlightable" id="gh-today" data-date="${todayStr}"><span class="color-fg-muted d-block text-small">Today's Contribs</span><strong class="f3-light">${advanced.todayCount}</strong></div>`,
     'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${advanced.currentStreakDates.join(',')}" data-longest-streak="${advanced.longestStreakDates.join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
-    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${advanced.bestMonthDates.join(',')}"><span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span><strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong></div>`,
-    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${advanced.bestWeekDates.join(',')}"><span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span><strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong></div>`,
+    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${advanced.bestMonthDates.join(',')}" title="${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak"><span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span><strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong></div>`,
+    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${advanced.bestWeekDates.join(',')}" title="${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak"><span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span><strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong></div>`,
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
-    'gh-velocity': `<div class="stat-card" id="gh-velocity"><span class="color-fg-muted d-block text-small">Average Velocity</span><strong class="f3-light">${advanced.velocity} commits/day</strong></div>`,
-    'gh-consistency': `<div class="stat-card" id="gh-consistency"><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
-    'gh-weekend': `<div class="stat-card" id="gh-weekend"><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
-    'gh-slump': `<div class="stat-card" id="gh-slump"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
+    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="${advanced.statsForTooltips.velocity.count} total commits / ${advanced.statsForTooltips.velocity.active} active days"><span class="color-fg-muted d-block text-small">Average Velocity</span><strong class="f3-light">${advanced.velocity} commits/day</strong></div>`,
+    'gh-consistency': `<div class="stat-card" id="gh-consistency" title="${advanced.statsForTooltips.consistency.active} / ${advanced.statsForTooltips.consistency.total} days active"><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
+    'gh-weekend': `<div class="stat-card" id="gh-weekend" title="${advanced.statsForTooltips.weekend.active} / ${advanced.statsForTooltips.weekend.total} weekend days active"><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
+    'gh-slump': `<div class="stat-card" id="gh-slump" title="${advanced.longestSlumpDates.length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
     'gh-best-day': `<div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}"><span class="color-fg-muted d-block text-small">Best Weekday</span><strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong></div>`,
     'gh-worst-day': `<div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}"><span class="color-fg-muted d-block text-small">Worst Weekday</span><strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong></div>`,
     'gh-current-weekday': `<div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}"><span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span><strong class="f3-light">${advanced.currentWeekdayCount}</strong></div>`,
@@ -856,7 +883,7 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
           <span class="gh-level-badge">LVL ${advanced.level}</span>
           <span class="gh-level-title">${advanced.levelTitle}</span>
         </div>
-        <div class="gh-progress-container" title="${advanced.nextLevelXP} XP to level up">
+        <div class="gh-progress-container" title="${advanced.currentXP} / ${advanced.nextLevelXP} XP (${advanced.xpToNext} to Level up)">
           <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
         </div>
       </div>
