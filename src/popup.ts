@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleTotal = document.getElementById('toggle-total') as HTMLInputElement;
   const toggleToday = document.getElementById('toggle-today') as HTMLInputElement;
   const toggleStreak = document.getElementById('toggle-streak') as HTMLInputElement;
+  const toggleLevel = document.getElementById('toggle-level') as HTMLInputElement;
   const toggleBestMonth = document.getElementById('toggle-best-month') as HTMLInputElement;
   const toggleBestWeek = document.getElementById('toggle-best-week') as HTMLInputElement;
   const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
@@ -48,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-total': 'Total Contributions',
     'gh-today': 'Today\'s Contribs',
     'gh-streak': 'Current / Best Streak',
+    'gh-level': 'RPG Level',
     'gh-best-month': 'Best Month',
     'gh-best-week': 'Best Week',
     'gh-island': 'Biggest Island (L2+)',
@@ -76,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel',
     'gridOrder'
   ]);
 
@@ -170,6 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleTotal, settings.showTotal);
   setChecked(toggleToday, settings.showTodayCount);
   setChecked(toggleStreak, settings.showStreak);
+  setChecked(toggleLevel, settings.showLevel);
   setChecked(toggleBestMonth, settings.showBestMonth);
   setChecked(toggleBestWeek, settings.showBestWeek);
   setChecked(toggleIsland, settings.showIsland);
@@ -222,6 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleTotal, 'showTotal');
   addToggleListener(toggleToday, 'showTodayCount');
   addToggleListener(toggleStreak, 'showStreak');
+  addToggleListener(toggleLevel, 'showLevel');
   addToggleListener(toggleBestMonth, 'showBestMonth');
   addToggleListener(toggleBestWeek, 'showBestWeek');
   addToggleListener(toggleIsland, 'showIsland');
@@ -305,6 +309,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Render Advanced Stats
         document.getElementById('persona-badge')!.textContent = adv.persona;
+        document.getElementById('rpg-level')!.textContent = `Lvl ${adv.level}: ${adv.levelTitle}`;
         document.getElementById('current-streak')!.textContent = `${adv.currentStreak} days`;
         document.getElementById('longest-streak')!.textContent = `${adv.longestStreak} days`;
         document.getElementById('longest-slump')!.textContent = `${adv.longestSlump} days`;

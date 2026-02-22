@@ -140,6 +140,9 @@
           <input type="checkbox" id="toggle-streak" checked> Streak
         </label>
         <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
+          <input type="checkbox" id="toggle-level" checked> RPG Level
+        </label>
+        <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
           <input type="checkbox" id="toggle-best-month" checked> Best Month
         </label>
         <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 10px;">
@@ -258,6 +261,10 @@
 
     <div class="advanced-stats" style="margin-top: 15px; padding-top: 10px; border-top: 1px dotted #d0d7de;">
       <div style="font-size: 12px; color: #57606a; margin-bottom: 8px; font-weight: 600;">ADVANCED ANALYTICS</div>
+      <div class="stat-row">
+        <span>Current Level:</span>
+        <strong id="rpg-level">-</strong>
+      </div>
       <div class="stat-row">
         <span>Current Streak:</span>
         <strong id="current-streak">-</strong>

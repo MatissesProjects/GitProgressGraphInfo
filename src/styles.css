@@ -97,6 +97,49 @@
   border-radius: 10px;
 }
 
+/* RPG Level Header Styles */
+.gh-level-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  max-width: 300px;
+  margin: 0 20px;
+}
+
+.gh-level-badge {
+  font-weight: 800;
+  font-size: 14px;
+  color: #f1e05a;
+  text-shadow: 0 0 8px rgba(241, 224, 90, 0.6);
+  letter-spacing: 0.5px;
+}
+
+.gh-level-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--color-fg-muted);
+  font-weight: 600;
+}
+
+.gh-progress-container {
+  width: 100%;
+  height: 8px;
+  background-color: var(--color-border-muted);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-default);
+  position: relative;
+}
+
+.gh-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #dbab09, #f1e05a);
+  box-shadow: 0 0 10px rgba(241, 224, 90, 0.4);
+  transition: width 0.5s ease-out;
+}
+
 .square-legend {
   width: 10px;
   height: 10px;

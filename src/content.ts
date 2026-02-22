@@ -234,10 +234,7 @@ function parseContributionGraph() {
     }
   });
 
-  if (contributionData.length === 0) {
-    return null;
-  }
-
+  if (contributionData.length === 0) return null;
   return contributionData;
 }
 
@@ -406,7 +403,7 @@ async function applyVisibility() {
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
     'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
     'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek'
+    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel'
   ]);
 
   const grid = document.getElementById('gh-grid-stats');
@@ -416,6 +413,7 @@ async function applyVisibility() {
   const achievements = document.getElementById('gh-achievements');
   const persona = document.getElementById('gh-persona');
   const footer = document.getElementById('gh-footer');
+  const headerLevel = document.getElementById('gh-header-level');
 
   if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
   if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
@@ -423,6 +421,7 @@ async function applyVisibility() {
   if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
   if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
   if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
+  if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
 
   const toggleMap: Record<string, any> = {
     'gh-total': settings.showTotal,
@@ -585,7 +584,6 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   let bestMonthName = "N/A", bestMonthScore = -1, bestMonthDates: string[] = [], bestMonthStats = { score: 0 };
   Object.entries(monthData).forEach(([month, data]) => {
     const consistency = data.activeDays / data.totalDays;
-    // Score formula: commits * consistency * streak
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
     if (score > bestMonthScore) {
       bestMonthScore = score;
@@ -637,11 +635,10 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   const todayWeekday = now.getDay();
   const todayCount = data.find(d => d.date === todayStr)?.count || 0;
 
-  // Islands (Restricted to past and present data to avoid future empty days)
+  // Islands
   const findIsland = (targetData: ContributionDay[], thresholdFn: (d: ContributionDay) => boolean) => {
     const visited = new Set<string>();
     let biggest: string[] = [];
-    
     targetData.filter(thresholdFn).forEach(day => {
       if (!visited.has(day.date)) {
         const current: string[] = [], queue = [day.date];
@@ -654,7 +651,6 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
             const n = new Date(d); n.setDate(d.getDate() + diff);
             const s = n.toISOString().split('T')[0];
             const node = dateMap.get(s);
-            // Only consider neighbors that are in the past/present data AND match the threshold
             if (node && node.date <= todayStr && thresholdFn(node) && !visited.has(s)) {
               visited.add(s);
               queue.push(s);
@@ -685,6 +681,19 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     if (weekdayHighActivityCounts[i] > maxHighFreq) { maxHighFreq = weekdayHighActivityCounts[i]; peakWeekdayIndex = i; }
   }
 
+  // RPG Level System
+  const displayTotal = (ytdTotalDays > 0) ? ytdTotalContributions : pastAndPresentData.reduce((sum, d) => sum + d.count, 0);
+  const getLevelThreshold = (l: number) => 25 * l * l;
+  const currentLevel = Math.floor(Math.sqrt(displayTotal / 25));
+  const nextLevel = currentLevel + 1;
+  const currentLevelXP = getLevelThreshold(currentLevel);
+  const nextLevelXP = getLevelThreshold(nextLevel);
+  const xpProgress = displayTotal - currentLevelXP;
+  const xpNeeded = nextLevelXP - currentLevelXP;
+  const progressPercent = Math.min(100, Math.max(0, Math.round((xpProgress / xpNeeded) * 100)));
+  const titles = ["Ghost", "Novice", "Script Kiddie", "Code Monkey", "Byte Basher", "Repo Ranger", "Commit Commander", "Git Guru", "Merge Master", "Branch Baron", "Pull Request Prince", "Octocat Overlord", "Code God"];
+  const levelTitle = titles[Math.min(currentLevel, titles.length - 1)];
+
   return {
     currentStreak, currentStreakDates, longestStreak, longestStreakDates, longestSlump, consistency, velocity, weekendScore, persona,
     bestDay: daysOfWeek[bestDayIndex], bestDayIndex, bestDayCount: maxWeekdayCount,
@@ -697,12 +706,14 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
     bestMonthName, bestMonthDates, bestMonthStats,
     bestWeekName, bestWeekDates, bestWeekStats,
+    level: currentLevel, levelTitle, nextLevelXP: nextLevelXP - displayTotal, progressPercent,
     activeDays, isYTD: ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
     issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,
     achievements: achievements.slice(0, 4), socials
   };
 }
+
 function init() {
   console.log("GitHeat: Initializing...");
   const isContextValid = () => !!chrome.runtime?.id;
@@ -735,7 +746,7 @@ function init() {
 
   chrome.storage.onChanged.addListener(async (changes) => {
     if (!isContextValid()) return;
-    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek'];
+    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel'];
     if (visibilityKeys.some(key => changes[key])) applyVisibility();
     if (changes.gridOrder) runAnalysis().catch(() => {});
     if (changes.theme || changes.customStart || changes.customStop) {
@@ -833,7 +844,41 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
     'gh-network': `<div class="stat-card" id="gh-network"><span class="color-fg-muted d-block text-small">Network</span><strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong></div>`
   };
 
-  statsDiv.innerHTML = `<div class="d-flex flex-justify-between flex-items-center mb-3"><div class="d-flex flex-items-center gap-2"><h3 class="h4 mb-0">GitHeat Analytics ${titleSuffix}</h3><span id="gh-persona" class="Label Label--info">${advanced.persona}</span></div><span class="Label Label--secondary">Deep Dive Mode</span></div><div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div><div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4" id="gh-detailed-stats"><div style="flex: 1; min-width: 200px;" id="gh-active-repos"><span class="color-fg-muted text-small d-block mb-2">Most Active Repos (Commits)</span><div class="d-flex flex-column gap-1">${advanced.topRepos.slice(0, 3).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div></div><div style="flex: 1; min-width: 200px;" id="gh-created-repos"><span class="color-fg-muted text-small d-block mb-2">Created Repositories</span><div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div></div><div style="flex: 1; min-width: 200px;" id="gh-achievements"><span class="color-fg-muted text-small d-block mb-2">Recent Achievements</span><div class="d-flex flex-wrap gap-1">${advanced.achievements.map((a: string) => `<span class="Label Label--secondary" title="${a}">${a}</span>`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div></div></div><div class="mt-3 pt-3 border-top color-border-muted" id="gh-footer"><div class="d-flex flex-items-center flex-wrap"><span class="color-fg-muted text-small mr-2">Deep Scale: </span><div id="granular-legend" class="d-flex gap-1 mr-3"><div class="square-legend" style="background-color: var(--color-calendar-graph-day-bg)"></div><div class="square-legend level-1"></div><div class="square-legend level-2"></div><div class="square-legend level-3"></div><div class="square-legend level-4"></div><div class="square-legend level-5"></div><div class="square-legend level-6"></div><div class="square-legend level-7"></div><div class="square-legend level-8"></div><div class="square-legend level-9"></div><div class="square-legend level-10"></div><div class="square-legend level-11"></div></div><div class="d-flex flex-items-center flex-wrap gap-2 ml-auto"><span class="color-fg-muted text-small mr-1">Thresholds: </span><span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span></div></div></div>`;
+  statsDiv.innerHTML = `
+    <div class="d-flex flex-justify-between flex-items-center mb-3">
+      <div class="d-flex flex-items-center gap-2">
+        <h3 class="h4 mb-0">GitHeat Analytics ${titleSuffix}</h3>
+        <span id="gh-persona" class="Label Label--info">${advanced.persona}</span>
+      </div>
+      
+      <div id="gh-header-level" class="gh-level-header">
+        <div class="d-flex flex-items-center gap-2">
+          <span class="gh-level-badge">LVL ${advanced.level}</span>
+          <span class="gh-level-title">${advanced.levelTitle}</span>
+        </div>
+        <div class="gh-progress-container" title="${advanced.nextLevelXP} XP to level up">
+          <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
+        </div>
+      </div>
+
+      <span class="Label Label--secondary">Deep Dive Mode</span>
+    </div>
+    <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
+    <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4" id="gh-detailed-stats">
+      <div style="flex: 1; min-width: 200px;" id="gh-active-repos">
+        <span class="color-fg-muted text-small d-block mb-2">Most Active Repos (Commits)</span>
+        <div class="d-flex flex-column gap-1">${advanced.topRepos.slice(0, 3).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div>
+      </div>
+      <div style="flex: 1; min-width: 200px;" id="gh-created-repos">
+        <span class="color-fg-muted text-small d-block mb-2">Created Repositories</span>
+        <div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
+      </div>
+      <div style="flex: 1; min-width: 200px;" id="gh-achievements">
+        <span class="color-fg-muted text-small d-block mb-2">Recent Achievements</span>
+        <div class="d-flex flex-wrap gap-1">${advanced.achievements.map((a: string) => `<span class="Label Label--secondary" title="${a}">${a}</span>`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div>
+      </div>
+    </div>
+    <div class="mt-3 pt-3 border-top color-border-muted" id="gh-footer"><div class="d-flex flex-items-center flex-wrap"><span class="color-fg-muted text-small mr-2">Deep Scale: </span><div id="granular-legend" class="d-flex gap-1 mr-3"><div class="square-legend" style="background-color: var(--color-calendar-graph-day-bg)"></div><div class="square-legend level-1"></div><div class="square-legend level-2"></div><div class="square-legend level-3"></div><div class="square-legend level-4"></div><div class="square-legend level-5"></div><div class="square-legend level-6"></div><div class="square-legend level-7"></div><div class="square-legend level-8"></div><div class="square-legend level-9"></div><div class="square-legend level-10"></div><div class="square-legend level-11"></div></div><div class="d-flex flex-items-center flex-wrap gap-2 ml-auto"><span class="color-fg-muted text-small mr-1">Thresholds: </span><span class="badge" style="border: 1px solid var(--color-border-default)">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span><span class="badge" style="border: 1px solid var(--color-border-default)">L4: ${thresholds[4]?.min ?? '?'}+</span></div></div></div>`;
   container.prepend(statsDiv);
 
   const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
