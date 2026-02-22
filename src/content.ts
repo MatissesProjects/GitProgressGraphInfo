@@ -38,6 +38,17 @@ interface SocialStats {
   organizations: number;
 }
 
+interface TimelineActivity {
+  topRepos: RepoActivity[];
+  createdRepos: number;
+  createdRepoList: CreatedRepo[];
+  issuesOpened: number;
+  pullRequests: number;
+  pullRequestReviews: number;
+  mergedPullRequests: number;
+  todayActions: { commits: number, repos: number, issues: number, prs: number, reviews: number };
+}
+
 function parseActivityTimeline(): TimelineActivity {
   const repoCommits: Record<string, number> = {};
   let createdRepos = 0;
@@ -47,15 +58,34 @@ function parseActivityTimeline(): TimelineActivity {
   let pullRequestReviews = 0;
   let mergedPullRequests = 0;
   
-  const activityItems = document.querySelectorAll('.TimelineItem');
+  const todayActions = { commits: 0, repos: 0, issues: 0, prs: 0, reviews: 0 };
   
+  const activityItems = document.querySelectorAll('.TimelineItem');
+  let isTodaySection = false;
+  
+  // GitHub timeline usually has items grouped by date. The first one is often "Today" or the latest date.
+  const now = new Date();
+  const todayLabel = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // e.g. "Feb 20"
+
   activityItems.forEach(item => {
+    // Check if this item starts a new date section
+    const dateHeader = item.querySelector('.TimelineItem-break')?.textContent?.trim();
+    if (dateHeader) {
+      // If we see "Today" or the current date, start tracking today's actions
+      isTodaySection = dateHeader.includes('Today') || dateHeader.includes(todayLabel);
+    }
+
     const body = item.querySelector('.TimelineItem-body');
     if (!body) return;
 
     const bodyText = body.textContent?.trim() || "";
 
+    // 1. Commits
     if (bodyText.includes('commits in')) {
+      const match = bodyText.match(/(\d+) commit/i);
+      const commitCount = match ? parseInt(match[1], 10) : 0;
+      if (isTodaySection) todayActions.commits += commitCount;
+
       const listItems = body.querySelectorAll('li');
       listItems.forEach(li => {
         const link = li.querySelector('a');
@@ -70,13 +100,12 @@ function parseActivityTimeline(): TimelineActivity {
       });
     }
 
+    // 2. Created Repos
     if (bodyText.includes('Created') && bodyText.includes('repositor') && !bodyText.includes('commits in')) {
       const match = bodyText.match(/Created (\d+) repositor/i);
-      if (match) {
-        createdRepos += parseInt(match[1], 10);
-      } else if (bodyText.includes('Created a repository')) {
-        createdRepos += 1;
-      }
+      const count = match ? parseInt(match[1], 10) : (bodyText.includes('Created a repository') ? 1 : 0);
+      createdRepos += count;
+      if (isTodaySection) todayActions.repos += count;
       
       const listItems = body.querySelectorAll('li, div.py-1');
       listItems.forEach(li => {
@@ -93,39 +122,38 @@ function parseActivityTimeline(): TimelineActivity {
       });
     }
 
+    // 3. Issues
     if (bodyText.includes('Opened') && bodyText.includes('issue')) {
       const match = bodyText.match(/Opened (\d+) (?:other )?issue/i);
-      if (match) {
-        issuesOpened += parseInt(match[1], 10);
-      } else if (bodyText.includes('Opened an issue')) {
-        issuesOpened += 1;
-      }
+      const count = match ? parseInt(match[1], 10) : (bodyText.includes('Opened an issue') ? 1 : 0);
+      issuesOpened += count;
+      if (isTodaySection) todayActions.issues += count;
     }
     if (bodyText.includes('Created an issue')) {
       issuesOpened += 1;
+      if (isTodaySection) todayActions.issues += 1;
     }
 
+    // 4. Pull Requests
     if (bodyText.includes('pull request')) {
+      // Proposed/Opened
       const proposedMatch = bodyText.match(/(?:Proposed|Opened) (\d+) (?:other )?pull request/i);
-      if (proposedMatch) {
-        pullRequests += parseInt(proposedMatch[1], 10);
-      } else if (bodyText.includes('Opened a pull request') || bodyText.includes('Proposed a pull request')) {
-        pullRequests += 1;
-      }
+      const pCount = proposedMatch ? parseInt(proposedMatch[1], 10) : ((bodyText.includes('Opened a pull request') || bodyText.includes('Proposed a pull request')) ? 1 : 0);
+      pullRequests += pCount;
+      if (isTodaySection) todayActions.prs += pCount;
 
+      // Merged
       const mergedMatch = bodyText.match(/Merged (\d+) (?:other )?pull request/i);
-      if (mergedMatch) {
-        mergedPullRequests += parseInt(mergedMatch[1], 10);
-      } else if (bodyText.includes('Merged a pull request')) {
-        mergedPullRequests += 1;
-      }
+      const mCount = mergedMatch ? parseInt(mergedMatch[1], 10) : (bodyText.includes('Merged a pull request') ? 1 : 0);
+      mergedPullRequests += mCount;
+      // We'll count merged as a PR action for today too
+      if (isTodaySection) todayActions.prs += mCount;
 
+      // Reviewed
       const reviewedMatch = bodyText.match(/Reviewed (\d+) (?:other )?pull request/i);
-      if (reviewedMatch) {
-        pullRequestReviews += parseInt(reviewedMatch[1], 10);
-      } else if (bodyText.includes('Reviewed a pull request')) {
-        pullRequestReviews += 1;
-      }
+      const rCount = reviewedMatch ? parseInt(reviewedMatch[1], 10) : (bodyText.includes('Reviewed a pull request') ? 1 : 0);
+      pullRequestReviews += rCount;
+      if (isTodaySection) todayActions.reviews += rCount;
     }
   });
 
@@ -140,7 +168,8 @@ function parseActivityTimeline(): TimelineActivity {
     issuesOpened, 
     pullRequests, 
     pullRequestReviews, 
-    mergedPullRequests 
+    mergedPullRequests,
+    todayActions
   };
 }
 
@@ -715,7 +744,31 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   const titles = ["Ghost", "Novice", "Script Kiddie", "Code Monkey", "Byte Basher", "Repo Ranger", "Commit Commander", "Git Guru", "Merge Master", "Branch Baron", "Pull Request Prince", "Octocat Overlord", "Code God"];
   const levelTitle = titles[Math.min(currentLevel, titles.length - 1)];
 
-  const todayCombo = todayCount >= 2 ? todayCount : 0;
+  // Dynamic Combo Multiplier (Fibonacci scaling)
+  // todayScore = (commits + reviews*2 + repos*3) + (streak bonus)
+  const actions = timeline.todayActions;
+  const streakBonus = Math.floor(currentStreak / 3);
+  const todayScore = (actions.commits + actions.reviews * 2 + actions.repos * 3) + streakBonus;
+  
+  const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
+  let todayCombo = 0;
+  for (let i = 0; i < fib.length; i++) {
+    if (todayScore >= fib[i]) todayCombo = i + 1;
+    else break;
+  }
+
+  const todayComboMath = `Score: ${todayScore} ((Commits:${actions.commits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
+
+  let todayComboReason = "Activity Streak";
+  if (todayCombo >= 2) {
+    const typesCount = (actions.commits > 0 ? 1 : 0) + (actions.issues > 0 ? 1 : 0) + (actions.prs > 0 ? 1 : 0) + (actions.reviews > 0 ? 1 : 0);
+    
+    if (typesCount >= 3) todayComboReason = "Multi-Tasker";
+    else if (actions.reviews >= 2) todayComboReason = "Guardian of Code";
+    else if (actions.commits >= 5) todayComboReason = "Commit Frenzy";
+    else if (actions.prs >= 1 && actions.issues >= 1) todayComboReason = "Problem Solver";
+    else if (actions.repos >= 1) todayComboReason = "Architect";
+  }
 
   // Stats for tooltips
   const statsForTooltips = {
@@ -747,7 +800,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     bestMonthName, bestMonthDates, bestMonthStats,
     bestWeekName, bestWeekDates, bestWeekStats,
     level: currentLevel, levelTitle, levelTotalXP: xpNeeded, levelProgressXP: xpProgress, totalXP: totalXPWithBonuses, xpToNext: nextLevelXP - totalXPWithBonuses, progressPercent,
-    todayCombo,
+    todayCombo, todayComboReason, todayComboMath,
     statsForTooltips,
     activeDays, isYTD: ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
@@ -897,7 +950,11 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
         <div class="d-flex flex-items-center gap-2">
           <span class="gh-level-badge">LVL ${advanced.level}</span>
           <span class="gh-level-title">${advanced.levelTitle}</span>
-          ${advanced.todayCombo >= 2 ? `<span class="gh-combo-badge">${advanced.todayCombo}x COMBO</span>` : ''}
+          ${advanced.todayCombo >= 2 ? `
+            <div class="gh-combo-badge" title="${advanced.todayComboMath}">
+              <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
+              <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">${advanced.todayComboReason}</div>
+            </div>` : ''}
         </div>
         <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
           <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
