@@ -732,7 +732,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
     bestMonthName, bestMonthDates, bestMonthStats,
     bestWeekName, bestWeekDates, bestWeekStats,
-    level: currentLevel, levelTitle, nextLevelXP: nextLevelXP, currentXP: displayTotal, xpToNext: nextLevelXP - displayTotal, progressPercent,
+    level: currentLevel, levelTitle, levelTotalXP: xpNeeded, levelProgressXP: xpProgress, totalXP: displayTotal, xpToNext: nextLevelXP - displayTotal, progressPercent,
     statsForTooltips,
     activeDays, isYTD: ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
@@ -883,9 +883,10 @@ function injectStats(thresholds: any, data: ContributionDay[], advanced: any, sa
           <span class="gh-level-badge">LVL ${advanced.level}</span>
           <span class="gh-level-title">${advanced.levelTitle}</span>
         </div>
-        <div class="gh-progress-container" title="${advanced.currentXP} / ${advanced.nextLevelXP} XP (${advanced.xpToNext} to Level up)">
+        <div class="gh-progress-container" title="${advanced.totalXP} / ${advanced.totalXP + advanced.xpToNext} total commits (${advanced.xpToNext} to level up)">
           <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
         </div>
+        <span class="gh-xp-text">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
       </div>
 
       <span class="Label Label--secondary">Deep Dive Mode</span>

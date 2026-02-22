@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Render Advanced Stats
         document.getElementById('persona-badge')!.textContent = adv.persona;
-        document.getElementById('rpg-level')!.textContent = `Lvl ${adv.level}: ${adv.levelTitle}`;
+        document.getElementById('rpg-level')!.textContent = `Lvl ${adv.level}: ${adv.levelTitle} (${adv.levelProgressXP} / ${adv.levelTotalXP} XP)`;
         document.getElementById('current-streak')!.textContent = `${adv.currentStreak} days`;
         document.getElementById('longest-streak')!.textContent = `${adv.longestStreak} days`;
         document.getElementById('longest-slump')!.textContent = `${adv.longestSlump} days`;
