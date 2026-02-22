@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
   const toggleSlumpIsland = document.getElementById('toggle-slump-island') as HTMLInputElement;
   const toggleVelocity = document.getElementById('toggle-velocity') as HTMLInputElement;
+  const toggleVelocityAbove = document.getElementById('toggle-velocity-above') as HTMLInputElement;
+  const toggleVelocityBelow = document.getElementById('toggle-velocity-below') as HTMLInputElement;
   const toggleConsistency = document.getElementById('toggle-consistency') as HTMLInputElement;
   const toggleWeekend = document.getElementById('toggle-weekend') as HTMLInputElement;
   const toggleSlump = document.getElementById('toggle-slump') as HTMLInputElement;
@@ -55,7 +57,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-best-week': 'Best Week',
     'gh-island': 'Biggest Island (L2+)',
     'gh-slump-island': 'Worst Island (0-1)',
-    'gh-velocity': 'Average Velocity',    'gh-consistency': 'Consistency %',
+    'gh-velocity': 'Average Velocity',
+    'gh-velocity-above': 'Above Average Days',
+    'gh-velocity-below': 'Below Average Days',
+    'gh-consistency': 'Consistency %',
     'gh-weekend': 'Weekend Score',
     'gh-slump': 'Longest Slump',
     'gh-best-day': 'Best Weekday',
@@ -79,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel',
     'gridOrder'
   ]);
 
@@ -180,6 +185,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleIsland, settings.showIsland);
   setChecked(toggleSlumpIsland, settings.showSlumpIsland);
   setChecked(toggleVelocity, settings.showVelocity);
+  setChecked(toggleVelocityAbove, settings.showVelocityAbove);
+  setChecked(toggleVelocityBelow, settings.showVelocityBelow);
   setChecked(toggleConsistency, settings.showConsistency);
   setChecked(toggleWeekend, settings.showWeekend);
   setChecked(toggleSlump, settings.showSlump);
@@ -234,6 +241,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleIsland, 'showIsland');
   addToggleListener(toggleSlumpIsland, 'showSlumpIsland');
   addToggleListener(toggleVelocity, 'showVelocity');
+  addToggleListener(toggleVelocityAbove, 'showVelocityAbove');
+  addToggleListener(toggleVelocityBelow, 'showVelocityBelow');
   addToggleListener(toggleConsistency, 'showConsistency');
   addToggleListener(toggleWeekend, 'showWeekend');
   addToggleListener(toggleSlump, 'showSlump');

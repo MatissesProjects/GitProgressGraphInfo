@@ -144,6 +144,10 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
 
   const rpg = calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity);
 
+  const avgVel = parseFloat(velocity);
+  const aboveVelocityDates = pastAndPresentData.filter(d => d.count >= avgVel && d.count > 0).map(d => d.date);
+  const belowVelocityDates = pastAndPresentData.filter(d => d.count < avgVel && d.count > 0).map(d => d.date);
+
   const statsForTooltips: any = {
     consistency: { active: (base.ytdTotalDays > 0 ? base.ytdActiveDays : base.activeDays), total: (base.ytdTotalDays > 0 ? base.ytdTotalDays : pastAndPresentData.length) },
     velocity: { count: (base.ytdTotalDays > 0 ? ytdTotalContributions : pastAndPresentData.reduce((sum, d) => sum + d.count, 0)), active: (base.ytdTotalDays > 0 ? base.ytdActiveDays : base.activeDays) },
@@ -170,6 +174,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
     peakWeekday: daysOfWeek[peakWeekdayIndex], peakWeekdayIndex, peakWeekdayCount: maxHighFreq,
     biggestIslandSize: biggestIslandDates.length, biggestIslandDates,
     biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
+    aboveVelocityDates, belowVelocityDates,
     statsForTooltips,
     isYTD: base.ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,

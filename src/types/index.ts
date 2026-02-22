@@ -74,6 +74,8 @@ export interface AdvancedStats {
   bestMonthCount: number;
   bestWeek: string;
   bestWeekCount: number;
+  belowVelocityDates: string[];
+  aboveVelocityDates: string[];
   level: number;
   xp: number;
   xpToNext: number;

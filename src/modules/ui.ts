@@ -3,7 +3,7 @@ import { ContributionDay, AdvancedStats } from '../types';
 export async function applyVisibility() {
   const settings = await chrome.storage.local.get([
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showStreak', 'showVelocity', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
+    'showTotal', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
     'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
     'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel'
   ]);
@@ -34,6 +34,8 @@ export async function applyVisibility() {
     'gh-island': settings.showIsland,
     'gh-slump-island': settings.showSlumpIsland,
     'gh-velocity': settings.showVelocity,
+    'gh-velocity-above': settings.showVelocityAbove,
+    'gh-velocity-below': settings.showVelocityBelow,
     'gh-consistency': settings.showConsistency,
     'gh-weekend': settings.showWeekend,
     'gh-slump': settings.showSlump,
@@ -83,7 +85,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   statsDiv.style.marginTop = '16px';
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
-  const defaultOrder = ['gh-total', 'gh-today', 'gh-streak', 'gh-level', 'gh-slump', 'gh-best-month', 'gh-best-week', 'gh-island', 'gh-slump-island', 'gh-velocity', 'gh-consistency', 'gh-weekend', 'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'];
+  const defaultOrder = ['gh-total', 'gh-today', 'gh-streak', 'gh-level', 'gh-slump', 'gh-best-month', 'gh-best-week', 'gh-island', 'gh-slump-island', 'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend', 'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-most-active-day', 'gh-max-commits', 'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'];
   let gridOrder = savedOrder || defaultOrder;
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
@@ -96,6 +98,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
     'gh-velocity': `<div class="stat-card" id="gh-velocity" title="${advanced.statsForTooltips.velocity.count} total commits / ${advanced.statsForTooltips.velocity.active} active days"><span class="color-fg-muted d-block text-small">Average Velocity</span><strong class="f3-light">${advanced.velocity} commits/day</strong></div>`,
+    'gh-velocity-above': `<div class="stat-card highlightable" id="gh-velocity-above"><span class="color-fg-muted d-block text-small">Above Average Days</span><strong class="f3-light">${advanced.aboveVelocityDates.length} days</strong></div>`,
+    'gh-velocity-below': `<div class="stat-card highlightable" id="gh-velocity-below"><span class="color-fg-muted d-block text-small">Below Average Days</span><strong class="f3-light">${advanced.belowVelocityDates.length} days</strong></div>`,
     'gh-consistency': `<div class="stat-card" id="gh-consistency" title="${advanced.statsForTooltips.consistency.active} / ${advanced.statsForTooltips.consistency.total} days active"><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
     'gh-weekend': `<div class="stat-card" id="gh-weekend" title="${advanced.statsForTooltips.weekend.active} / ${advanced.statsForTooltips.weekend.total} weekend days active"><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
     'gh-slump': `<div class="stat-card" id="gh-slump" title="${advanced.longestSlumpDates.length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
@@ -213,6 +217,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-best-week', () => highlightDates(advanced.bestWeekDates));
   addHover('#gh-island', () => highlightDates(advanced.biggestIslandDates, 'gh-highlight-special'));
   addHover('#gh-slump-island', () => highlightDates(advanced.biggestSlumpIslandDates, 'gh-highlight-sad'));
+  addHover('#gh-velocity-above', () => highlightDates(advanced.aboveVelocityDates));
+  addHover('#gh-velocity-below', () => highlightDates(advanced.belowVelocityDates, 'gh-highlight-sad'));
   addHover('#gh-best-day', () => highlightWeekday(advanced.bestDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
   addHover('#gh-worst-day', () => highlightWeekday(advanced.worstDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
   addHover('#gh-current-weekday', () => highlightWeekday(advanced.currentWeekdayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
