@@ -11,6 +11,7 @@ A Chrome extension that turns your GitHub contribution graph into a deep-dive an
 - **Bonus XP:** 
   - **Multi-Commit Bonus:** Get extra XP for 5+ contributions in a single day.
   - **Reviewer Bonus:** Earn massive XP (+3 per review) for performing Code Reviews.
+  - **Velocity Bonus:** Gain +2 XP if today's commits exceed your daily average velocity.
 - **Combo System:** Achieve a **COMBO x#** badge in the header for high daily activity (2+ contributions). The badge features a fiery animation and dynamic "Combo Reasons" like:
   - **Multi-Tasker:** For doing commits, PRs, and reviews in one day.
   - **Guardian of Code:** For focusing on Code Reviews.

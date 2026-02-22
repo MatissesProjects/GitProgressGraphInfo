@@ -757,11 +757,13 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
   const levelTitle = titles[Math.min(currentLevel, titles.length - 1)];
 
   // Dynamic Combo Multiplier (Fibonacci scaling)
-  // todayScore = (heatmapCommits + reviews*2 + repos*3) + (streak bonus)
+  // todayScore = (heatmapCommits + reviews*2 + repos*3) + (streak bonus) + (velocity bonus)
   const actions = timeline.todayActions;
   const heatmapCommits = todayCount; // Use heatmap count as it's the source of truth for commits
   const streakBonus = Math.floor(currentStreak / 3);
-  const todayScore = (heatmapCommits + actions.reviews * 2 + actions.repos * 3) + streakBonus;
+  const avgVelocity = parseFloat(velocity);
+  const velocityBonus = (heatmapCommits > avgVelocity && avgVelocity > 0) ? 2 : 0;
+  const todayScore = (heatmapCommits + actions.reviews * 2 + actions.repos * 3) + streakBonus + velocityBonus;
   
   const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
   let todayCombo = 0;
@@ -770,7 +772,7 @@ function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[]
     else break;
   }
 
-  const todayComboMath = `Score: ${todayScore} ((HeatmapCommits:${heatmapCommits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
+  const todayComboMath = `Score: ${todayScore} ((HeatmapCommits:${heatmapCommits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus}) + (VelocityBonus:${velocityBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
 
   let todayComboReason = "Activity Streak";
   if (todayCombo >= 2) {
