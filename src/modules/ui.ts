@@ -81,8 +81,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
   const statsDiv = document.createElement('div');
   statsDiv.id = 'git-heat-stats';
-  statsDiv.className = 'git-heat-panel border color-border-muted color-bg-subtle rounded-2 p-3 mb-3';
-  statsDiv.style.marginTop = '16px';
+  statsDiv.className = 'git-heat-panel border color-border-muted color-bg-subtle rounded-2 p-2 mb-2';
+  statsDiv.style.marginTop = '8px';
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
   const defaultOrder = [
@@ -141,7 +141,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   ];
 
   statsDiv.innerHTML = `
-    <div class="d-flex flex-justify-between flex-items-center mb-3">
+    <div class="d-flex flex-justify-between flex-items-center mb-2">
       <div class="d-flex flex-items-center gap-2">
         <h3 class="h4 mb-0">GitHeat Analytics ${titleSuffix}</h3>
         <span id="gh-persona" class="Label Label--info">${advanced.persona}</span>
@@ -165,21 +165,21 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
     </div>
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
-    <div class="mt-3 pt-3 border-top color-border-muted d-flex flex-wrap gap-4" id="gh-detailed-stats">
-      <div style="flex: 1; min-width: 200px;" id="gh-active-repos">
-        <span class="color-fg-muted text-small d-block mb-2">Most Active Repos (Commits)</span>
+    <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">
+      <div style="flex: 1; min-width: 160px;" id="gh-active-repos">
+        <span class="color-fg-muted text-small d-block mb-1">Most Active Repos (Commits)</span>
         <div class="d-flex flex-column gap-1">${advanced.topRepos.slice(0, 3).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div>
       </div>
-      <div style="flex: 1; min-width: 200px;" id="gh-created-repos">
-        <span class="color-fg-muted text-small d-block mb-2">Created Repositories</span>
+      <div style="flex: 1; min-width: 160px;" id="gh-created-repos">
+        <span class="color-fg-muted text-small d-block mb-1">Created Repositories</span>
         <div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
       </div>
-      <div style="flex: 1; min-width: 200px;" id="gh-achievements">
-        <span class="color-fg-muted text-small d-block mb-2">Recent Achievements</span>
+      <div style="flex: 1; min-width: 160px;" id="gh-achievements">
+        <span class="color-fg-muted text-small d-block mb-1">Recent Achievements</span>
         <div class="d-flex flex-wrap gap-1">${advanced.achievements.map((a: string) => `<span class="Label Label--secondary" title="${a}">${a}</span>`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div>
       </div>
     </div>
-    <div class="mt-3 pt-3 border-top color-border-muted" id="gh-footer">
+    <div class="mt-2 pt-2 border-top color-border-muted" id="gh-footer">
       <div class="d-flex flex-items-center flex-wrap">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
         <div id="granular-legend" class="d-flex gap-1 mr-3">
