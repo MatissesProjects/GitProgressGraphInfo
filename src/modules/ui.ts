@@ -86,8 +86,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
   const defaultOrder = [
-    'gh-level', 'gh-total', 'gh-today', 'gh-streak', 
-    'gh-best-month', 'gh-best-week', 'gh-most-active-day', 'gh-max-commits',
+    'gh-streak', 'gh-best-month', 'gh-best-week', 'gh-most-active-day', 'gh-max-commits',
     'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
     'gh-island', 'gh-slump-island', 'gh-slump',
     'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
@@ -97,8 +96,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
   const itemMap: Record<string, string> = {
-    'gh-total': `<div class="stat-card" id="gh-total"><span class="color-fg-muted d-block text-small">Total ${titleSuffix}</span><strong class="f3-light">${totalContributions.toLocaleString()}</strong></div>`,
-    'gh-today': `<div class="stat-card highlightable" id="gh-today" data-date="${todayStr}"><span class="color-fg-muted d-block text-small">Today's Contribs</span><strong class="f3-light">${advanced.todayCount}</strong></div>`,
     'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${advanced.currentStreakDates.join(',')}" data-longest-streak="${advanced.longestStreakDates.join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
     'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${advanced.bestMonthDates.join(',')}" title="${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak"><span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span><strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong></div>`,
     'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${advanced.bestWeekDates.join(',')}" title="${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak"><span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span><strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong></div>`,
@@ -141,28 +138,32 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   ];
 
   statsDiv.innerHTML = `
-    <div class="d-flex flex-justify-between flex-items-center mb-2">
-      <div class="d-flex flex-items-center gap-2">
-        <h3 class="h4 mb-0">GitHeat Analytics ${titleSuffix}</h3>
-        <span id="gh-persona" class="Label Label--info">${advanced.persona}</span>
-      </div>
-      
-      <div id="gh-header-level" class="gh-level-header">
-        <div class="d-flex flex-items-center gap-2">
-          <span class="gh-level-badge">LVL ${advanced.level}</span>
-          <span class="gh-level-title">${advanced.levelTitle}</span>
-          ${advanced.todayCombo >= 2 ? `
-            <div class="gh-combo-badge" title="${advanced.todayComboMath}">
-              <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
-              <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">${advanced.todayComboReason}</div>
-            </div>` : ''}
-        </div>
-        <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
-          <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
-        </div>
-        <span class="gh-xp-text">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
+    <div class="d-flex flex-justify-between flex-items-center mb-3" style="gap: 15px;">
+      <div class="d-flex flex-items-center gap-2" style="flex-shrink: 0;">
+        <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
+        <span id="gh-persona" class="Label Label--info" style="white-space: nowrap;">${advanced.persona}</span>
       </div>
 
+      <div style="flex: 1;"></div>
+
+      <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
+        ${advanced.todayCombo >= 2 ? `
+          <div class="gh-combo-badge" title="${advanced.todayComboMath}">
+            <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
+            <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">${advanced.todayComboReason}</div>
+          </div>` : ''}
+        
+        <div id="gh-header-level" class="gh-level-header" style="margin: 0; width: 180px;">
+          <div class="d-flex flex-items-center gap-2">
+            <span class="gh-level-badge">LVL ${advanced.level}</span>
+            <span class="gh-level-title">${advanced.levelTitle}</span>
+          </div>
+          <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
+            <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
+          </div>
+          <span class="gh-xp-text" style="font-size: 8px;">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
+        </div>
+      </div>
     </div>
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">

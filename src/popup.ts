@@ -51,10 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const resetBtn = document.getElementById('reset-reorder') as HTMLButtonElement;
 
   const ITEM_LABELS: Record<string, string> = {
-    'gh-total': 'Total Contributions',
-    'gh-today': 'Today\'s Contribs',
     'gh-streak': 'Current / Best Streak',
-    'gh-level': 'RPG Level',
     'gh-best-month': 'Best Month',
     'gh-best-week': 'Best Week',
     'gh-island': 'Biggest Island (L2+)',
