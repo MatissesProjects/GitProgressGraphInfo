@@ -61,7 +61,9 @@ async function runStandalone() {
             showLangs: false,
             showNetwork: false,
 
-            theme: 'green'
+            theme: 'custom',
+            customStart: 'rgb(74, 32, 126)',
+            customStop: 'rgb(4, 255, 0)'
           };
 
           if (typeof keys === 'string') return Promise.resolve({ [keys]: settings[keys] });
@@ -93,7 +95,7 @@ async function runStandalone() {
       
       injectStats(t, p, data, advanced, null);
       extendLegend(t);
-      await applyDeepRecoloring(data, p, 'green');
+      await applyDeepRecoloring(data, p, 'custom', 'rgb(74, 32, 126)', 'rgb(4, 255, 0)');
       await applyVisibility();
       
       console.log("GitHeat Standalone: Analysis complete.");
