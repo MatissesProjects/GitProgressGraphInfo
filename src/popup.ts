@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleLevel = document.getElementById('toggle-level') as HTMLInputElement;
   const toggleBestMonth = document.getElementById('toggle-best-month') as HTMLInputElement;
   const toggleBestWeek = document.getElementById('toggle-best-week') as HTMLInputElement;
+  const toggleDominantWeekday = document.getElementById('toggle-dominant-weekday') as HTMLInputElement;
   const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
   const toggleSlumpIsland = document.getElementById('toggle-slump-island') as HTMLInputElement;
   const toggleVelocity = document.getElementById('toggle-velocity') as HTMLInputElement;
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-streak': 'Current / Best Streak',
     'gh-best-month': 'Best Month',
     'gh-best-week': 'Best Week',
+    'gh-dominant-weekday': 'Dominant Weekday',
     'gh-island': 'Biggest Island (L2+)',
     'gh-slump-island': 'Worst Island (0-1)',
     'gh-velocity': 'Average Velocity',
@@ -210,6 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleLevel, settings.showLevel);
   setChecked(toggleBestMonth, settings.showBestMonth);
   setChecked(toggleBestWeek, settings.showBestWeek);
+  setChecked(toggleDominantWeekday, settings.showDominantWeekday);
   setChecked(toggleIsland, settings.showIsland);
   setChecked(toggleSlumpIsland, settings.showSlumpIsland);
   setChecked(toggleVelocity, settings.showVelocity);
@@ -266,6 +269,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleLevel, 'showLevel');
   addToggleListener(toggleBestMonth, 'showBestMonth');
   addToggleListener(toggleBestWeek, 'showBestWeek');
+  addToggleListener(toggleDominantWeekday, 'showDominantWeekday');
   addToggleListener(toggleIsland, 'showIsland');
   addToggleListener(toggleSlumpIsland, 'showSlumpIsland');
   addToggleListener(toggleVelocity, 'showVelocity');
@@ -355,6 +359,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('longest-slump')!.textContent = `${adv.longestSlump} days`;
         document.getElementById('best-month')!.textContent = `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})`;
         document.getElementById('best-week')!.textContent = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})`;
+        document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
         document.getElementById('velocity')!.textContent = `${adv.velocity} c/d`;
         document.getElementById('pr-stats')!.textContent = `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`;

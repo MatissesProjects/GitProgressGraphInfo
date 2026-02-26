@@ -117,7 +117,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
 
   const persona = getPersona(weekendVolumeShare, consistency, velocity, weekendScore, totalStars);
 
-  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   let bestDayIndex = 0, maxWeekdayCount = -1, worstDayIndex = 0, minWeekdayCount = Infinity;
   for (let i = 0; i < 7; i++) {
     if (base.weekdayCounts[i] > maxWeekdayCount) { maxWeekdayCount = base.weekdayCounts[i]; bestDayIndex = i; }
@@ -308,7 +308,7 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     if (wins > maxWins) { maxWins = wins; dominantWeekdayIndex = parseInt(idx); }
   });
 
-  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const dominantWeekday = dominantWeekdayIndex >= 0 ? daysOfWeek[dominantWeekdayIndex] : "N/A";
 
   let bestWeekName = "N/A", bestWeekScore = -1, bestWeekDates: string[] = [], bestWeekStats = { score: 0, count: 0, consistency: "0", streak: 0 };
