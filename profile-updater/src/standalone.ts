@@ -14,7 +14,26 @@ import { applyDeepRecoloring } from '../../src/modules/theme';
 import { injectStats, extendLegend, applyVisibility } from '../../src/modules/ui';
 
 async function runStandalone() {
-  // ... (mocking chrome here)
+  console.log("GitHeat Standalone: Initializing...");
+  
+  // Mock chrome API
+  (window as any).chrome = {
+    storage: {
+      local: {
+        get: (keys: string[] | any) => {
+          const defaults: any = {};
+          if (Array.isArray(keys)) {
+            keys.forEach(k => (defaults as any)[k] = true); // Default to true for everything
+          } else if (typeof keys === 'object') {
+            Object.keys(keys).forEach(k => (defaults as any)[k] = true);
+          }
+          return Promise.resolve(defaults);
+        }
+      },
+      onChanged: { addListener: () => {} }
+    },
+    runtime: { id: 'standalone' }
+  };
 
   try {
     const data = parseContributionGraph();
