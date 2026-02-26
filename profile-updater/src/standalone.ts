@@ -62,14 +62,14 @@ async function runStandalone() {
             showNetwork: false,
 
             theme: 'custom',
-            customStart: 'rgb(74, 32, 126)',
-            customStop: 'rgb(4, 255, 0)'
+            customStart: '#4a207e',
+            customStop: '#04ff00'
           };
 
-          if (typeof keys === 'string') return Promise.resolve({ [keys]: settings[keys] });
+          if (typeof keys === 'string') return Promise.resolve({ [keys]: (settings as any)[keys] });
           if (Array.isArray(keys)) {
             const result: any = {};
-            keys.forEach(k => result[k] = settings[k] ?? true);
+            keys.forEach(k => result[k] = (settings as any)[k] ?? true);
             return Promise.resolve(result);
           }
           return Promise.resolve(settings);
@@ -95,7 +95,7 @@ async function runStandalone() {
       
       injectStats(t, p, data, advanced, null);
       extendLegend(t);
-      await applyDeepRecoloring(data, p, 'custom', 'rgb(74, 32, 126)', 'rgb(4, 255, 0)');
+      await applyDeepRecoloring(data, p, 'custom', '#4a207e', '#04ff00');
       await applyVisibility();
       
       console.log("GitHeat Standalone: Analysis complete.");

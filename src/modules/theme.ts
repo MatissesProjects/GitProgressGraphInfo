@@ -52,7 +52,7 @@ export function generateCustomScale(start: string, stop: string): string[] {
   return scale;
 }
 
-export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green') {
+export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string) {
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
   if (themeName === 'none') {
@@ -74,11 +74,15 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
 
   let colors: string[];
   if (themeName === 'custom') {
-    try {
-      const settings = await chrome.storage.local.get(['customStart', 'customStop']);
-      colors = generateCustomScale((settings.customStart as string) || '#ebedf0', (settings.customStop as string) || '#216e39');
-    } catch (e) {
-      return;
+    if (customStart && customStop) {
+      colors = generateCustomScale(customStart, customStop);
+    } else {
+      try {
+        const settings = await chrome.storage.local.get(['customStart', 'customStop']);
+        colors = generateCustomScale((settings.customStart as string) || '#ebedf0', (settings.customStop as string) || '#216e39');
+      } catch (e) {
+        return;
+      }
     }
   } else {
     colors = THEMES[themeName] || THEMES.green;
@@ -135,7 +139,8 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   if (statsPanel) {
     const legendSquares = statsPanel.querySelectorAll('.square-legend');
     legendSquares.forEach((sq: any, i) => {
-      const color = colors[i];
+      // Skip colors[0] (background) and use colors 1-11
+      const color = colors[i + 1];
       if (color) sq.style.setProperty('background-color', color, 'important');
     });
 
