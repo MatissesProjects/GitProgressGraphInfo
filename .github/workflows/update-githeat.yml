@@ -36,7 +36,7 @@ jobs:
       - name: Run Profile Updater
         working-directory: profile-updater
         env:
-          GITHUB_USERNAME: ${{ github.repository_owner }}
+          GITHUB_USERNAME: MatissesProjects # for now its just me! $_{{ github.repository_owner }}
         run: npm start
 
       - name: Commit and Push Image
