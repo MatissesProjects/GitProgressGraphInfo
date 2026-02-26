@@ -92,14 +92,41 @@ async function run() {
     // Give a small buffer for the UI to actually render after the flag is set
     await new Promise(r => setTimeout(r, 2000));
 
-    const statsPanel = await page.$('#git-heat-stats');
-    if (!statsPanel) {
-      throw new Error('Could not find #git-heat-stats panel even after completion signal');
+    // Find both the stats panel and the contribution graph container
+    const combinedSelector = '#git-heat-stats, .js-yearly-contributions';
+    
+    console.log('Wrapping stats and graph for combined screenshot...');
+    await page.evaluate(() => {
+      const stats = document.getElementById('git-heat-stats');
+      const graph = document.querySelector('.js-yearly-contributions') as HTMLElement;
+      
+      if (stats && graph) {
+        // Create a wrapper to contain both
+        const wrapper = document.createElement('div');
+        wrapper.id = 'githeat-screenshot-wrapper';
+        wrapper.className = 'p-3 color-bg-default border color-border-default rounded-2';
+        wrapper.style.display = 'inline-block';
+        wrapper.style.minWidth = 'max-content';
+        
+        // Move them into the wrapper
+        graph.parentNode?.insertBefore(wrapper, graph);
+        wrapper.appendChild(stats);
+        wrapper.appendChild(graph);
+        
+        // Clean up UI for screenshot
+        const profileLink = graph.querySelector('.float-right.f6');
+        if (profileLink) (profileLink as HTMLElement).style.display = 'none';
+      }
+    });
+
+    const wrapper = await page.$('#githeat-screenshot-wrapper');
+    if (!wrapper) {
+      throw new Error('Could not create screenshot wrapper');
     }
 
     console.log('Taking screenshot...');
     const screenshotPath = path.join(process.cwd(), '../githeat.png');
-    await statsPanel.screenshot({ path: screenshotPath });
+    await wrapper.screenshot({ path: screenshotPath });
 
     console.log(`Success! Image saved to: ${screenshotPath}`);
   } catch (error) {
