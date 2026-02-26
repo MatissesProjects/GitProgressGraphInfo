@@ -128,7 +128,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
   const todayCount = data.find(d => d.date === todayStr)?.count || 0;
 
   const biggestIslandDates = findIsland(pastAndPresentData, d => d.level >= 2, dateMap, todayStr, wrapAround);
-  const biggestSlumpIslandDates = findIsland(pastAndPresentData, d => d.level <= 1, dateMap, todayStr, wrapAround);
+  const biggestSlumpIslandDates = findIsland(pastAndPresentData, d => d.count <= 1, dateMap, todayStr, wrapAround);
 
   const weekdayHighActivityCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
   const weekdayTotalDays: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
