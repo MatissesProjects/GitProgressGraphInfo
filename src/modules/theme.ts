@@ -98,6 +98,8 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   
   const getGranularLevel = (count: number) => {
     if (count <= 0) return 0;
+    if (count === 1) return 1;
+
     if (count >= (percentiles[99] || 999)) return 11;
     if (count >= (percentiles[95] || 999)) return 10;
     if (count >= (percentiles[90] || 999)) return 9;
@@ -107,7 +109,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     if (count >= (percentiles[50] || 999)) return 5;
     if (count >= (percentiles[40] || 999)) return 4;
     if (count >= (percentiles[30] || 999)) return 3;
-    if (count >= (percentiles[20] || 999)) return 2;
+    if (count >= (Math.max(2, percentiles[20] || 999))) return 2;
     return 1;
   };
 
