@@ -21,8 +21,9 @@ async function run() {
   console.log('Building standalone script...');
   try {
     execSync('npm run build:standalone', { cwd: path.join(process.cwd()) });
-  } catch (buildError: any) {
-    console.error('Build failed!', buildError.stdout?.toString() || buildError.message);
+  } catch (buildError) {
+    const error = buildError as { stdout?: Buffer; message: string };
+    console.error('Build failed!', error.stdout?.toString() || error.message);
     process.exit(1);
   }
 
@@ -59,7 +60,7 @@ async function run() {
 
     // Pipe browser console to Node console
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-    page.on('pageerror', (err: any) => console.error('PAGE ERROR:', err.message));
+    page.on('pageerror', (err: Error) => console.error('PAGE ERROR:', err.message));
 
     console.log(`Navigating to https://github.com/${username}...`);
     
@@ -92,8 +93,8 @@ async function run() {
 
     console.log('Isolating stats and graph for clean capture...');
     await page.evaluate(() => {
-      const stats = document.getElementById('git-heat-stats');
-      const graphContainer = document.querySelector('.js-yearly-contributions') as any;
+      const stats = document.getElementById('git-heat-stats') as HTMLElement | null;
+      const graphContainer = document.querySelector('.js-yearly-contributions') as HTMLElement | null;
       
       if (stats && graphContainer) {
         // 1. Create a truly isolated wrapper at the top of the body
@@ -132,16 +133,16 @@ async function run() {
         
         killList.forEach(selector => {
           document.querySelectorAll(selector).forEach(el => {
-            (el as any).style.setProperty('display', 'none', 'important');
+            (el as HTMLElement).style.setProperty('display', 'none', 'important');
           });
         });
 
         // 3. Clean up the moved elements
-        (stats as any).style.margin = '0';
-        (stats as any).style.width = '100%';
-        (graphContainer as any).style.margin = '0';
-        (graphContainer as any).style.width = '100%';
-        (graphContainer as any).style.border = 'none';
+        stats.style.margin = '0';
+        stats.style.width = '100%';
+        graphContainer.style.margin = '0';
+        graphContainer.style.width = '100%';
+        graphContainer.style.border = 'none';
 
         // 4. Move them into our isolated wrapper
         wrapper.appendChild(stats);
