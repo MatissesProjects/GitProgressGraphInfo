@@ -25,29 +25,53 @@ export const THEMES: Record<string, string[]> = {
 
 export function interpolateColor(color1: string, color2: string, factor: number) {
   const hex = (x: number) => {
-    const s = x.toString(16);
+    const s = Math.max(0, Math.min(255, Math.round(x))).toString(16);
     return s.length === 1 ? '0' + s : s;
   };
 
-  const r1 = parseInt(color1.substring(1, 3), 16);
-  const g1 = parseInt(color1.substring(3, 5), 16);
-  const b1 = parseInt(color1.substring(5, 7), 16);
+  const parseToRgb = (c: string) => {
+    c = c.trim();
+    if (c.startsWith('#')) {
+      const h = c.replace('#', '');
+      if (h.length === 3) {
+        return {
+          r: parseInt(h[0] + h[0], 16),
+          g: parseInt(h[1] + h[1], 16),
+          b: parseInt(h[2] + h[2], 16)
+        };
+      }
+      return {
+        r: parseInt(h.substring(0, 2), 16),
+        g: parseInt(h.substring(2, 4), 16),
+        b: parseInt(h.substring(4, 6), 16)
+      };
+    }
+    if (c.startsWith('rgb')) {
+      const parts = c.match(/\d+/g);
+      if (parts && parts.length >= 3) {
+        return { r: parseInt(parts[0]), g: parseInt(parts[1]), b: parseInt(parts[2]) };
+      }
+    }
+    return { r: 235, g: 237, b: 240 };
+  };
 
-  const r2 = parseInt(color2.substring(1, 3), 16);
-  const g2 = parseInt(color2.substring(3, 5), 16);
-  const b2 = parseInt(color2.substring(5, 7), 16);
+  const c1 = parseToRgb(color1);
+  const c2 = parseToRgb(color2);
 
-  const r = Math.round(r1 + factor * (r2 - r1));
-  const g = Math.round(g1 + factor * (g2 - g1));
-  const b = Math.round(b1 + factor * (b2 - b1));
+  const r = c1.r + factor * (c2.r - c1.r);
+  const g = c1.g + factor * (c2.g - c1.g);
+  const b = c1.b + factor * (c2.b - c1.b);
 
   return `#${hex(r)}${hex(g)}${hex(b)}`;
 }
 
 export function generateCustomScale(start: string, stop: string): string[] {
-  const scale = [start];
-  for (let i = 1; i <= 11; i++) {
-    scale.push(interpolateColor(start, stop, i / 11));
+  // Index 0: Placeholder for background
+  const scale = ['#161b22']; 
+  // Level 1 (start) to Level 11 (stop)
+  for (let i = 0; i <= 10; i++) {
+    const factor = i / 10;
+    scale.push(interpolateColor(start, stop, factor));
   }
   return scale;
 }
@@ -59,31 +83,15 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     days.forEach((day: any) => {
       day.style.removeProperty('background-color');
       day.style.removeProperty('fill');
-      day.style.outline = '';
-      day.style.border = '';
     });
-    const footer = document.querySelector('.ContributionCalendar-footer');
-    if (footer) {
-      footer.querySelectorAll('.ContributionCalendar-day').forEach((sq: any) => {
-        sq.style.removeProperty('background-color');
-        sq.style.removeProperty('fill');
-      });
-    }
     return;
   }
 
   let colors: string[];
   if (themeName === 'custom') {
-    if (customStart && customStop) {
-      colors = generateCustomScale(customStart, customStop);
-    } else {
-      try {
-        const settings = await chrome.storage.local.get(['customStart', 'customStop']);
-        colors = generateCustomScale((settings.customStart as string) || '#ebedf0', (settings.customStop as string) || '#216e39');
-      } catch (e) {
-        return;
-      }
-    }
+    const start = customStart || '#4a207e';
+    const stop = customStop || '#04ff00';
+    colors = generateCustomScale(start, stop);
   } else {
     colors = THEMES[themeName] || THEMES.green;
   }
@@ -111,22 +119,14 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
       const color = colors[level];
       day.style.setProperty('background-color', color, 'important');
       day.style.setProperty('fill', color, 'important');
-      
-      if (day.classList.contains('gh-highlight') || day.classList.contains('gh-highlight-special') || day.classList.contains('gh-highlight-sad')) {
-        day.style.outline = '';
-        day.style.border = '';
-      } else {
-        day.style.outline = 'none';
-        day.style.border = 'none';
-      }
     }
   });
 
   const footer = document.querySelector('.ContributionCalendar-footer');
   if (footer) {
     const legendSquares = footer.querySelectorAll('.ContributionCalendar-day');
+    const levelMap = [0, 3, 6, 9, 11];
     legendSquares.forEach((sq: any, i) => {
-      const levelMap = [0, 3, 6, 9, 11];
       const color = colors[levelMap[i]];
       if (color) {
         sq.style.setProperty('background-color', color, 'important');
@@ -137,13 +137,14 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
 
   const statsPanel = document.getElementById('git-heat-stats');
   if (statsPanel) {
+    // Coloring the Deep Scale legend
     const legendSquares = statsPanel.querySelectorAll('.square-legend');
     legendSquares.forEach((sq: any, i) => {
-      // Skip colors[0] (background) and use colors 1-11
-      const color = colors[i + 1];
+      const color = colors[i + 1]; // Level 1 to 11
       if (color) sq.style.setProperty('background-color', color, 'important');
     });
 
+    // Coloring the threshold badges
     const badges = statsPanel.querySelectorAll('.badge');
     const badgeLevels = [3, 6, 9, 11];
     badges.forEach((badge: any, i) => {
