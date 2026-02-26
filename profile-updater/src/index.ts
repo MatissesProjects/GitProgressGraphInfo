@@ -49,7 +49,7 @@ async function run() {
 
     console.log('Waiting for GitHeat to be ready...');
     // standalone.ts adds 'githeat-ready' class to body when done
-    await page.waitForSelector('body.githeat-ready', { timeout: 30000 });
+    await page.waitForSelector('body.githeat-ready', { timeout: 5000 });
 
     const statsPanel = await page.$('#git-heat-stats');
     if (!statsPanel) {
