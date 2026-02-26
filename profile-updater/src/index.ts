@@ -39,7 +39,7 @@ async function run() {
 
   try {
     const page = await browser.newPage();
-    // Use high deviceScaleFactor for crisp text like the example image
+    // Use high deviceScaleFactor for crisp text
     await page.setViewport({ width: 1200, height: 2000, deviceScaleFactor: 2 });
     
     // Set Timezone if provided, otherwise default to UTC
@@ -63,7 +63,6 @@ async function run() {
 
     console.log(`Navigating to https://github.com/${username}...`);
     
-    // Construct YTD URL to ensure full graph data is loaded
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -91,36 +90,17 @@ async function run() {
     // Give a small buffer for the UI to actually render after the flag is set
     await new Promise(r => setTimeout(r, 2000));
 
-    console.log('Preparing combined screenshot layout...');
+    console.log('Isolating stats and graph for clean capture...');
     await page.evaluate(() => {
       const stats = document.getElementById('git-heat-stats');
       const graphContainer = document.querySelector('.js-yearly-contributions') as HTMLElement;
       
       if (stats && graphContainer) {
-        // 1. Hide ALL noise globally on the page to prevent overlapping elements
-        const noiseSelectors = [
-          '.js-profile-timeline-year-list',
-          '.profile-timeline-year-list',
-          '#user-activity-overview',
-          '.activity-listing',
-          '.js-yearly-contributions .float-right',
-          '.contrib-footer-link',
-          '.f6.color-fg-muted.pt-1.mb-n1'
-        ];
-        
-        noiseSelectors.forEach(selector => {
-          document.querySelectorAll(selector).forEach(el => {
-            (el as HTMLElement).style.setProperty('display', 'none', 'important');
-            (el as HTMLElement).style.setProperty('visibility', 'hidden', 'important');
-            (el as HTMLElement).style.setProperty('opacity', '0', 'important');
-          });
-        });
-
-        // 2. Create a clean wrapper for the combined view
+        // 1. Create a truly isolated wrapper at the top of the body
         const wrapper = document.createElement('div');
         wrapper.id = 'githeat-screenshot-wrapper';
         
-        // Match the aesthetic of ExampleGraphAndData.png
+        // Style wrapper with fixed positioning and high z-index to ignore page layout
         Object.assign(wrapper.style, {
           backgroundColor: '#0d1117',
           padding: '24px',
@@ -131,40 +111,48 @@ async function run() {
           borderRadius: '12px',
           border: '1px solid #30363d',
           boxSizing: 'border-box',
-          position: 'relative',
-          overflow: 'hidden' // Ensure nothing leaks out
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          zIndex: '2147483647',
+          boxShadow: 'none'
         });
 
-        // 3. Ensure the stats panel is styled correctly
-        Object.assign(stats.style, {
-          margin: '0',
-          width: '100%',
-          border: 'none',
-          padding: '0'
-        });
+        // 2. Aggressively hide the year list and other UI elements
+        const killList = [
+          '.js-profile-timeline-year-list',
+          '.profile-timeline-year-list',
+          '#user-activity-overview',
+          '.activity-listing',
+          '.js-yearly-contributions .float-right',
+          'ul.filter-list', // Common for year lists
+          '.contrib-footer-link',
+          'details' // Hide contribution settings dropdown
+        ];
         
-        // 4. Clean up the graph container
-        Object.assign(graphContainer.style, {
-          margin: '0',
-          width: '100%',
-          border: 'none',
-          padding: '0'
+        killList.forEach(selector => {
+          document.querySelectorAll(selector).forEach(el => {
+            (el as HTMLElement).style.setProperty('display', 'none', 'important');
+          });
         });
 
-        // Move elements into the wrapper
-        graphContainer.parentNode?.insertBefore(wrapper, graphContainer);
+        // 3. Clean up the moved elements
+        stats.style.margin = '0';
+        stats.style.width = '100%';
+        graphContainer.style.margin = '0';
+        graphContainer.style.width = '100%';
+        graphContainer.style.border = 'none';
+
+        // 4. Move them into our isolated wrapper
         wrapper.appendChild(stats);
         wrapper.appendChild(graphContainer);
-        
-        // 5. Hide the specific "Contribution settings" dropdown link inside the graph area
-        const settingsLink = graphContainer.querySelector('details-menu')?.parentElement;
-        if (settingsLink) settingsLink.style.display = 'none';
+        document.body.appendChild(wrapper);
       }
     });
 
     const wrapper = await page.$('#githeat-screenshot-wrapper');
     if (!wrapper) {
-      throw new Error('Could not find screenshot wrapper');
+      throw new Error('Could not find isolated screenshot wrapper');
     }
 
     console.log('Taking screenshot...');
