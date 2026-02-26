@@ -60,7 +60,7 @@ You can automatically update a GitHeat analytics image for your GitHub profile R
 To display your GitHeat analytics in your GitHub profile README, add the following Markdown:
 
 ```markdown
-![GitHeat Analytics](https://raw.githubusercontent.com/YOUR_USERNAME/GitProgressGraphInfo/main/githeat.png)
+[![GitHeat Analytics](https://raw.githubusercontent.com/YOUR_USERNAME/GitProgressGraphInfo/main/githeat.png)](https://github.com/YOUR_USERNAME/GitProgressGraphInfo)
 ```
 
 Replace `YOUR_USERNAME` with your GitHub username.
