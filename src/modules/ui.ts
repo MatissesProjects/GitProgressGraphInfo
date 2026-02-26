@@ -124,7 +124,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const p = percentiles;
   const p20 = Math.max(2, p[20] || 2);
   const legendRanges = [
-    "0 commits",
     p20 === 2 ? "1 commit" : `1 to ${p20 - 1} commits`,
     `${p20} to ${p[30] > p20 ? p[30]-1 : p20} commits`,
     `${p[30]} to ${p[40] > p[30] ? p[40]-1 : p[30]} commits`,
@@ -147,7 +146,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
       <div style="flex: 1;"></div>
 
-      <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
+      <div class="d-flex flex-items-center" style="gap: 126; flex-shrink: 0;">
         ${advanced.todayCombo >= 2 ? `
           <div class="gh-combo-badge" title="${advanced.todayComboMath}">
             <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
@@ -185,7 +184,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center flex-wrap">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
         <div id="granular-legend" class="d-flex gap-1 mr-3">
-          ${legendRanges.slice(1).map((range, i) => `<div class="square-legend level-${i+1}" title="${range}"></div>`).join('')}
+          ${legendRanges.map((range, i) => `<div class="square-legend level-${i+1}" title="${range}"></div>`).join('')}
         </div>
         <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
           <span class="color-fg-muted text-small mr-1">Thresholds: </span>

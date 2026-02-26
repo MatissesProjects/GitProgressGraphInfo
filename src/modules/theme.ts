@@ -98,18 +98,19 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   
   const getGranularLevel = (count: number) => {
     if (count <= 0) return 0;
-    if (count === 1) return 1;
+    const c = Number(count);
+    if (c === 1) return 1;
 
-    if (count >= (percentiles[99] || 999)) return 11;
-    if (count >= (percentiles[95] || 999)) return 10;
-    if (count >= (percentiles[90] || 999)) return 9;
-    if (count >= (percentiles[80] || 999)) return 8;
-    if (count >= (percentiles[70] || 999)) return 7;
-    if (count >= (percentiles[60] || 999)) return 6;
-    if (count >= (percentiles[50] || 999)) return 5;
-    if (count >= (percentiles[40] || 999)) return 4;
-    if (count >= (percentiles[30] || 999)) return 3;
-    if (count >= (Math.max(2, percentiles[20] || 999))) return 2;
+    if (c >= (percentiles[99] || 999)) return 11;
+    if (c >= (percentiles[95] || 999)) return 10;
+    if (c >= (percentiles[90] || 999)) return 9;
+    if (c >= (percentiles[80] || 999)) return 8;
+    if (c >= (percentiles[70] || 999)) return 7;
+    if (c >= (percentiles[60] || 999)) return 6;
+    if (c >= (percentiles[50] || 999)) return 5;
+    if (c >= (percentiles[40] || 999)) return 4;
+    if (c >= (percentiles[30] || 999)) return 3;
+    if (c >= (Math.max(2, percentiles[20] || 999))) return 2;
     return 1;
   };
 
@@ -139,11 +140,31 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
 
   const statsPanel = document.getElementById('git-heat-stats');
   if (statsPanel) {
+    const p = percentiles;
+    const p20 = Math.max(2, p[20] || 2);
+    const legendRanges = [
+      p20 === 2 ? "1 commit" : `1 to ${p20 - 1} commits`,
+      `${p20} to ${p[30] > p20 ? p[30]-1 : p20} commits`,
+      `${p[30]} to ${p[40] > p[30] ? p[40]-1 : p[30]} commits`,
+      `${p[40]} to ${p[50] > p[40] ? p[50]-1 : p[40]} commits`,
+      `${p[50]} to ${p[60] > p[50] ? p[60]-1 : p[50]} commits`,
+      `${p[60]} to ${p[70] > p[60] ? p[70]-1 : p[60]} commits`,
+      `${p[70]} to ${p[80] > p[70] ? p[80]-1 : p[70]} commits`,
+      `${p[80]} to ${p[90] > p[80] ? p[90]-1 : p[80]} commits`,
+      `${p[90]} to ${p[95] > p[90] ? p[95]-1 : p[90]} commits`,
+      `${p[95]} to ${p[99] > p[95] ? p[99]-1 : p[95]} commits`,
+      `${p[99]}+ commits`
+    ];
+
     // Coloring the Deep Scale legend
     const legendSquares = statsPanel.querySelectorAll('.square-legend');
     legendSquares.forEach((sq: any, i) => {
       const color = colors[i + 1]; // Level 1 to 11
       if (color) sq.style.setProperty('background-color', color, 'important');
+      
+      // Update tooltip to ensure it's always correct
+      const range = legendRanges[i];
+      if (range) sq.setAttribute('title', range);
     });
 
     // Coloring the threshold badges
