@@ -122,10 +122,11 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   };
 
   const p = percentiles;
+  const p20 = Math.max(2, p[20] || 2);
   const legendRanges = [
     "0 commits",
-    `1 to ${Math.max(1, (p[20] || 2) - 1)} commits`,
-    `${Math.max(2, p[20] || 2)} to ${p[30] > p[20] ? p[30]-1 : p[20]} commits`,
+    p20 === 2 ? "1 commit" : `1 to ${p20 - 1} commits`,
+    `${p20} to ${p[30] > p20 ? p[30]-1 : p20} commits`,
     `${p[30]} to ${p[40] > p[30] ? p[40]-1 : p[30]} commits`,
     `${p[40]} to ${p[50] > p[40] ? p[50]-1 : p[40]} commits`,
     `${p[50]} to ${p[60] > p[50] ? p[60]-1 : p[50]} commits`,
