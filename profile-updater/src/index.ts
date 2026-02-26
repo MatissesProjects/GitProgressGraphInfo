@@ -97,16 +97,23 @@ async function run() {
       const graphContainer = document.querySelector('.js-yearly-contributions') as HTMLElement;
       
       if (stats && graphContainer) {
-        // 1. Hide noise
-        const noise = [
+        // 1. Hide ALL noise globally on the page to prevent overlapping elements
+        const noiseSelectors = [
           '.js-profile-timeline-year-list',
-          '.js-yearly-contributions .float-right',
+          '.profile-timeline-year-list',
+          '#user-activity-overview',
           '.activity-listing',
-          '#user-activity-overview'
+          '.js-yearly-contributions .float-right',
+          '.contrib-footer-link',
+          '.f6.color-fg-muted.pt-1.mb-n1'
         ];
-        noise.forEach(selector => {
-          const el = document.querySelector(selector);
-          if (el) (el as HTMLElement).style.setProperty('display', 'none', 'important');
+        
+        noiseSelectors.forEach(selector => {
+          document.querySelectorAll(selector).forEach(el => {
+            (el as HTMLElement).style.setProperty('display', 'none', 'important');
+            (el as HTMLElement).style.setProperty('visibility', 'hidden', 'important');
+            (el as HTMLElement).style.setProperty('opacity', '0', 'important');
+          });
         });
 
         // 2. Create a clean wrapper for the combined view
@@ -114,20 +121,21 @@ async function run() {
         wrapper.id = 'githeat-screenshot-wrapper';
         
         // Match the aesthetic of ExampleGraphAndData.png
-        // Dark background, rounded corners, clean padding
         Object.assign(wrapper.style, {
           backgroundColor: '#0d1117',
           padding: '24px',
           display: 'flex',
           flexDirection: 'column',
           gap: '20px',
-          width: '820px', // Matches GitHub's typical column width
+          width: '820px', 
           borderRadius: '12px',
           border: '1px solid #30363d',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          position: 'relative',
+          overflow: 'hidden' // Ensure nothing leaks out
         });
 
-        // 3. Ensure the stats panel doesn't have its own margin interfering
+        // 3. Ensure the stats panel is styled correctly
         Object.assign(stats.style, {
           margin: '0',
           width: '100%',
@@ -139,7 +147,8 @@ async function run() {
         Object.assign(graphContainer.style, {
           margin: '0',
           width: '100%',
-          border: 'none'
+          border: 'none',
+          padding: '0'
         });
 
         // Move elements into the wrapper
@@ -147,11 +156,9 @@ async function run() {
         wrapper.appendChild(stats);
         wrapper.appendChild(graphContainer);
         
-        // Ensure the graph itself inside the container is visible and styled
-        const graphSvg = graphContainer.querySelector('svg');
-        if (graphSvg) {
-            graphSvg.style.maxWidth = '100%';
-        }
+        // 5. Hide the specific "Contribution settings" dropdown link inside the graph area
+        const settingsLink = graphContainer.querySelector('details-menu')?.parentElement;
+        if (settingsLink) settingsLink.style.display = 'none';
       }
     });
 
@@ -162,7 +169,6 @@ async function run() {
 
     console.log('Taking screenshot...');
     const screenshotPath = path.join(process.cwd(), '../githeat.png');
-    // Set omitBackground to true to let the wrapper's background show
     await wrapper.screenshot({ path: screenshotPath });
 
     console.log(`Success! Image saved to: ${screenshotPath}`);
