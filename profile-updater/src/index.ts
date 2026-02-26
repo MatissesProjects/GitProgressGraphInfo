@@ -50,7 +50,7 @@ async function run() {
 
     console.log(`Navigating to https://github.com/${username}...`);
     // 'domcontentloaded' or 'networkidle2'
-    await page.goto(`https://github.com/${username}`, { waitUntil: 'networkidle2', timeout: 60000 });
+    await page.goto(`https://github.com/${username}`, { waitUntil: 'networkidle2', timeout: 6000 });
 
     console.log('Injecting styles and script...');
     await page.addStyleTag({ content: styles });
@@ -62,7 +62,7 @@ async function run() {
 
     console.log('Waiting for GitHeat to be ready...');
     // standalone.ts adds 'githeat-ready' class to body when done
-    await page.waitForSelector('body.githeat-ready', { timeout: 60000 });
+    await page.waitForSelector('body.githeat-ready', { timeout: 6000 });
     
     // Give a small buffer for the UI to actually render after the flag is set
     await new Promise(r => setTimeout(r, 2000));
