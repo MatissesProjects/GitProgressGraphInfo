@@ -11,11 +11,6 @@ on:
       timezone:
         description: 'Timezone for analytics (e.g. America/Los_Angeles)'
         required: false
-        default: 'America/Los_Angeles' # Allow manual trigger
-    inputs:
-      timezone:
-        description: 'Timezone for analytics (e.g. America/Los_Angeles)'
-        required: false
         default: 'America/Los_Angeles'
 
 jobs:
