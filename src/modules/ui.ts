@@ -184,7 +184,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center flex-wrap">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
         <div id="granular-legend" class="d-flex gap-1 mr-3">
-          ${legendRanges.map((range, i) => `<div class="square-legend ${i > 0 ? `level-${i}` : ''}" title="${range}" style="${i === 0 ? 'background-color: var(--color-calendar-graph-day-bg)' : ''}"></div>`).join('')}
+          ${legendRanges.slice(1).map((range, i) => `<div class="square-legend level-${i+1}" title="${range}"></div>`).join('')}
         </div>
         <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
           <span class="color-fg-muted text-small mr-1">Thresholds: </span>
