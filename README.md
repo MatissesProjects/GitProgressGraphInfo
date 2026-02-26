@@ -2,7 +2,7 @@
 
 A Chrome extension that turns your GitHub contribution graph into a deep-dive analytical dashboard and gamified experience.
 
-![Graph And Data](src/ExampleGraphAndData.png)
+![Graph And Data](githeat.png)
 
 ## Core Features
 
