@@ -5,7 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "tsx src/index.ts",
-    "build:standalone": "esbuild src/standalone.ts --bundle --outfile=dist/standalone.js --platform=browser",
+    "build:standalone": "esbuild src/standalone.ts --bundle --outfile=dist/standalone.js --platform=browser --format=iife",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {

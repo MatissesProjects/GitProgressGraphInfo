@@ -54,11 +54,10 @@ async function run() {
 
     console.log('Injecting styles and script...');
     await page.addStyleTag({ content: styles });
-    await page.evaluate((script) => {
-      const el = document.createElement('script');
-      el.textContent = script;
-      document.body.appendChild(el);
-    }, standaloneScript);
+    
+    // Bypass CSP by executing the script content directly via Puppeteer's evaluate
+    // instead of creating an inline script element
+    await page.evaluate(standaloneScript);
 
     console.log('Waiting for GitHeat to be ready...');
     // standalone.ts adds 'githeat-ready' class to body when done
