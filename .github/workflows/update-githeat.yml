@@ -1,9 +1,17 @@
 name: Update GitHeat Profile Image
 
 on:
+  push:
+    paths:
+      - '.github/workflows/**'
   schedule:
-    - cron: '0 0 * * *' # Daily at midnight UTC
-  workflow_dispatch: # Allow manual trigger
+    - cron: '15 0 * * *' # 12:15 AM UTC
+  workflow_dispatch:
+    inputs:
+      timezone:
+        description: 'Timezone for analytics (e.g. America/Los_Angeles)'
+        required: false
+        default: 'America/Los_Angeles' # Allow manual trigger
     inputs:
       timezone:
         description: 'Timezone for analytics (e.g. America/Los_Angeles)'
