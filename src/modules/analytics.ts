@@ -281,14 +281,35 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     const sunday = new Date(date);
     sunday.setDate(date.getDate() - dayOfWeek);
     const weekKey = sunday.toISOString().split('T')[0];
-    if (!weekData[weekKey]) weekData[weekKey] = { count: 0, activeDays: 0, maxStreak: 0, tempStreak: 0, dates: [] };
+    if (!weekData[weekKey]) weekData[weekKey] = { count: 0, activeDays: 0, maxStreak: 0, tempStreak: 0, dates: [], dayCounts: {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0} };
     const w = weekData[weekKey];
     w.dates.push(day.date);
+    w.dayCounts[dayOfWeek] += day.count;
     if (day.count > 0) {
       w.count += day.count; w.activeDays++; w.tempStreak++;
       if (w.tempStreak > w.maxStreak) w.maxStreak = w.tempStreak;
     } else w.tempStreak = 0;
   });
+
+  const weeklyWinners: number[] = [];
+  Object.values(weekData).forEach((w: any) => {
+    let max = -1, winner = -1;
+    for (let i = 0; i < 7; i++) {
+      if (w.dayCounts[i] > max) { max = w.dayCounts[i]; winner = i; }
+    }
+    if (max > 0) weeklyWinners.push(winner);
+  });
+
+  const winnerCounts: Record<number, number> = {};
+  weeklyWinners.forEach(w => winnerCounts[w] = (winnerCounts[w] || 0) + 1);
+  
+  let dominantWeekdayIndex = -1, maxWins = 0;
+  Object.entries(winnerCounts).forEach(([idx, wins]) => {
+    if (wins > maxWins) { maxWins = wins; dominantWeekdayIndex = parseInt(idx); }
+  });
+
+  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dominantWeekday = dominantWeekdayIndex >= 0 ? daysOfWeek[dominantWeekdayIndex] : "N/A";
 
   let bestWeekName = "N/A", bestWeekScore = -1, bestWeekDates: string[] = [], bestWeekStats = { score: 0, count: 0, consistency: "0", streak: 0 };
   Object.entries(weekData).forEach(([weekStart, data]) => {
@@ -304,5 +325,5 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     }
   });
 
-  return { bestMonthName, bestMonthDates, bestMonthStats, bestWeekName, bestWeekDates, bestWeekStats };
+  return { bestMonthName, bestMonthDates, bestMonthStats, bestWeekName, bestWeekDates, bestWeekStats, dominantWeekday, dominantWeekdayWins: maxWins };
 }

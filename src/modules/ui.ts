@@ -5,7 +5,7 @@ export async function applyVisibility() {
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
     'showTotal', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
     'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel'
+    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday'
   ]);
 
   const grid = document.getElementById('gh-grid-stats');
@@ -31,6 +31,7 @@ export async function applyVisibility() {
     'gh-streak': settings.showStreak,
     'gh-best-month': settings.showBestMonth,
     'gh-best-week': settings.showBestWeek,
+    'gh-dominant-weekday': settings.showDominantWeekday,
     'gh-island': settings.showIsland,
     'gh-slump-island': settings.showSlumpIsland,
     'gh-velocity': settings.showVelocity,
@@ -87,7 +88,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
   const defaultOrder = [
-    'gh-streak', 'gh-best-month', 'gh-best-week', 'gh-most-active-day', 'gh-max-commits',
+    'gh-streak', 'gh-best-month', 'gh-best-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
     'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
     'gh-island', 'gh-slump-island', 'gh-slump',
     'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
@@ -100,6 +101,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${advanced.currentStreakDates.join(',')}" data-longest-streak="${advanced.longestStreakDates.join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
     'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${advanced.bestMonthDates.join(',')}" title="${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak"><span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span><strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong></div>`,
     'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${advanced.bestWeekDates.join(',')}" title="${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak"><span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span><strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong></div>`,
+    'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday"><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
     'gh-velocity': `<div class="stat-card" id="gh-velocity" title="${advanced.statsForTooltips.velocity.count} total commits / ${advanced.statsForTooltips.velocity.active} active days"><span class="color-fg-muted d-block text-small">Average Velocity</span><strong class="f3-light">${advanced.velocity} commits/day</strong></div>`,

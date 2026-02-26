@@ -30,6 +30,7 @@ async function runStandalone() {
             showAchievements: true,
             showFooter: true,
             showLegendNumbers: true,
+            showDominantWeekday: true,
             
             // Main Grid Items (Checked)
             showTotal: true,
