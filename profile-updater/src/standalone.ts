@@ -14,7 +14,7 @@ import { applyDeepRecoloring } from '../../src/modules/theme';
 import { injectStats, extendLegend, applyVisibility } from '../../src/modules/ui';
 
 async function runStandalone() {
-  console.log("GitHeat Standalone: Initializing...");
+  console.log("GitHeat Standalone: Initializing on " + window.location.href + "...");
   
   // Mock chrome API
   (window as any).chrome = {
@@ -43,7 +43,7 @@ async function runStandalone() {
     const socials = parseSocials();
     
     if (data) {
-      console.log("Graph found, calculating stats...");
+      console.log("Graph found with " + data.length + " days of data, calculating stats...");
       const t = calculateThresholds(data);
       const p = calculatePercentiles(data);
       const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, true);
@@ -54,13 +54,21 @@ async function runStandalone() {
       await applyVisibility();
       
       console.log("GitHeat Standalone: Analysis complete.");
-      // Signal to Puppeteer that we're done
-      document.body.classList.add('githeat-ready');
     } else {
-      console.error("GitHeat Standalone: No graph found.");
+      console.error("GitHeat Standalone: No graph found. Looking for .ContributionCalendar-day elements...");
+      const days = document.querySelectorAll('.ContributionCalendar-day');
+      console.log("Found " + days.length + " calendar day elements.");
+      
+      if (days.length === 0) {
+        console.log("DOM state: " + (document.querySelector('.js-yearly-contributions') ? "Container found" : "Container NOT found"));
+      }
     }
-  } catch (e) {
-    console.error("GitHeat Standalone: Error during analysis", e);
+    
+    // Always signal completion so we don't just time out
+    document.body.classList.add('githeat-ready');
+  } catch (e: any) {
+    console.error("GitHeat Standalone: Error during analysis: " + e.message);
+    document.body.classList.add('githeat-ready');
   }
 }
 

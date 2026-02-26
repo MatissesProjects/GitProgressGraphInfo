@@ -19,7 +19,12 @@ async function run() {
   }
 
   console.log('Building standalone script...');
-  execSync('npm run build:standalone', { cwd: path.join(process.cwd()) });
+  try {
+    execSync('npm run build:standalone', { cwd: path.join(process.cwd()) });
+  } catch (buildError: any) {
+    console.error('Build failed!', buildError.stdout?.toString() || buildError.message);
+    process.exit(1);
+  }
 
   const standalonePath = path.join(outputDir, 'standalone.js');
   const stylesPath = path.join(process.cwd(), '../src/styles.css');
@@ -28,16 +33,24 @@ async function run() {
 
   console.log(`Launching Puppeteer for user: ${username}...`);
   const browser = await puppeteer.launch({
-    headless: 'new',
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 2000 });
+    
+    // Set a realistic User-Agent
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
+
+    // Pipe browser console to Node console
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    page.on('pageerror', err => console.error('PAGE ERROR:', err.message));
 
     console.log(`Navigating to https://github.com/${username}...`);
-    await page.goto(`https://github.com/${username}`, { waitUntil: 'networkidle2' });
+    // 'domcontentloaded' or 'networkidle2'
+    await page.goto(`https://github.com/${username}`, { waitUntil: 'networkidle2', timeout: 60000 });
 
     console.log('Injecting styles and script...');
     await page.addStyleTag({ content: styles });
@@ -50,10 +63,13 @@ async function run() {
     console.log('Waiting for GitHeat to be ready...');
     // standalone.ts adds 'githeat-ready' class to body when done
     await page.waitForSelector('body.githeat-ready', { timeout: 60000 });
+    
+    // Give a small buffer for the UI to actually render after the flag is set
+    await new Promise(r => setTimeout(r, 2000));
 
     const statsPanel = await page.$('#git-heat-stats');
     if (!statsPanel) {
-      throw new Error('Could not find #git-heat-stats panel');
+      throw new Error('Could not find #git-heat-stats panel even after completion signal');
     }
 
     console.log('Taking screenshot...');
