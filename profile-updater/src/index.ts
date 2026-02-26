@@ -41,6 +41,15 @@ async function run() {
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 2000 });
     
+    // Set Timezone if provided, otherwise default to UTC
+    const timezone = process.env.TIMEZONE || 'UTC';
+    try {
+      await page.emulateTimezone(timezone);
+      console.log(`Emulating timezone: ${timezone}`);
+    } catch (e) {
+      console.error(`Failed to set timezone ${timezone}, falling back to UTC`);
+    }
+    
     // Force Dark Mode
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
     

@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '0 0 * * *' # Daily at midnight UTC
   workflow_dispatch: # Allow manual trigger
+    inputs:
+      timezone:
+        description: 'Timezone for analytics (e.g. America/Los_Angeles)'
+        required: false
+        default: 'America/Los_Angeles'
 
 jobs:
   update-profile:
@@ -37,6 +42,7 @@ jobs:
         working-directory: profile-updater
         env:
           GITHUB_USERNAME: ${{ github.repository_owner }}
+          TIMEZONE: ${{ github.event.inputs.timezone || 'America/Los_Angeles' }}
         run: npm start
 
       - name: Check for generated image
