@@ -52,8 +52,16 @@ async function run() {
     page.on('pageerror', err => console.error('PAGE ERROR:', err.message));
 
     console.log(`Navigating to https://github.com/${username}...`);
-    // 'domcontentloaded' or 'networkidle2'
-    await page.goto(`https://github.com/${username}`, { waitUntil: 'networkidle2', timeout: 60000 });
+    
+    // Construct YTD URL to ensure full graph data is loaded
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const ytdUrl = `https://github.com/${username}?tab=overview&from=${year}-${month}-01&to=${year}-${month}-${day}`;
+    
+    console.log(`Using YTD URL: ${ytdUrl}`);
+    await page.goto(ytdUrl, { waitUntil: 'networkidle2', timeout: 60000 });
 
     // Force GitHub to render in Dark Mode
     await page.evaluate(() => {
