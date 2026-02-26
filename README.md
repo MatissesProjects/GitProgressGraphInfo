@@ -46,6 +46,33 @@ A Chrome extension that turns your GitHub contribution graph into a deep-dive an
 5. Click **Load unpacked**.
 6. Select the `dist` folder in this project directory.
 
+## GitHub Profile Updater (GitHub Action)
+
+You can automatically update a GitHeat analytics image for your GitHub profile README using a GitHub Action.
+
+### Setup
+1. Fork or clone this repository to your own GitHub account.
+2. The GitHub Action is located in `.github/workflows/update-githeat.yml`.
+3. It runs automatically every day at midnight UTC, but you can also trigger it manually from the **Actions** tab.
+4. The action will generate a `githeat.png` file in the root of your repository.
+
+### Usage in Profile README
+To display your GitHeat analytics in your GitHub profile README, add the following Markdown:
+
+```markdown
+![GitHeat Analytics](https://raw.githubusercontent.com/YOUR_USERNAME/GitProgressGraphInfo/main/githeat.png)
+```
+
+Replace `YOUR_USERNAME` with your GitHub username.
+
+### Local Development
+To run the profile updater locally:
+1. Navigate to the `profile-updater` directory: `cd profile-updater`
+2. Install dependencies: `npm install`
+3. Create a `.env` file based on `.env.example` and set your `GITHUB_USERNAME`.
+4. Run the updater: `npm start`
+5. The resulting `githeat.png` will be saved in the root directory.
+
 ## Development
 - **Tech Stack:** TypeScript, CSS, Chrome Extension API.
 - **Source:** All logic is in `src/content.ts` (scraping/injection) and `src/popup.ts` (UI/settings).

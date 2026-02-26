@@ -1,0 +1,21 @@
+{
+  "name": "githeat-profile-updater",
+  "version": "1.0.0",
+  "description": "GitHub Action to update GitHeat analytics image for GitHub profile",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build:standalone": "esbuild src/standalone.ts --bundle --outfile=dist/standalone.js --platform=browser",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "puppeteer": "^22.6.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.2",
+    "esbuild": "^0.20.2",
+    "@types/node": "^20.11.24"
+  }
+}
