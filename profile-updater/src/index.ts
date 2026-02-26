@@ -41,6 +41,9 @@ async function run() {
     const page = await browser.newPage();
     await page.setViewport({ width: 1200, height: 2000 });
     
+    // Force Dark Mode
+    await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+    
     // Set a realistic User-Agent
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
@@ -50,7 +53,13 @@ async function run() {
 
     console.log(`Navigating to https://github.com/${username}...`);
     // 'domcontentloaded' or 'networkidle2'
-    await page.goto(`https://github.com/${username}`, { waitUntil: 'networkidle2', timeout: 6000 });
+    await page.goto(`https://github.com/${username}`, { waitUntil: 'networkidle2', timeout: 60000 });
+
+    // Force GitHub to render in Dark Mode
+    await page.evaluate(() => {
+      document.documentElement.setAttribute('data-color-mode', 'dark');
+      document.documentElement.setAttribute('data-dark-theme', 'dark');
+    });
 
     console.log('Injecting styles and script...');
     await page.addStyleTag({ content: styles });
@@ -61,7 +70,7 @@ async function run() {
 
     console.log('Waiting for GitHeat to be ready...');
     // standalone.ts adds 'githeat-ready' class to body when done
-    await page.waitForSelector('body.githeat-ready', { timeout: 6000 });
+    await page.waitForSelector('body.githeat-ready', { timeout: 60000 });
     
     // Give a small buffer for the UI to actually render after the flag is set
     await new Promise(r => setTimeout(r, 2000));

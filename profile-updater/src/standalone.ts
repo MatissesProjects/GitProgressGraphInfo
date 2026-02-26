@@ -21,13 +21,56 @@ async function runStandalone() {
     storage: {
       local: {
         get: (keys: string[] | any) => {
-          const defaults: any = {};
+          const settings: any = {
+            // Panel Sections (All Checked)
+            showGrid: true,
+            showPersona: true,
+            showActiveRepos: true,
+            showCreatedRepos: true,
+            showAchievements: true,
+            showFooter: true,
+            showLegendNumbers: true,
+            
+            // Main Grid Items (Checked)
+            showTotal: true,
+            showTodayCount: true,
+            showStreak: true,
+            showLevel: true,
+            showBestMonth: true,
+            showBestWeek: true,
+            showIsland: true,
+            showSlumpIsland: true,
+            showVelocity: true,
+            showVelocityAbove: true,
+            showVelocityBelow: true,
+            showConsistency: true,
+            showWeekend: true,
+            showSlump: true,
+            showBestDay: true,
+            showWorstDay: true,
+            showCurrentWeekday: true,
+            showPeakDay: true,
+            showMaxCommits: true,
+
+            // Main Grid Items (Unchecked)
+            showPowerDay: false,
+            showMostActiveDay: false,
+            showStars: false,
+            showPR: false,
+            showIssueCreated: false,
+            showLangs: false,
+            showNetwork: false,
+
+            theme: 'green'
+          };
+
+          if (typeof keys === 'string') return Promise.resolve({ [keys]: settings[keys] });
           if (Array.isArray(keys)) {
-            keys.forEach(k => (defaults as any)[k] = true); // Default to true for everything
-          } else if (typeof keys === 'object') {
-            Object.keys(keys).forEach(k => (defaults as any)[k] = true);
+            const result: any = {};
+            keys.forEach(k => result[k] = settings[k] ?? true);
+            return Promise.resolve(result);
           }
-          return Promise.resolve(defaults);
+          return Promise.resolve(settings);
         }
       },
       onChanged: { addListener: () => {} }
