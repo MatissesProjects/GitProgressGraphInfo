@@ -39,6 +39,17 @@ jobs:
           GITHUB_USERNAME: ${{ github.repository_owner }}
         run: npm start
 
+      - name: Check for generated image
+        run: |
+          if [ -f "githeat.png" ]; then
+            echo "githeat.png found!"
+            ls -l githeat.png
+          else
+            echo "githeat.png NOT found!"
+            find . -name "*.png"
+            exit 1
+          fi
+
       - name: Commit and Push Image
         run: |
           git config --global user.name "github-actions[bot]"
