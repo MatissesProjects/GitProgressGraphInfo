@@ -14,7 +14,7 @@ import { applyDeepRecoloring } from '../../src/modules/theme';
 import { injectStats, extendLegend, applyVisibility } from '../../src/modules/ui';
 
 async function runStandalone() {
-  console.log("GitHeat Standalone: Initializing on " + window.location.href + "...");
+  console.log("GitHeat Standalone: Initializing (v1.2 - Quantile Scale) on " + window.location.href + "...");
   
   // Mock chrome API
   (window as any).chrome = {
