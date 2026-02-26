@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: profile-updater/package-lock.json
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Install dependencies
         working-directory: profile-updater
@@ -36,7 +36,7 @@ jobs:
       - name: Run Profile Updater
         working-directory: profile-updater
         env:
-          GITHUB_USERNAME: MatissesProjects # for now its just me! $_{{ github.repository_owner }}
+          GITHUB_USERNAME: ${{ github.repository_owner }}
         run: npm start
 
       - name: Commit and Push Image
