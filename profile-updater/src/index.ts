@@ -39,7 +39,8 @@ async function run() {
 
   try {
     const page = await browser.newPage();
-    await page.setViewport({ width: 1200, height: 2000 });
+    // Use a wider viewport to ensure the graph doesn't wrap or get squished
+    await page.setViewport({ width: 1000, height: 2000 });
     
     // Set Timezone if provided, otherwise default to UTC
     const timezone = process.env.TIMEZONE || 'UTC';
@@ -92,36 +93,54 @@ async function run() {
     // Give a small buffer for the UI to actually render after the flag is set
     await new Promise(r => setTimeout(r, 2000));
 
-    // Find both the stats panel and the contribution graph container
-    const combinedSelector = '#git-heat-stats, .js-yearly-contributions';
-    
-    console.log('Wrapping stats and graph for combined screenshot...');
+    console.log('Preparing clean screenshot layout...');
     await page.evaluate(() => {
       const stats = document.getElementById('git-heat-stats');
-      const graph = document.querySelector('.js-yearly-contributions') as HTMLElement;
+      const graphContainer = document.querySelector('.js-yearly-contributions') as HTMLElement;
       
-      if (stats && graph) {
-        // Create a wrapper to contain both
+      if (stats && graphContainer) {
+        // 1. Hide the year navigation list on the right
+        const yearList = document.querySelector('.js-profile-timeline-year-list');
+        if (yearList) (yearList as HTMLElement).style.display = 'none';
+
+        // 2. Hide "Learn how we count contributions" and "Less/More" legend if needed, 
+        // but let's keep the core graph area.
+        const footer = graphContainer.querySelector('.contrib-footer');
+        // if (footer) (footer as HTMLElement).style.display = 'none';
+
+        // 3. Hide the activity overview and everything else below the graph
+        const activityOverview = document.querySelector('.activity-listing');
+        if (activityOverview) (activityOverview as HTMLElement).style.display = 'none';
+        
+        // 4. Create a clean wrapper for just the stats + graph
         const wrapper = document.createElement('div');
         wrapper.id = 'githeat-screenshot-wrapper';
-        wrapper.className = 'p-3 color-bg-default border color-border-default rounded-2';
-        wrapper.style.display = 'inline-block';
-        wrapper.style.minWidth = 'max-content';
+        wrapper.style.backgroundColor = '#0d1117'; // GitHub Dark background
+        wrapper.style.padding = '16px';
+        wrapper.style.display = 'flex';
+        wrapper.style.flexDirection = 'column';
+        wrapper.style.gap = '12px';
+        wrapper.style.width = '850px'; // Lock width to a standard size
         
-        // Move them into the wrapper
-        graph.parentNode?.insertBefore(wrapper, graph);
+        // Ensure stats panel looks right inside wrapper
+        stats.style.margin = '0';
+        stats.style.width = '100%';
+        
+        // Ensure graph container doesn't have extra margins
+        graphContainer.style.margin = '0';
+        graphContainer.style.width = '100%';
+        graphContainer.style.border = 'none';
+
+        // Insert wrapper into DOM and move elements
+        graphContainer.parentNode?.insertBefore(wrapper, graphContainer);
         wrapper.appendChild(stats);
-        wrapper.appendChild(graph);
-        
-        // Clean up UI for screenshot
-        const profileLink = graph.querySelector('.float-right.f6');
-        if (profileLink) (profileLink as HTMLElement).style.display = 'none';
+        wrapper.appendChild(graphContainer);
       }
     });
 
     const wrapper = await page.$('#githeat-screenshot-wrapper');
     if (!wrapper) {
-      throw new Error('Could not create screenshot wrapper');
+      throw new Error('Could not find screenshot wrapper');
     }
 
     console.log('Taking screenshot...');
