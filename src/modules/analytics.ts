@@ -21,18 +21,26 @@ export function calculateThresholds(data: ContributionDay[]) {
 }
 
 export function calculatePercentiles(data: ContributionDay[]) {
-  // Use linear distribution instead of density-based quantiles to match standard distance-based scaling perception
-  const max = data.reduce((m, d) => Math.max(m, d.count), 1);
-  const percentiles: Record<number, number> = {};
+  const counts = data.filter(d => d.count > 0).map(d => d.count).sort((a, b) => a - b);
+  if (counts.length === 0) return {};
+
   const markers = [20, 30, 40, 50, 60, 70, 80, 90, 95, 99];
+  const percentiles: Record<number, number> = {};
   
-  let last = 0;
-  markers.forEach((m, i) => {
-    const boundaryIndex = i + 1; // 10 boundaries for 11 levels
-    let val = Math.floor(boundaryIndex * (max / 11)) + 1;
-    if (val <= last) val = last + 1;
-    percentiles[m] = val;
-    last = val;
+  markers.forEach(m => {
+    const index = Math.floor((m / 100) * counts.length);
+    percentiles[m] = counts[Math.min(index, counts.length - 1)];
+  });
+
+  // Ensure strict monotonicity and distinct levels.
+  // We start 'last' at 1 so that the first percentile boundary (p20) is at least 2.
+  // This preserves Level 1 as exactly "1 commit".
+  let last = 1;
+  markers.forEach(m => {
+    if (percentiles[m] <= last) {
+      percentiles[m] = last + 1;
+    }
+    last = percentiles[m];
   });
 
   return percentiles;

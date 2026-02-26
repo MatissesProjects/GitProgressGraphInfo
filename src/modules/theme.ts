@@ -77,6 +77,7 @@ export function generateCustomScale(start: string, stop: string): string[] {
 }
 
 export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string) {
+  console.log("GitHeat: Applying Deep Recoloring (v1.2 - Quantile Scale)...");
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
   if (themeName === 'none') {

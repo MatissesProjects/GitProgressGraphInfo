@@ -69,6 +69,7 @@ export async function applyVisibility() {
 }
 
 export function injectStats(thresholds: any, percentiles: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null) {
+  console.log("GitHeat: Injecting Stats (v1.2 - Quantile Scale)...");
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
   const existing = document.getElementById('git-heat-stats');
@@ -146,7 +147,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
       <div style="flex: 1;"></div>
 
-      <div class="d-flex flex-items-center" style="gap: 126; flex-shrink: 0;">
+      <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
         ${advanced.todayCombo >= 2 ? `
           <div class="gh-combo-badge" title="${advanced.todayComboMath}">
             <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
