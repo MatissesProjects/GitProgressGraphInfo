@@ -360,8 +360,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('current-streak')!.textContent = `${adv.currentStreak} days`;
         document.getElementById('longest-streak')!.textContent = `${adv.longestStreak} days`;
         document.getElementById('longest-slump')!.textContent = `${adv.longestSlump} days`;
-        document.getElementById('best-month')!.textContent = `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})`;
-        document.getElementById('best-week')!.textContent = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})`;
+        
+        const bestMonthTrendHtml = adv.bestMonthTrend !== 0 ? ` <span style="color: ${adv.bestMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best month vs average month score">${adv.bestMonthIcon} ${Math.abs(adv.bestMonthTrend)}%</span>` : '';
+        document.getElementById('best-month')!.innerHTML = `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})${bestMonthTrendHtml}`;
+        
+        const bestWeekTrendHtml = adv.bestWeekTrend !== 0 ? ` <span style="color: ${adv.bestWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best week vs average week score">${adv.bestWeekIcon} ${Math.abs(adv.bestWeekTrend)}%</span>` : '';
+        document.getElementById('best-week')!.innerHTML = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})${bestWeekTrendHtml}`;
+        
         document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
         

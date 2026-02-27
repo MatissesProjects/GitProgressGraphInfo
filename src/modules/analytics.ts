@@ -305,9 +305,11 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   });
 
   let bestMonthName = "N/A", bestMonthScore = -1, bestMonthDates: string[] = [], bestMonthStats = { score: 0, count: 0, consistency: "0", streak: 0 };
+  const allMonthScores: number[] = [];
   Object.entries(monthData).forEach(([month, data]) => {
     const consistency = data.activeDays / data.totalDays;
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
+    if (score > 0) allMonthScores.push(score);
     if (score > bestMonthScore) {
       bestMonthScore = score;
       bestMonthName = new Date(month + '-01T00:00:00').toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -315,6 +317,13 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
       bestMonthStats = { score, count: data.count, consistency: (consistency * 100).toFixed(1), streak: data.maxStreak };
     }
   });
+
+  const avgMonthScore = allMonthScores.length > 0 ? allMonthScores.reduce((a, b) => a + b, 0) / allMonthScores.length : 0;
+  let bestMonthTrend = 0, bestMonthIcon = '';
+  if (avgMonthScore > 0) {
+    bestMonthTrend = Math.round(((bestMonthScore - avgMonthScore) / avgMonthScore) * 100);
+    bestMonthIcon = bestMonthTrend > 0 ? '▲' : (bestMonthTrend < 0 ? '▼' : '');
+  }
 
   const weekData: Record<string, any> = {};
   pastAndPresentData.forEach(day => {
@@ -354,9 +363,11 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   const dominantWeekday = dominantWeekdayIndex >= 0 ? daysOfWeek[dominantWeekdayIndex] : "N/A";
 
   let bestWeekName = "N/A", bestWeekScore = -1, bestWeekDates: string[] = [], bestWeekStats = { score: 0, count: 0, consistency: "0", streak: 0 };
+  const allWeekScores: number[] = [];
   Object.entries(weekData).forEach(([weekStart, data]) => {
     const consistency = data.activeDays / 7;
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
+    if (score > 0) allWeekScores.push(score);
     if (score > bestWeekScore) {
       bestWeekScore = score;
       const start = new Date(weekStart + 'T00:00:00'), end = new Date(start);
@@ -367,5 +378,12 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     }
   });
 
-  return { bestMonthName, bestMonthDates, bestMonthStats, bestWeekName, bestWeekDates, bestWeekStats, dominantWeekday, dominantWeekdayWins: maxWins };
+  const avgWeekScore = allWeekScores.length > 0 ? allWeekScores.reduce((a, b) => a + b, 0) / allWeekScores.length : 0;
+  let bestWeekTrend = 0, bestWeekIcon = '';
+  if (avgWeekScore > 0) {
+    bestWeekTrend = Math.round(((bestWeekScore - avgWeekScore) / avgWeekScore) * 100);
+    bestWeekIcon = bestWeekTrend > 0 ? '▲' : (bestWeekTrend < 0 ? '▼' : '');
+  }
+
+  return { bestMonthName, bestMonthDates, bestMonthStats, bestWeekName, bestWeekDates, bestWeekStats, dominantWeekday, dominantWeekdayWins: maxWins, bestMonthTrend, bestMonthIcon, bestWeekTrend, bestWeekIcon };
 }

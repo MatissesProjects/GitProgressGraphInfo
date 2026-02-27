@@ -103,8 +103,26 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
   const itemMap: Record<string, string> = {
     'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${advanced.currentStreakDates.join(',')}" data-longest-streak="${advanced.longestStreakDates.join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
-    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${advanced.bestMonthDates.join(',')}" title="${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak"><span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span><strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong></div>`,
-    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${advanced.bestWeekDates.join(',')}" title="${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak"><span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span><strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong></div>`,
+    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${advanced.bestMonthDates.join(',')}" title="Best month score vs average month score. (${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak)">
+      <span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span>
+      <div class="d-flex flex-items-center gap-1">
+        <strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong>
+        ${(showTrends !== false && advanced.bestMonthTrend !== 0) ? `
+          <span class="${advanced.bestMonthTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
+            ${advanced.bestMonthIcon} ${Math.abs(advanced.bestMonthTrend)}%
+          </span>` : ''}
+      </div>
+    </div>`,
+    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${advanced.bestWeekDates.join(',')}" title="Best week score vs average week score. (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak)">
+      <span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span>
+      <div class="d-flex flex-items-center gap-1">
+        <strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong>
+        ${(showTrends !== false && advanced.bestWeekTrend !== 0) ? `
+          <span class="${advanced.bestWeekTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
+            ${advanced.bestWeekIcon} ${Math.abs(advanced.bestWeekTrend)}%
+          </span>` : ''}
+      </div>
+    </div>`,
     'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday"><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
