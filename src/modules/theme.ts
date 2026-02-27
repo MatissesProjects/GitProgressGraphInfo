@@ -65,19 +65,19 @@ export function interpolateColor(color1: string, color2: string, factor: number)
   return `#${hex(r)}${hex(g)}${hex(b)}`;
 }
 
-export function generateCustomScale(start: string, stop: string): string[] {
+export function generateCustomScale(start: string, stop: string, steps: number = 11): string[] {
   // Index 0: Placeholder for background
   const scale = ['#161b22']; 
-  // Level 1 (start) to Level 11 (stop)
-  for (let i = 0; i <= 10; i++) {
-    const factor = i / 10;
+  // Generate gradient: Level 1 (start) to Level N (stop)
+  for (let i = 0; i < steps; i++) {
+    const factor = i / (steps - 1);
     scale.push(interpolateColor(start, stop, factor));
   }
   return scale;
 }
 
 export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string) {
-  console.log("GitHeat: Applying Deep Recoloring (v1.2 - Quantile Scale)...");
+  console.log("GitHeat: Applying Deep Recoloring (v1.3 - High Resolution Gradient)...");
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
   if (themeName === 'none') {
@@ -87,6 +87,10 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     });
     return;
   }
+
+  // Count active deep scale levels from percentiles
+  const pMarkers = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 98, 99];
+  const totalLevels = pMarkers.length + 1; // 15 levels
 
   let colors: string[];
   if (themeName === 'custom') {
@@ -103,8 +107,9 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
         stop = stop || '#04ff00';
       }
     }
-    colors = generateCustomScale(start, stop);
+    colors = generateCustomScale(start, stop, totalLevels);
   } else {
+    // For predefined themes, we still use 12 levels for now, or we can interpolate them too
     colors = THEMES[themeName] || THEMES.green;
   }
   
@@ -113,16 +118,11 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     const c = Number(count);
     if (c === 1) return 1;
 
-    if (c >= (percentiles[99] || 999)) return 11;
-    if (c >= (percentiles[95] || 999)) return 10;
-    if (c >= (percentiles[90] || 999)) return 9;
-    if (c >= (percentiles[80] || 999)) return 8;
-    if (c >= (percentiles[70] || 999)) return 7;
-    if (c >= (percentiles[60] || 999)) return 6;
-    if (c >= (percentiles[50] || 999)) return 5;
-    if (c >= (percentiles[40] || 999)) return 4;
-    if (c >= (percentiles[30] || 999)) return 3;
-    if (c >= (Math.max(2, percentiles[20] || 999))) return 2;
+    // Iterate through markers to find level
+    for (let i = pMarkers.length - 1; i >= 0; i--) {
+      const m = pMarkers[i];
+      if (c >= (percentiles[m] || 999)) return i + 2;
+    }
     return 1;
   };
 
@@ -131,7 +131,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     const dayData = data.find(d => d.date === date);
     if (dayData && dayData.count > 0) {
       const level = getGranularLevel(dayData.count);
-      const color = colors[level];
+      const color = colors[level] || colors[colors.length - 1];
       day.style.setProperty('background-color', color, 'important');
       day.style.setProperty('fill', color, 'important');
     }
@@ -140,7 +140,10 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   const footer = document.querySelector('.ContributionCalendar-footer');
   if (footer) {
     const legendSquares = footer.querySelectorAll('.ContributionCalendar-day');
-    const levelMap = [0, 1, 4, 7, 11];
+    // Map the 5 standard GitHub squares to our expanded scale
+    // Standard: 0, 1, 2, 3, 4
+    // Our scale: 0, 1, 5, 10, 14 (roughly)
+    const levelMap = [0, 1, Math.floor(totalLevels/3), Math.floor(totalLevels*2/3), totalLevels];
     legendSquares.forEach((sq: any, i) => {
       const color = colors[levelMap[i]];
       if (color) {
@@ -153,25 +156,29 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   const statsPanel = document.getElementById('git-heat-stats');
   if (statsPanel) {
     const p = percentiles;
-    const p20 = Math.max(2, p[20] || 2);
+    const p10 = Math.max(2, p[10] || 2);
     const legendRanges = [
-      p20 === 2 ? "1 commit" : `1 to ${p20 - 1} commits`,
-      `${p20} to ${p[30] > p20 ? p[30]-1 : p20} commits`,
+      p10 === 2 ? "1 commit" : `1 to ${p10 - 1} commits`,
+      `${p10} to ${p[20] > p10 ? p[20]-1 : p10} commits`,
+      `${p[20]} to ${p[30] > p[20] ? p[30]-1 : p[20]} commits`,
       `${p[30]} to ${p[40] > p[30] ? p[40]-1 : p[30]} commits`,
       `${p[40]} to ${p[50] > p[40] ? p[50]-1 : p[40]} commits`,
       `${p[50]} to ${p[60] > p[50] ? p[60]-1 : p[50]} commits`,
       `${p[60]} to ${p[70] > p[60] ? p[70]-1 : p[60]} commits`,
-      `${p[70]} to ${p[80] > p[70] ? p[80]-1 : p[70]} commits`,
-      `${p[80]} to ${p[90] > p[80] ? p[90]-1 : p[80]} commits`,
+      `${p[70]} to ${p[75] > p[70] ? p[75]-1 : p[70]} commits`,
+      `${p[75]} to ${p[80] > p[75] ? p[80]-1 : p[75]} commits`,
+      `${p[80]} to ${p[85] > p[80] ? p[85]-1 : p[80]} commits`,
+      `${p[85]} to ${p[90] > p[85] ? p[90]-1 : p[85]} commits`,
       `${p[90]} to ${p[95] > p[90] ? p[95]-1 : p[90]} commits`,
-      `${p[95]} to ${p[99] > p[95] ? p[99]-1 : p[95]} commits`,
+      `${p[95]} to ${p[98] > p[95] ? p[98]-1 : p[95]} commits`,
+      `${p[98]} to ${p[99] > p[98] ? p[99]-1 : p[98]} commits`,
       `${p[99]}+ commits`
     ];
 
     // Coloring the Deep Scale legend
     const legendSquares = statsPanel.querySelectorAll('.square-legend');
     legendSquares.forEach((sq: any, i) => {
-      const color = colors[i + 1]; // Level 1 to 11
+      const color = colors[i + 1]; 
       if (color) sq.style.setProperty('background-color', color, 'important');
       
       // Update tooltip to ensure it's always correct
@@ -181,7 +188,8 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
 
     // Coloring the threshold badges
     const badges = statsPanel.querySelectorAll('.badge');
-    const badgeLevels = [1, 4, 7, 11];
+    // Standard badges map to specific points in our 15-level scale
+    const badgeLevels = [1, Math.floor(totalLevels/3), Math.floor(totalLevels*2/3), totalLevels];
     badges.forEach((badge: any, i) => {
       const color = colors[badgeLevels[i]];
       if (color) badge.style.setProperty('background-color', color, 'important');

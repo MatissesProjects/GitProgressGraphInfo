@@ -24,7 +24,9 @@ export function calculatePercentiles(data: ContributionDay[]) {
   const counts = data.filter(d => d.count > 0).map(d => d.count).sort((a, b) => a - b);
   if (counts.length === 0) return {};
 
-  const markers = [20, 30, 40, 50, 60, 70, 80, 90, 95, 99];
+  // Expand from 11 levels to 15 levels for a smoother gradient
+  // We need 14 markers for 15 levels
+  const markers = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 98, 99];
   const percentiles: Record<number, number> = {};
   
   markers.forEach(m => {
@@ -33,7 +35,7 @@ export function calculatePercentiles(data: ContributionDay[]) {
   });
 
   // Ensure strict monotonicity and distinct levels.
-  // We start 'last' at 1 so that the first percentile boundary (p20) is at least 2.
+  // We start 'last' at 1 so that the first percentile boundary (p10) is at least 2.
   // This preserves Level 1 as exactly "1 commit".
   let last = 1;
   markers.forEach(m => {

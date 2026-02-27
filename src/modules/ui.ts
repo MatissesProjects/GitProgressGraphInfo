@@ -125,18 +125,22 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   };
 
   const p = percentiles;
-  const p20 = Math.max(2, p[20] || 2);
+  const p10 = Math.max(2, p[10] || 2);
   const legendRanges = [
-    p20 === 2 ? "1 commit" : `1 to ${p20 - 1} commits`,
-    `${p20} to ${p[30] > p20 ? p[30]-1 : p20} commits`,
+    p10 === 2 ? "1 commit" : `1 to ${p10 - 1} commits`,
+    `${p10} to ${p[20] > p10 ? p[20]-1 : p10} commits`,
+    `${p[20]} to ${p[30] > p[20] ? p[30]-1 : p[20]} commits`,
     `${p[30]} to ${p[40] > p[30] ? p[40]-1 : p[30]} commits`,
     `${p[40]} to ${p[50] > p[40] ? p[50]-1 : p[40]} commits`,
     `${p[50]} to ${p[60] > p[50] ? p[60]-1 : p[50]} commits`,
     `${p[60]} to ${p[70] > p[60] ? p[70]-1 : p[60]} commits`,
-    `${p[70]} to ${p[80] > p[70] ? p[80]-1 : p[70]} commits`,
-    `${p[80]} to ${p[90] > p[80] ? p[90]-1 : p[80]} commits`,
+    `${p[70]} to ${p[75] > p[70] ? p[75]-1 : p[70]} commits`,
+    `${p[75]} to ${p[80] > p[75] ? p[80]-1 : p[75]} commits`,
+    `${p[80]} to ${p[85] > p[80] ? p[85]-1 : p[80]} commits`,
+    `${p[85]} to ${p[90] > p[85] ? p[90]-1 : p[85]} commits`,
     `${p[90]} to ${p[95] > p[90] ? p[95]-1 : p[90]} commits`,
-    `${p[95]} to ${p[99] > p[95] ? p[99]-1 : p[95]} commits`,
+    `${p[95]} to ${p[98] > p[95] ? p[98]-1 : p[95]} commits`,
+    `${p[98]} to ${p[99] > p[98] ? p[99]-1 : p[98]} commits`,
     `${p[99]}+ commits`
   ];
 
