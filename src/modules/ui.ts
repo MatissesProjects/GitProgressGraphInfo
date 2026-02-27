@@ -198,16 +198,21 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
   statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-start mb-3" style="gap: 15px;">
-      <div class="d-flex flex-items-center flex-wrap gap-2" style="flex: 1; min-width: 0;">
-        <h3 class="h4 mb-0 mr-2" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
-        <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: ${advanced.persona}</span>
+      <div class="d-flex flex-column" style="flex: 1; min-width: 0;">
+        <div class="d-flex flex-items-center flex-wrap gap-2">
+          <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
+          <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: ${advanced.persona}</span>
+        </div>
+        
         ${rpgClasses.length > 0 ? `
-          <span class="color-fg-muted text-small ml-1" style="white-space: nowrap;">Class:</span>
-          ${rpgClasses.map(c => `
-            <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="${c.description}">
-              <span>${c.icon}</span> ${c.name}
-            </span>
-          `).join('')}
+          <div class="d-flex flex-items-center flex-wrap gap-1 mt-1">
+            <span class="color-fg-muted text-small" style="white-space: nowrap;">Class:</span>
+            ${rpgClasses.map(c => `
+              <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="${c.description}">
+                <span>${c.icon}</span> ${c.name}
+              </span>
+            `).join('')}
+          </div>
         ` : ''}
       </div>
 
