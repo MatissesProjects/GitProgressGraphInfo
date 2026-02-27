@@ -177,6 +177,27 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
   const aboveVelocityDates = pastAndPresentData.filter(d => d.count >= avgVel && d.count > 0).map(d => d.date);
   const belowVelocityDates = pastAndPresentData.filter(d => d.count < avgVel && d.count > 0).map(d => d.date);
 
+  // Weekday Trends
+  // Current Weekday Trend (Today's count vs avg for this weekday)
+  const currentWeekdayIdx = now.getDay();
+  const currentWeekdayAvg = weekdayTotalDays[currentWeekdayIdx] > 0 ? (base.weekdayCounts[currentWeekdayIdx] / weekdayTotalDays[currentWeekdayIdx]) : 0;
+  let currentWeekdayTrend = 0, currentWeekdayIcon = '';
+  if (currentWeekdayAvg > 0) {
+    currentWeekdayTrend = Math.round(((todayCount - currentWeekdayAvg) / currentWeekdayAvg) * 100);
+    currentWeekdayIcon = currentWeekdayTrend > 0 ? '▲' : (currentWeekdayTrend < 0 ? '▼' : '');
+  } else if (todayCount > 0) {
+    currentWeekdayTrend = 100; currentWeekdayIcon = '▲';
+  }
+
+  // Best Weekday Trend (Best day's total vs average weekday total)
+  const totalCommits = base.weekdayCounts[0] + base.weekdayCounts[1] + base.weekdayCounts[2] + base.weekdayCounts[3] + base.weekdayCounts[4] + base.weekdayCounts[5] + base.weekdayCounts[6];
+  const overallWeekdayAvg = totalCommits / 7;
+  let bestWeekdayTrend = 0, bestWeekdayIcon = '';
+  if (overallWeekdayAvg > 0) {
+    bestWeekdayTrend = Math.round(((maxWeekdayCount - overallWeekdayAvg) / overallWeekdayAvg) * 100);
+    bestWeekdayIcon = bestWeekdayTrend > 0 ? '▲' : (bestWeekdayTrend < 0 ? '▼' : '');
+  }
+
   const statsForTooltips: any = {
     consistency: { active: (base.ytdTotalDays > 0 ? base.ytdActiveDays : base.activeDays), total: (base.ytdTotalDays > 0 ? base.ytdTotalDays : pastAndPresentData.length) },
     velocity: { count: (base.ytdTotalDays > 0 ? ytdTotalContributions : pastAndPresentData.reduce((sum, d) => sum + d.count, 0)), active: (base.ytdTotalDays > 0 ? base.ytdActiveDays : base.activeDays) },
@@ -206,6 +227,8 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
     aboveVelocityDates, belowVelocityDates,
     statsForTooltips,
     velocityTrend, velocityIcon,
+    currentWeekdayTrend, currentWeekdayIcon,
+    bestWeekdayTrend, bestWeekdayIcon,
     isYTD: base.ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
     issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,

@@ -5,7 +5,7 @@ export async function applyVisibility() {
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
     'showTotal', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
     'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday'
+    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends'
   ]);
 
   const grid = document.getElementById('gh-grid-stats');
@@ -108,7 +108,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.velocity} commits/day</strong>
-        ${advanced.velocityTrend !== 0 ? `
+        ${(settings.showTrends !== false && advanced.velocityTrend !== 0) ? `
           <span class="${advanced.velocityTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
             ${advanced.velocityIcon} ${Math.abs(advanced.velocityTrend)}%
           </span>` : ''}
@@ -119,9 +119,27 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-consistency': `<div class="stat-card" id="gh-consistency" title="${advanced.statsForTooltips.consistency.active} / ${advanced.statsForTooltips.consistency.total} days active"><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
     'gh-weekend': `<div class="stat-card" id="gh-weekend" title="${advanced.statsForTooltips.weekend.active} / ${advanced.statsForTooltips.weekend.total} weekend days active"><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
     'gh-slump': `<div class="stat-card highlightable" id="gh-slump" title="${advanced.longestSlumpDates.length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
-    'gh-best-day': `<div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}"><span class="color-fg-muted d-block text-small">Best Weekday</span><strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong></div>`,
+    'gh-best-day': `<div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}" title="Avg for this day vs overall avg across all weekdays.">
+      <span class="color-fg-muted d-block text-small">Best Weekday</span>
+      <div class="d-flex flex-items-center gap-1">
+        <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
+        ${(settings.showTrends !== false && advanced.bestWeekdayTrend !== 0) ? `
+          <span class="${advanced.bestWeekdayTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
+            ${advanced.bestWeekdayIcon} ${Math.abs(advanced.bestWeekdayTrend)}%
+          </span>` : ''}
+      </div>
+    </div>`,
     'gh-worst-day': `<div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}"><span class="color-fg-muted d-block text-small">Worst Weekday</span><strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong></div>`,
-    'gh-current-weekday': `<div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}"><span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span><strong class="f3-light">${advanced.currentWeekdayCount}</strong></div>`,
+    'gh-current-weekday': `<div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}" title="Today's count vs the average count for this specific weekday.">
+      <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
+      <div class="d-flex flex-items-center gap-1">
+        <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
+        ${(settings.showTrends !== false && advanced.currentWeekdayTrend !== 0) ? `
+          <span class="${advanced.currentWeekdayTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
+            ${advanced.currentWeekdayIcon} ${Math.abs(advanced.currentWeekdayTrend)}%
+          </span>` : ''}
+      </div>
+    </div>`,
     'gh-power-day': `<div class="stat-card highlightable" id="gh-power-day" data-weekday="${advanced.powerDayIndex}"><span class="color-fg-muted d-block text-small">Most Productive (Avg)</span><strong class="f3-light">${advanced.powerDay} (${advanced.powerDayAvg})</strong></div>`,
     'gh-peak-day': `<div class="stat-card highlightable" id="gh-peak-day" data-weekday="${advanced.peakWeekdayIndex}"><span class="color-fg-muted d-block text-small">Peak Frequency (L2+)</span><strong class="f3-light">${advanced.peakWeekday} (${advanced.peakWeekdayCount})</strong></div>`,
     'gh-most-active-day': `<div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}"><span class="color-fg-muted d-block text-small">Most Active Day</span><strong class="f3-light">${advanced.mostActiveDay}</strong></div>`,

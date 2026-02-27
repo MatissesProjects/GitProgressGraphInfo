@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleAchievements = document.getElementById('toggle-achievements') as HTMLInputElement;
   const toggleFooter = document.getElementById('toggle-footer') as HTMLInputElement;
   const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
+  const toggleTrends = document.getElementById('toggle-trends') as HTMLInputElement;
   const toggleIslandWrap = document.getElementById('toggle-island-wrap') as HTMLInputElement;
 
   // Visibility Toggles - Grid Items
@@ -204,6 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleAchievements, settings.showAchievements);
   setChecked(toggleFooter, settings.showFooter);
   setChecked(toggleLegendNums, settings.showLegendNumbers);
+  setChecked(toggleTrends, settings.showTrends);
   setChecked(toggleIslandWrap, settings.islandWrapAround);
 
   setChecked(toggleTotal, settings.showTotal);
@@ -261,6 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleAchievements, 'showAchievements');
   addToggleListener(toggleFooter, 'showFooter');
   addToggleListener(toggleLegendNums, 'showLegendNumbers');
+  addToggleListener(toggleTrends, 'showTrends');
   addToggleListener(toggleIslandWrap, 'islandWrapAround');
 
   addToggleListener(toggleTotal, 'showTotal');
@@ -368,9 +371,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('pr-stats')!.textContent = `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`;
         document.getElementById('issue-repo-stats')!.textContent = `${adv.issuesOpened} / ${adv.createdRepos}`;
         document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
-        document.getElementById('best-day')!.textContent = `${adv.bestDay} (${adv.bestDayCount})`;
+        const bestDayTrendHtml = adv.bestWeekdayTrend !== 0 ? ` <span style="color: ${adv.bestWeekdayTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Avg for this day vs overall avg across all weekdays">${adv.bestWeekdayIcon} ${Math.abs(adv.bestWeekdayTrend)}%</span>` : '';
+        document.getElementById('best-day')!.innerHTML = `${adv.bestDay} (${adv.bestDayCount})${bestDayTrendHtml}`;
+        
         document.getElementById('worst-day')!.textContent = `${adv.worstDay} (${adv.worstDayCount})`;
-        document.getElementById('current-weekday')!.textContent = `${adv.currentWeekday} (${adv.currentWeekdayCount})`;
+        
+        const currentWeekdayTrendHtml = adv.currentWeekdayTrend !== 0 ? ` <span style="color: ${adv.currentWeekdayTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Today's count vs avg for this weekday">${adv.currentWeekdayIcon} ${Math.abs(adv.currentWeekdayTrend)}%</span>` : '';
+        document.getElementById('current-weekday')!.innerHTML = `${adv.currentWeekday} (${adv.currentWeekdayCount})${currentWeekdayTrendHtml}`;
         document.getElementById('power-day')!.textContent = `${adv.powerDay} (${adv.powerDayAvg})`;
         document.getElementById('peak-day')!.textContent = `${adv.peakWeekday} (${adv.peakWeekdayCount})`;
         document.getElementById('biggest-island')!.textContent = `${adv.biggestIslandSize} days`;
