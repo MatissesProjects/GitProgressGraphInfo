@@ -235,22 +235,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         </div>
       </div>
     </div>
-        ${advanced.todayCombo >= 2 ? `
-          <div class="gh-combo-badge" title="${advanced.todayComboMath}">
-            <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
-            <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">${advanced.todayComboReason}</div>
-          </div>` : ''}
         
-        <div id="gh-header-level" class="gh-level-header" style="margin: 0; width: 180px;">
-          <div class="d-flex flex-items-center gap-2">
-            <span class="gh-level-badge">LVL ${advanced.level}</span>
-            <span class="gh-level-title">${advanced.levelTitle}</span>
-          </div>
-          <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
-            <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
-          </div>
-          <span class="gh-xp-text" style="font-size: 8px;">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
-        </div>
       </div>
     </div>
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
