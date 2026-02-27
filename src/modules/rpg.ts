@@ -6,11 +6,51 @@ export const titles = ["Ghost", "Novice", "Script Kiddie", "Code Monkey", "Byte 
 
 export function getPersona(weekendVolumeShare: number, consistency: string, velocity: string, weekendScore: number, totalStars: number) {
   if (weekendVolumeShare > 0.4) return "Weekend Warrior";
-  if (parseFloat(consistency) < 20) return "Burst Developer";
+  if (parseFloat(consistency) < 20 && parseFloat(velocity) > 5) return "Burst Developer";
   if (parseFloat(velocity) > 15) return "High-Volume Architect";
-  if (weekendScore > 80) return "Unstoppable Force";
+  if (weekendScore > 80 && parseFloat(consistency) > 80) return "Unstoppable Force";
   if (totalStars > 100) return "Popular Maintainer";
   return "Consistent Coder";
+}
+
+export function getCodingClass(advanced: any) {
+  const classes: { name: string; icon: string; description: string }[] = [];
+  
+  // The Night Owl (Mocked/Proxy: High consistency but low weekend score? No, let's use TodayActions if it's late night)
+  // Actually, let's use the achievements as a source for some
+  if (advanced.achievements.includes('Pull Shark')) {
+    classes.push({ name: 'Apex Predator', icon: '🦈', description: 'Has the Pull Shark achievement.' });
+  }
+  if (advanced.achievements.includes('YOLO')) {
+    classes.push({ name: 'Risk Taker', icon: '🎲', description: 'Has the YOLO achievement.' });
+  }
+  
+  // Necromancer Proxy: Commits in many different repos but few created repos
+  if (advanced.topRepos.length > 10 && advanced.createdRepos < 2) {
+    classes.push({ name: 'The Necromancer', icon: '💀', description: 'Working on many existing repositories.' });
+  }
+
+  // Refactorer Proxy: High PR to Commit ratio
+  if (advanced.pullRequests > advanced.todayCount && advanced.pullRequests > 0) {
+    classes.push({ name: 'The Refactorer', icon: '🔧', description: 'High ratio of Pull Requests to raw commits.' });
+  }
+
+  // The Specialist
+  if (advanced.topRepos.length > 0 && advanced.topRepos[0].commits > (advanced.totalCount * 0.7)) {
+    classes.push({ name: 'The Specialist', icon: '🎯', description: '70%+ of work is in a single repository.' });
+  }
+
+  // The Polyglot
+  if (advanced.topLangs.length >= 2) {
+    classes.push({ name: 'The Polyglot', icon: '🌍', description: 'Master of multiple programming languages.' });
+  }
+
+  // The Marathoner
+  if (advanced.longestStreak > 30) {
+    classes.push({ name: 'The Marathoner', icon: '🏃', description: '30+ day commit streak.' });
+  }
+
+  return classes;
 }
 
 export function getCombo(todayScore: number, actions: any) {

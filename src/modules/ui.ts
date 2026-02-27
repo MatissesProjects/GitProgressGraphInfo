@@ -1,4 +1,5 @@
 import { ContributionDay, AdvancedStats } from '../types';
+import { getCodingClass } from './rpg';
 
 export async function applyVisibility() {
   try {
@@ -193,11 +194,27 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     `${p[99]}+ commits`
   ];
 
+  const rpgClasses = getCodingClass(advanced);
+
   statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-center mb-3" style="gap: 15px;">
-      <div class="d-flex flex-items-center gap-2" style="flex-shrink: 0;">
-        <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
-        <span id="gh-persona" class="Label Label--info" style="white-space: nowrap;">${advanced.persona}</span>
+      <div class="d-flex flex-items-center gap-3" style="flex-shrink: 0;">
+        <div class="d-flex flex-column">
+          <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
+          <div class="d-flex flex-items-center gap-2 mt-1">
+            <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: ${advanced.persona}</span>
+            ${rpgClasses.length > 0 ? `
+              <div class="d-flex flex-items-center gap-1">
+                <span class="color-fg-muted text-small">Class:</span>
+                ${rpgClasses.map(c => `
+                  <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="${c.description}">
+                    <span>${c.icon}</span> ${c.name}
+                  </span>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
       </div>
 
       <div style="flex: 1;"></div>
