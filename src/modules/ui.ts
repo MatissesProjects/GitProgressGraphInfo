@@ -104,7 +104,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday"><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
-    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="${advanced.statsForTooltips.velocity.count} total commits / ${advanced.statsForTooltips.velocity.active} active days">
+    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Avg commits per active day (${advanced.statsForTooltips.velocity.count} total / ${advanced.statsForTooltips.velocity.active} active). Trend compares the last 7 days vs the 7 days prior.">
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.velocity} commits/day</strong>

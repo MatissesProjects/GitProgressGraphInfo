@@ -362,7 +362,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
         
-        const velTrendHtml = adv.velocityTrend !== 0 ? ` <span style="color: ${adv.velocityTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;">${adv.velocityIcon} ${Math.abs(adv.velocityTrend)}%</span>` : '';
+        const velTrendHtml = adv.velocityTrend !== 0 ? ` <span style="color: ${adv.velocityTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Change vs previous 7-day period">${adv.velocityIcon} ${Math.abs(adv.velocityTrend)}%</span>` : '';
         document.getElementById('velocity')!.innerHTML = `${adv.velocity} c/d${velTrendHtml}`;
         
         document.getElementById('pr-stats')!.textContent = `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`;
