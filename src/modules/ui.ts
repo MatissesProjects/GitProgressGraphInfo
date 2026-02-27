@@ -197,42 +197,37 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const rpgClasses = getCodingClass(advanced);
 
   statsDiv.innerHTML = `
-    <div class="d-flex flex-column mb-3" style="gap: 8px;">
-      <div class="d-flex flex-justify-between flex-items-center">
-        <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
-        
-        <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
-          ${advanced.todayCombo >= 2 ? `
-            <div class="gh-combo-badge" title="${advanced.todayComboMath}">
-              <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
-              <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">${advanced.todayComboReason}</div>
-            </div>` : ''}
-          
-          <div id="gh-header-level" class="gh-level-header" style="margin: 0; width: 180px;">
-            <div class="d-flex flex-items-center gap-2">
-              <span class="gh-level-badge">LVL ${advanced.level}</span>
-              <span class="gh-level-title">${advanced.levelTitle}</span>
-            </div>
-            <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
-              <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
-            </div>
-            <span class="gh-xp-text" style="font-size: 8px;">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="d-flex flex-items-center flex-wrap gap-2">
+    <div class="d-flex flex-justify-between flex-items-start mb-3" style="gap: 15px;">
+      <div class="d-flex flex-items-center flex-wrap gap-2" style="flex: 1; min-width: 0;">
+        <h3 class="h4 mb-0 mr-2" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
         <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: ${advanced.persona}</span>
         ${rpgClasses.length > 0 ? `
-          <div class="d-flex flex-items-center flex-wrap gap-1">
-            <span class="color-fg-muted text-small" style="white-space: nowrap; margin-left: 4px;">Class:</span>
-            ${rpgClasses.map(c => `
-              <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="${c.description}">
-                <span>${c.icon}</span> ${c.name}
-              </span>
-            `).join('')}
-          </div>
+          <span class="color-fg-muted text-small ml-1" style="white-space: nowrap;">Class:</span>
+          ${rpgClasses.map(c => `
+            <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="${c.description}">
+              <span>${c.icon}</span> ${c.name}
+            </span>
+          `).join('')}
         ` : ''}
+      </div>
+
+      <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
+        ${advanced.todayCombo >= 2 ? `
+          <div class="gh-combo-badge" title="${advanced.todayComboMath}">
+            <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
+            <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">${advanced.todayComboReason}</div>
+          </div>` : ''}
+        
+        <div id="gh-header-level" class="gh-level-header" style="margin: 0; width: 180px;">
+          <div class="d-flex flex-items-center gap-2">
+            <span class="gh-level-badge">LVL ${advanced.level}</span>
+            <span class="gh-level-title">${advanced.levelTitle}</span>
+          </div>
+          <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
+            <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
+          </div>
+          <span class="gh-xp-text" style="font-size: 8px;">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
+        </div>
       </div>
     </div>
         ${advanced.todayCombo >= 2 ? `
