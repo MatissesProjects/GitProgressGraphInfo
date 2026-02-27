@@ -129,7 +129,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   const footer = document.querySelector('.ContributionCalendar-footer');
   if (footer) {
     const legendSquares = footer.querySelectorAll('.ContributionCalendar-day');
-    const levelMap = [0, 3, 6, 9, 11];
+    const levelMap = [0, 1, 4, 7, 11];
     legendSquares.forEach((sq: any, i) => {
       const color = colors[levelMap[i]];
       if (color) {
@@ -170,7 +170,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
 
     // Coloring the threshold badges
     const badges = statsPanel.querySelectorAll('.badge');
-    const badgeLevels = [3, 6, 9, 11];
+    const badgeLevels = [1, 4, 7, 11];
     badges.forEach((badge: any, i) => {
       const color = colors[badgeLevels[i]];
       if (color) badge.style.setProperty('background-color', color, 'important');
