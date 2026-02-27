@@ -131,6 +131,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     const dayData = data.find(d => d.date === date);
     if (dayData && dayData.count > 0) {
       const level = getGranularLevel(dayData.count);
+      day.setAttribute('data-granular-level', level.toString());
       const color = colors[level] || colors[colors.length - 1];
       day.style.setProperty('background-color', color, 'important');
       day.style.setProperty('fill', color, 'important');

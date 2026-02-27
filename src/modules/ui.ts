@@ -219,6 +219,14 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     });
   };
 
+  const highlightGranularLevel = (level: number) => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"][data-date]`).forEach((day: any) => {
+      day.classList.add('gh-highlight');
+      day.style.outline = '';
+      day.style.border = '';
+    });
+  };
+
   const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string) => {
     document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: any) => {
       const date = day.getAttribute('data-date');
@@ -239,6 +247,19 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     const el = statsDiv.querySelector(id);
     if (el) { el.addEventListener('mouseenter', () => { el.classList.add('highlighting'); fn(); }); el.addEventListener('mouseleave', () => { el.classList.remove('highlighting'); clearHighlights(); }); }
   };
+
+  // Add hover for granular legend squares
+  statsDiv.querySelectorAll('.square-legend').forEach((sq, i) => {
+    const level = i + 1;
+    sq.addEventListener('mouseenter', () => { 
+      sq.classList.add('highlighting'); 
+      highlightGranularLevel(level); 
+    });
+    sq.addEventListener('mouseleave', () => { 
+      sq.classList.remove('highlighting'); 
+      clearHighlights(); 
+    });
+  });
 
   addHover('#gh-today', () => highlightDates([todayStr]));
   addHover('#gh-streak', () => highlightDates([...new Set([...advanced.longestStreakDates, ...advanced.currentStreakDates])]));
