@@ -90,8 +90,19 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
 
   let colors: string[];
   if (themeName === 'custom') {
-    const start = customStart || '#4a207e';
-    const stop = customStop || '#04ff00';
+    let start = customStart;
+    let stop = customStop;
+
+    if (!start || !stop) {
+      try {
+        const settings = await chrome.storage.local.get(['customStart', 'customStop']);
+        start = start || (settings.customStart as string) || '#4a207e';
+        stop = stop || (settings.customStop as string) || '#04ff00';
+      } catch (e) {
+        start = start || '#4a207e';
+        stop = stop || '#04ff00';
+      }
+    }
     colors = generateCustomScale(start, stop);
   } else {
     colors = THEMES[themeName] || THEMES.green;
