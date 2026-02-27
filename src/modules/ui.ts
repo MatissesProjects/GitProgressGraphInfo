@@ -197,29 +197,27 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const rpgClasses = getCodingClass(advanced);
 
   statsDiv.innerHTML = `
-    <div class="d-flex flex-justify-between flex-items-center mb-3" style="gap: 15px;">
-      <div class="d-flex flex-items-center gap-3" style="flex-shrink: 0;">
-        <div class="d-flex flex-column">
-          <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
-          <div class="d-flex flex-items-center gap-2 mt-1">
+    <div class="d-flex flex-justify-between flex-items-start mb-3" style="gap: 15px;">
+      <div class="d-flex flex-column gap-1" style="flex: 1; min-width: 0;">
+        <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
+        <div class="d-flex flex-column gap-1 mt-1">
+          <div id="gh-persona-row" class="d-flex flex-items-center">
             <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: ${advanced.persona}</span>
-            ${rpgClasses.length > 0 ? `
-              <div class="d-flex flex-items-center gap-1">
-                <span class="color-fg-muted text-small">Class:</span>
-                ${rpgClasses.map(c => `
-                  <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="${c.description}">
-                    <span>${c.icon}</span> ${c.name}
-                  </span>
-                `).join('')}
-              </div>
-            ` : ''}
           </div>
+          ${rpgClasses.length > 0 ? `
+            <div id="gh-class-row" class="d-flex flex-items-center flex-wrap gap-1">
+              <span class="color-fg-muted text-small" style="white-space: nowrap;">Class:</span>
+              ${rpgClasses.map(c => `
+                <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 2px;" title="${c.description}">
+                  <span>${c.icon}</span> ${c.name}
+                </span>
+              `).join('')}
+            </div>
+          ` : ''}
         </div>
       </div>
 
-      <div style="flex: 1;"></div>
-
-      <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
+      <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0; margin-top: 4px;">
         ${advanced.todayCombo >= 2 ? `
           <div class="gh-combo-badge" title="${advanced.todayComboMath}">
             <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
