@@ -1,76 +1,80 @@
 import { ContributionDay, AdvancedStats } from '../types';
 
 export async function applyVisibility() {
-  const settings = await chrome.storage.local.get([
-    'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
-    'showTotal', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
-    'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-    'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends'
-  ]);
+  try {
+    const settings = await chrome.storage.local.get([
+      'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
+      'showTotal', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
+      'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends'
+    ]);
 
-  const grid = document.getElementById('gh-grid-stats');
-  const detailed = document.getElementById('gh-detailed-stats');
-  const activeRepos = document.getElementById('gh-active-repos');
-  const createdRepos = document.getElementById('gh-created-repos');
-  const achievements = document.getElementById('gh-achievements');
-  const persona = document.getElementById('gh-persona');
-  const footer = document.getElementById('gh-footer');
-  const headerLevel = document.getElementById('gh-header-level');
+    const grid = document.getElementById('gh-grid-stats');
+    const detailed = document.getElementById('gh-detailed-stats');
+    const activeRepos = document.getElementById('gh-active-repos');
+    const createdRepos = document.getElementById('gh-created-repos');
+    const achievements = document.getElementById('gh-achievements');
+    const persona = document.getElementById('gh-persona');
+    const footer = document.getElementById('gh-footer');
+    const headerLevel = document.getElementById('gh-header-level');
 
-  if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
-  if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
-  if (createdRepos) createdRepos.style.display = (settings.showCreatedRepos !== false) ? 'block' : 'none';
-  if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
-  if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
-  if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
-  if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
+    if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
+    if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
+    if (createdRepos) createdRepos.style.display = (settings.showCreatedRepos !== false) ? 'block' : 'none';
+    if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
+    if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
+    if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
+    if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
 
-  const toggleMap: Record<string, any> = {
-    'gh-total': settings.showTotal,
-    'gh-today': settings.showTodayCount,
-    'gh-streak': settings.showStreak,
-    'gh-best-month': settings.showBestMonth,
-    'gh-best-week': settings.showBestWeek,
-    'gh-dominant-weekday': settings.showDominantWeekday,
-    'gh-island': settings.showIsland,
-    'gh-slump-island': settings.showSlumpIsland,
-    'gh-velocity': settings.showVelocity,
-    'gh-velocity-above': settings.showVelocityAbove,
-    'gh-velocity-below': settings.showVelocityBelow,
-    'gh-consistency': settings.showConsistency,
-    'gh-weekend': settings.showWeekend,
-    'gh-slump': settings.showSlump,
-    'gh-best-day': settings.showBestDay,
-    'gh-worst-day': settings.showWorstDay,
-    'gh-current-weekday': settings.showCurrentWeekday,
-    'gh-power-day': settings.showPowerDay,
-    'gh-peak-day': settings.showPeakDay,
-    'gh-most-active-day': settings.showMostActiveDay,
-    'gh-max-commits': settings.showMaxCommits,
-    'gh-stars': settings.showStars,
-    'gh-pr': settings.showPR,
-    'gh-issue-created': settings.showIssueCreated,
-    'gh-langs': settings.showLangs,
-    'gh-network': settings.showNetwork
-  };
+    const toggleMap: Record<string, any> = {
+      'gh-total': settings.showTotal,
+      'gh-today': settings.showTodayCount,
+      'gh-streak': settings.showStreak,
+      'gh-best-month': settings.showBestMonth,
+      'gh-best-week': settings.showBestWeek,
+      'gh-dominant-weekday': settings.showDominantWeekday,
+      'gh-island': settings.showIsland,
+      'gh-slump-island': settings.showSlumpIsland,
+      'gh-velocity': settings.showVelocity,
+      'gh-velocity-above': settings.showVelocityAbove,
+      'gh-velocity-below': settings.showVelocityBelow,
+      'gh-consistency': settings.showConsistency,
+      'gh-weekend': settings.showWeekend,
+      'gh-slump': settings.showSlump,
+      'gh-best-day': settings.showBestDay,
+      'gh-worst-day': settings.showWorstDay,
+      'gh-current-weekday': settings.showCurrentWeekday,
+      'gh-power-day': settings.showPowerDay,
+      'gh-peak-day': settings.showPeakDay,
+      'gh-most-active-day': settings.showMostActiveDay,
+      'gh-max-commits': settings.showMaxCommits,
+      'gh-stars': settings.showStars,
+      'gh-pr': settings.showPR,
+      'gh-issue-created': settings.showIssueCreated,
+      'gh-langs': settings.showLangs,
+      'gh-network': settings.showNetwork
+    };
 
-  Object.entries(toggleMap).forEach(([id, val]) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = (val !== false) ? 'block' : 'none';
-  });
+    Object.entries(toggleMap).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = (val !== false) ? 'block' : 'none';
+    });
 
-  document.querySelectorAll('.git-heat-legend-label').forEach((el: any) => {
-    el.style.display = (settings.showLegendNumbers !== false) ? 'inline' : 'none';
-  });
+    document.querySelectorAll('.git-heat-legend-label').forEach((el: any) => {
+      el.style.display = (settings.showLegendNumbers !== false) ? 'inline' : 'none';
+    });
 
-  if (detailed) {
-    const anyDetailedVisible = (settings.showActiveRepos !== false) || (settings.showCreatedRepos !== false) || (settings.showAchievements !== false);
-    detailed.style.display = anyDetailedVisible ? 'flex' : 'none';
+    if (detailed) {
+      const anyDetailedVisible = (settings.showActiveRepos !== false) || (settings.showCreatedRepos !== false) || (settings.showAchievements !== false);
+      detailed.style.display = anyDetailedVisible ? 'flex' : 'none';
+    }
+  } catch (e) {
+    console.error("GitHeat: Error applying visibility", e);
   }
 }
 
-export function injectStats(thresholds: any, percentiles: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null) {
-  console.log("GitHeat: Injecting Stats (v1.2 - Quantile Scale)...");
+export function injectStats(thresholds: any, percentiles: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null, showTrends: boolean = true) {
+  console.log("GitHeat: Injecting Stats (v1.3)...");
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
   const existing = document.getElementById('git-heat-stats');
@@ -108,7 +112,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.velocity} commits/day</strong>
-        ${(settings.showTrends !== false && advanced.velocityTrend !== 0) ? `
+        ${(showTrends !== false && advanced.velocityTrend !== 0) ? `
           <span class="${advanced.velocityTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
             ${advanced.velocityIcon} ${Math.abs(advanced.velocityTrend)}%
           </span>` : ''}
@@ -123,7 +127,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <span class="color-fg-muted d-block text-small">Best Weekday</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
-        ${(settings.showTrends !== false && advanced.bestWeekdayTrend !== 0) ? `
+        ${(showTrends !== false && advanced.bestWeekdayTrend !== 0) ? `
           <span class="${advanced.bestWeekdayTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
             ${advanced.bestWeekdayIcon} ${Math.abs(advanced.bestWeekdayTrend)}%
           </span>` : ''}
@@ -134,7 +138,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
-        ${(settings.showTrends !== false && advanced.currentWeekdayTrend !== 0) ? `
+        ${(showTrends !== false && advanced.currentWeekdayTrend !== 0) ? `
           <span class="${advanced.currentWeekdayTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
             ${advanced.currentWeekdayIcon} ${Math.abs(advanced.currentWeekdayTrend)}%
           </span>` : ''}
@@ -238,14 +242,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     });
   };
 
-  const highlightLevel = (level: number) => {
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: any) => {
-      day.classList.add('gh-highlight');
-      day.style.outline = '';
-      day.style.border = '';
-    });
-  };
-
   const highlightGranularLevel = (level: number) => {
     document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"][data-date]`).forEach((day: any) => {
       day.classList.add('gh-highlight');
@@ -304,10 +300,34 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-peak-day', () => highlightWeekday(advanced.peakWeekdayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
   addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
-  addHover('#gh-thresh-1', () => highlightLevel(1));
-  addHover('#gh-thresh-2', () => highlightLevel(2));
-  addHover('#gh-thresh-3', () => highlightLevel(3));
-  addHover('#gh-thresh-4', () => highlightLevel(4));
+  addHover('#gh-thresh-1', () => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="1"][data-date]`).forEach((day: any) => {
+      day.classList.add('gh-highlight');
+      day.style.outline = '';
+      day.style.border = '';
+    });
+  });
+  addHover('#gh-thresh-2', () => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="2"][data-date]`).forEach((day: any) => {
+      day.classList.add('gh-highlight');
+      day.style.outline = '';
+      day.style.border = '';
+    });
+  });
+  addHover('#gh-thresh-3', () => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="3"][data-date]`).forEach((day: any) => {
+      day.classList.add('gh-highlight');
+      day.style.outline = '';
+      day.style.border = '';
+    });
+  });
+  addHover('#gh-thresh-4', () => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="4"][data-date]`).forEach((day: any) => {
+      day.classList.add('gh-highlight');
+      day.style.outline = '';
+      day.style.border = '';
+    });
+  });
 }
 
 export function extendLegend(thresholds: any) {

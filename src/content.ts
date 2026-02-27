@@ -20,24 +20,29 @@ function init() {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!isContextValid()) return;
     if (request.action === "getStats") {
-      const data = parseContributionGraph();
-      const pinned = parsePinnedProjects();
-      const timeline = parseActivityTimeline();
-      const achievements = parseAchievements();
-      const socials = parseSocials();
-      if (data) {
-        const thresholds = calculateThresholds(data);
-        const percentiles = calculatePercentiles(data);
-        const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
-        let total = data.reduce((sum, day) => sum + day.count, 0);
-        if (advanced.isYTD) {
-          const currentYear = new Date().getFullYear();
-          const ytdData = data.filter(d => d.date >= `${currentYear}-01-01`);
-          if (ytdData.length > 0) total = ytdData.reduce((sum, day) => sum + day.count, 0);
+      try {
+        const data = parseContributionGraph();
+        const pinned = parsePinnedProjects();
+        const timeline = parseActivityTimeline();
+        const achievements = parseAchievements();
+        const socials = parseSocials();
+        if (data) {
+          const thresholds = calculateThresholds(data);
+          const percentiles = calculatePercentiles(data);
+          const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
+          let total = data.reduce((sum, day) => sum + day.count, 0);
+          if (advanced.isYTD) {
+            const currentYear = new Date().getFullYear();
+            const ytdData = data.filter(d => d.date >= `${currentYear}-01-01`);
+            if (ytdData.length > 0) total = ytdData.reduce((sum, day) => sum + day.count, 0);
+          }
+          sendResponse({ thresholds, percentiles, total, advanced, success: true });
+        } else {
+          sendResponse({ success: false, error: "No graph found" });
         }
-        sendResponse({ thresholds, percentiles, total, advanced, success: true });
-      } else {
-        sendResponse({ success: false, error: "No graph found" });
+      } catch (e) {
+        console.error("GitHeat: Error in message listener", e);
+        sendResponse({ success: false, error: "Internal error" });
       }
     }
     return true;
@@ -45,15 +50,19 @@ function init() {
 
   chrome.storage.onChanged.addListener(async (changes) => {
     if (!isContextValid()) return;
-    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel'];
-    if (visibilityKeys.some(key => changes[key])) applyVisibility();
+    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends'];
+    if (visibilityKeys.some(key => (changes as any)[key])) {
+      await applyVisibility();
+      // Trends change might need a re-injection
+      if (changes.showTrends) runAnalysis().catch(() => {});
+    }
     if (changes.gridOrder || changes.islandWrapAround) runAnalysis().catch(() => {});
     if (changes.theme || changes.customStart || changes.customStop) {
       const data = parseContributionGraph();
       if (data) {
         const p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get('theme');
-        await applyDeepRecoloring(data, p, (s.theme as string) || 'green');
+        const s = await chrome.storage.local.get(['theme', 'customStart', 'customStop']);
+        await applyDeepRecoloring(data, p, (s.theme as string) || 'green', (s.customStart as string), (s.customStop as string));
       }
     }
   });
@@ -70,16 +79,20 @@ function init() {
       const socials = parseSocials();
       if (data) {
         const t = calculateThresholds(data), p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround']);
+        const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround', 'showTrends', 'customStart', 'customStop']);
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
-        const wrapAround = true; // Always true for now
+        const wrapAround = true; 
+        const showTrends = s.showTrends !== false;
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround);
-        injectStats(t, p, data, advanced, order);
+        
+        injectStats(t, p, data, advanced, order, showTrends);
         extendLegend(t);
-        await applyDeepRecoloring(data, p, theme);
+        await applyDeepRecoloring(data, p, theme, (s.customStart as string), (s.customStop as string));
         await applyVisibility();
       }
-    } catch (e) {} finally { isAnalysisRunning = false; }
+    } catch (e) {
+      console.error("GitHeat: Analysis error", e);
+    } finally { isAnalysisRunning = false; }
   };
 
   const observer = new MutationObserver((mutations) => {

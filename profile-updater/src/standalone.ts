@@ -31,6 +31,7 @@ async function runStandalone() {
             showFooter: true,
             showLegendNumbers: true,
             showDominantWeekday: true,
+            showTrends: true,
             
             // Main Grid Items (Checked)
             showTotal: true,
@@ -94,7 +95,7 @@ async function runStandalone() {
       const p = calculatePercentiles(data);
       const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, true);
       
-      injectStats(t, p, data, advanced, null);
+      injectStats(t, p, data, advanced, null, true);
       extendLegend(t);
       await applyDeepRecoloring(data, p, 'custom', '#4a207e', '#04ff00');
       await applyVisibility();

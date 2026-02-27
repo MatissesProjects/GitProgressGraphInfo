@@ -30,7 +30,7 @@ export function interpolateColor(color1: string, color2: string, factor: number)
   };
 
   const parseToRgb = (c: string) => {
-    c = c.trim();
+    c = (c || '').trim();
     if (c.startsWith('#')) {
       const h = c.replace('#', '');
       if (h.length === 3) {
@@ -66,9 +66,7 @@ export function interpolateColor(color1: string, color2: string, factor: number)
 }
 
 export function generateCustomScale(start: string, stop: string, steps: number = 11): string[] {
-  // Index 0: Placeholder for background
   const scale = ['#161b22']; 
-  // Generate gradient: Level 1 (start) to Level N (stop)
   for (let i = 0; i < steps; i++) {
     const factor = i / (steps - 1);
     scale.push(interpolateColor(start, stop, factor));
@@ -88,7 +86,6 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     return;
   }
 
-  // Count active deep scale levels from percentiles
   const pMarkers = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 98, 99];
   const totalLevels = pMarkers.length + 1; // 15 levels
 
@@ -109,8 +106,19 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     }
     colors = generateCustomScale(start, stop, totalLevels);
   } else {
-    // For predefined themes, we still use 12 levels for now, or we can interpolate them too
-    colors = THEMES[themeName] || THEMES.green;
+    // Interpolate predefined themes to match our 15-level scale
+    const baseColors = THEMES[themeName] || THEMES.green;
+    colors = [baseColors[0]]; // Index 0 is always the background
+    const gradientColors = baseColors.slice(1);
+    const steps = totalLevels;
+    for (let i = 0; i < steps; i++) {
+      const factor = i / (steps - 1);
+      const colorIdx = factor * (gradientColors.length - 1);
+      const low = Math.floor(colorIdx);
+      const high = Math.ceil(colorIdx);
+      const subFactor = colorIdx - low;
+      colors.push(interpolateColor(gradientColors[low], gradientColors[high], subFactor));
+    }
   }
   
   const getGranularLevel = (count: number) => {
@@ -118,7 +126,6 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     const c = Number(count);
     if (c === 1) return 1;
 
-    // Iterate through markers to find level
     for (let i = pMarkers.length - 1; i >= 0; i--) {
       const m = pMarkers[i];
       if (c >= (percentiles[m] || 999)) return i + 2;
@@ -141,9 +148,6 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   const footer = document.querySelector('.ContributionCalendar-footer');
   if (footer) {
     const legendSquares = footer.querySelectorAll('.ContributionCalendar-day');
-    // Map the 5 standard GitHub squares to our expanded scale
-    // Standard: 0, 1, 2, 3, 4
-    // Our scale: 0, 1, 5, 10, 14 (roughly)
     const levelMap = [0, 1, Math.floor(totalLevels/3), Math.floor(totalLevels*2/3), totalLevels];
     legendSquares.forEach((sq: any, i) => {
       const color = colors[levelMap[i]];
@@ -176,20 +180,15 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
       `${p[99]}+ commits`
     ];
 
-    // Coloring the Deep Scale legend
     const legendSquares = statsPanel.querySelectorAll('.square-legend');
     legendSquares.forEach((sq: any, i) => {
       const color = colors[i + 1]; 
       if (color) sq.style.setProperty('background-color', color, 'important');
-      
-      // Update tooltip to ensure it's always correct
       const range = legendRanges[i];
       if (range) sq.setAttribute('title', range);
     });
 
-    // Coloring the threshold badges
     const badges = statsPanel.querySelectorAll('.badge');
-    // Standard badges map to specific points in our 15-level scale
     const badgeLevels = [1, Math.floor(totalLevels/3), Math.floor(totalLevels*2/3), totalLevels];
     badges.forEach((badge: any, i) => {
       const color = colors[badgeLevels[i]];
