@@ -157,6 +157,22 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
 
   const rpg = calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity);
 
+  // Velocity Trend (Last 7 days vs Previous 7 days)
+  const sorted = [...pastAndPresentData].sort((a, b) => b.date.localeCompare(a.date));
+  let velocityTrend = 0, velocityIcon = '';
+  if (sorted.length >= 14) {
+    const cw = sorted.slice(0, 7), pw = sorted.slice(7, 14);
+    const cAct = cw.filter(d => d.count > 0), pAct = pw.filter(d => d.count > 0);
+    const cVel = cAct.length > 0 ? cw.reduce((s, d) => s + d.count, 0) / cAct.length : 0;
+    const pVel = pAct.length > 0 ? pw.reduce((s, d) => s + d.count, 0) / pAct.length : 0;
+    if (pVel > 0) {
+      velocityTrend = Math.round(((cVel - pVel) / pVel) * 100);
+      velocityIcon = velocityTrend > 0 ? '▲' : (velocityTrend < 0 ? '▼' : '');
+    } else if (cVel > 0) {
+      velocityTrend = 100; velocityIcon = '▲';
+    }
+  }
+
   const avgVel = parseFloat(velocity);
   const aboveVelocityDates = pastAndPresentData.filter(d => d.count >= avgVel && d.count > 0).map(d => d.date);
   const belowVelocityDates = pastAndPresentData.filter(d => d.count < avgVel && d.count > 0).map(d => d.date);
@@ -189,6 +205,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
     biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
     aboveVelocityDates, belowVelocityDates,
     statsForTooltips,
+    velocityTrend, velocityIcon,
     isYTD: base.ytdTotalDays > 0, totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
     issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,

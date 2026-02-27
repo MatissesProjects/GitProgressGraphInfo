@@ -104,7 +104,16 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday"><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
-    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="${advanced.statsForTooltips.velocity.count} total commits / ${advanced.statsForTooltips.velocity.active} active days"><span class="color-fg-muted d-block text-small">Average Velocity</span><strong class="f3-light">${advanced.velocity} commits/day</strong></div>`,
+    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="${advanced.statsForTooltips.velocity.count} total commits / ${advanced.statsForTooltips.velocity.active} active days">
+      <span class="color-fg-muted d-block text-small">Average Velocity</span>
+      <div class="d-flex flex-items-center gap-1">
+        <strong class="f3-light">${advanced.velocity} commits/day</strong>
+        ${advanced.velocityTrend !== 0 ? `
+          <span class="${advanced.velocityTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
+            ${advanced.velocityIcon} ${Math.abs(advanced.velocityTrend)}%
+          </span>` : ''}
+      </div>
+    </div>`,
     'gh-velocity-above': `<div class="stat-card highlightable" id="gh-velocity-above"><span class="color-fg-muted d-block text-small">Above Average Days</span><strong class="f3-light">${advanced.aboveVelocityDates.length} days</strong></div>`,
     'gh-velocity-below': `<div class="stat-card highlightable" id="gh-velocity-below"><span class="color-fg-muted d-block text-small">Below Average Days</span><strong class="f3-light">${advanced.belowVelocityDates.length} days</strong></div>`,
     'gh-consistency': `<div class="stat-card" id="gh-consistency" title="${advanced.statsForTooltips.consistency.active} / ${advanced.statsForTooltips.consistency.total} days active"><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,

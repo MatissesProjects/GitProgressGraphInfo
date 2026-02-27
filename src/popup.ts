@@ -361,7 +361,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('best-week')!.textContent = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})`;
         document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
-        document.getElementById('velocity')!.textContent = `${adv.velocity} c/d`;
+        
+        const velTrendHtml = adv.velocityTrend !== 0 ? ` <span style="color: ${adv.velocityTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;">${adv.velocityIcon} ${Math.abs(adv.velocityTrend)}%</span>` : '';
+        document.getElementById('velocity')!.innerHTML = `${adv.velocity} c/d${velTrendHtml}`;
+        
         document.getElementById('pr-stats')!.textContent = `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`;
         document.getElementById('issue-repo-stats')!.textContent = `${adv.issuesOpened} / ${adv.createdRepos}`;
         document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
