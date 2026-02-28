@@ -195,4 +195,16 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
       if (color) badge.style.setProperty('background-color', color, 'important');
     });
   }
+
+  // Recolor Activity Ticker
+  const tickerPath = document.querySelector('.gh-ticker-path');
+  const tickerStopTop = document.querySelector('.gh-ticker-stop-top');
+  const tickerStopBottom = document.querySelector('.gh-ticker-stop-bottom');
+  if (tickerPath && tickerStopTop && tickerStopBottom) {
+    const startColor = colors[1];
+    const stopColor = colors[colors.length - 1];
+    tickerPath.setAttribute('stroke', stopColor);
+    (tickerStopTop as HTMLElement).style.setProperty('stop-color', stopColor, 'important');
+    (tickerStopBottom as HTMLElement).style.setProperty('stop-color', startColor, 'important');
+  }
 }

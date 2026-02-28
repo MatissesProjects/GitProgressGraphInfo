@@ -93,12 +93,12 @@ function renderTickerGraph(data: { date: string; count: number }[]) {
     <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px;">
       <span class="color-fg-muted text-small d-block mb-1">Activity Pulse Ticker (YTD)</span>
       <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible;">
-        <path d="M ${points}" fill="none" stroke="var(--color-accent-fg)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        <path d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#pulse-gradient)" opacity="0.1" />
+        <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="var(--color-accent-fg)" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round" />
+        <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#pulse-gradient)" opacity="0.2" />
         <defs>
           <linearGradient id="pulse-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" style="stop-color:var(--color-accent-fg);stop-opacity:1" />
-            <stop offset="100%" style="stop-color:var(--color-accent-fg);stop-opacity:0" />
+            <stop class="gh-ticker-stop-top" offset="0%" style="stop-color:var(--color-accent-fg);stop-opacity:1" />
+            <stop class="gh-ticker-stop-bottom" offset="100%" style="stop-color:var(--color-accent-fg);stop-opacity:0" />
           </linearGradient>
         </defs>
       </svg>
