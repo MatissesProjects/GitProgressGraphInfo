@@ -196,7 +196,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
   const defaultOrder = [
-    'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
+    'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
     'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
     'gh-island', 'gh-slump-island', 'gh-slump',
     'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
@@ -230,6 +230,10 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
             ${advanced.bestWeekIcon} ${Math.abs(advanced.bestWeekTrend)}%
           </span>` : ''}
       </div>
+    </div>`,
+    'gh-current-week': `<div class="stat-card highlightable" id="gh-current-week" data-week-dates="${(advanced.currentWeekDates || []).join(',')}" title="Your performance this week so far. (${advanced.currentWeekStats.count} commits, ${advanced.currentWeekStats.consistency}% consistency, ${advanced.currentWeekStats.streak} day streak)">
+      <span class="color-fg-muted d-block text-small">Current Week</span>
+      <strong class="f3-light">Score: ${advanced.currentWeekStats.score}</strong>
     </div>`,
     'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday"><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${(advanced.biggestIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
@@ -468,6 +472,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-best-month', () => highlightDates(advanced.bestMonthDates));
   addHover('#gh-worst-month', () => highlightDates(advanced.worstMonthDates));
   addHover('#gh-best-week', () => highlightDates(advanced.bestWeekDates));
+  addHover('#gh-current-week', () => highlightDates(advanced.currentWeekDates));
   addHover('#gh-island', () => highlightDates(advanced.biggestIslandDates, 'gh-highlight-special'));
   addHover('#gh-slump-island', () => highlightDates(advanced.biggestSlumpIslandDates, 'gh-highlight-sad'));
   addHover('#gh-velocity-above', () => highlightDates(advanced.aboveVelocityDates, 'gh-highlight-special'));

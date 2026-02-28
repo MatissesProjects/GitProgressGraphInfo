@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleBestMonth = document.getElementById('toggle-best-month') as HTMLInputElement;
   const toggleWorstMonth = document.getElementById('toggle-worst-month') as HTMLInputElement;
   const toggleBestWeek = document.getElementById('toggle-best-week') as HTMLInputElement;
+  const toggleCurrentWeek = document.getElementById('toggle-current-week') as HTMLInputElement;
   const toggleDominantWeekday = document.getElementById('toggle-dominant-weekday') as HTMLInputElement;
   const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
   const toggleSlumpIsland = document.getElementById('toggle-slump-island') as HTMLInputElement;
@@ -152,6 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-best-month': 'Best Month',
     'gh-worst-month': 'Worst Month',
     'gh-best-week': 'Best Week',
+    'gh-current-week': 'Current Week',
     'gh-dominant-weekday': 'Dominant Weekday',
     'gh-island': 'Biggest Island (L2+)',
     'gh-slump-island': 'Worst Island (0-1)',
@@ -182,7 +184,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar',
     'gridOrder'
   ]);
 
@@ -322,6 +324,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleBestMonth, settings.showBestMonth);
   setChecked(toggleWorstMonth, settings.showWorstMonth);
   setChecked(toggleBestWeek, settings.showBestWeek);
+  setChecked(toggleCurrentWeek, settings.showCurrentWeek);
   setChecked(toggleDominantWeekday, settings.showDominantWeekday);
   setChecked(toggleIsland, settings.showIsland);
   setChecked(toggleSlumpIsland, settings.showSlumpIsland);
@@ -390,6 +393,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleBestMonth, 'showBestMonth');
   addToggleListener(toggleWorstMonth, 'showWorstMonth');
   addToggleListener(toggleBestWeek, 'showBestWeek');
+  addToggleListener(toggleCurrentWeek, 'showCurrentWeek');
   addToggleListener(toggleDominantWeekday, 'showDominantWeekday');
   addToggleListener(toggleIsland, 'showIsland');
   addToggleListener(toggleSlumpIsland, 'showSlumpIsland');
@@ -487,6 +491,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const bestWeekTrendHtml = adv.bestWeekTrend !== 0 ? ` <span style="color: ${adv.bestWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best week vs average week score">${adv.bestWeekIcon} ${Math.abs(adv.bestWeekTrend)}%</span>` : '';
         document.getElementById('best-week')!.innerHTML = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})${bestWeekTrendHtml}`;
         
+        document.getElementById('current-week')!.innerHTML = `Score: ${adv.currentWeekStats.score}`;
+
         document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
         
