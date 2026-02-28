@@ -101,7 +101,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
     return 1;
   };
 
-  const pulseHash = ytdDays.map(d => getLevel(d.count).toString(16).toUpperCase()).join('');
+  const pulseHash = ytdDays.map(d => getLevel(d.count).toString(16).toUpperCase()).reverse().join('');
 
   const base = calculateBaseStats(pastAndPresentData, ytdStartStr, todayStr);
   

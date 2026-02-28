@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleFooter = document.getElementById('toggle-footer') as HTMLInputElement;
   const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
   const toggleTrends = document.getElementById('toggle-trends') as HTMLInputElement;
+  const togglePulseHash = document.getElementById('toggle-pulse-hash') as HTMLInputElement;
   const toggleIslandWrap = document.getElementById('toggle-island-wrap') as HTMLInputElement;
 
   // Visibility Toggles - Grid Items

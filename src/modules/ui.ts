@@ -18,6 +18,7 @@ export async function applyVisibility() {
     const persona = document.getElementById('gh-persona');
     const footer = document.getElementById('gh-footer');
     const headerLevel = document.getElementById('gh-header-level');
+    const pulseSignature = document.getElementById('gh-pulse-signature');
 
     if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
     if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
@@ -26,6 +27,7 @@ export async function applyVisibility() {
     if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
     if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
     if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
+    if (pulseSignature) pulseSignature.style.display = (settings.showPulseHash !== false) ? 'block' : 'none';
 
     const toggleMap: Record<string, any> = {
       'gh-total': settings.showTotal,
@@ -53,8 +55,7 @@ export async function applyVisibility() {
       'gh-pr': settings.showPR,
       'gh-issue-created': settings.showIssueCreated,
       'gh-langs': settings.showLangs,
-      'gh-network': settings.showNetwork,
-      'gh-pulse-hash': settings.showPulseHash
+      'gh-network': settings.showNetwork
     };
 
     Object.entries(toggleMap).forEach(([id, val]) => {
@@ -98,7 +99,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
     'gh-island', 'gh-slump-island', 'gh-slump',
     'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
-    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network', 'gh-pulse-hash'
+    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
   ];
   let gridOrder = savedOrder || defaultOrder;
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
@@ -172,14 +173,13 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-pr': `<div class="stat-card" id="gh-pr"><span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span><strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong></div>`,
     'gh-issue-created': `<div class="stat-card" id="gh-issue-created"><span class="color-fg-muted d-block text-small">Issues / Created Repos</span><strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong></div>`,
     'gh-langs': `<div class="stat-card" id="gh-langs"><span class="color-fg-muted d-block text-small">Top Languages</span><strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong></div>`,
-    'gh-network': `<div class="stat-card" id="gh-network"><span class="color-fg-muted d-block text-small">Network</span><strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong></div>`,
-    'gh-pulse-hash': `<div class="stat-card" id="gh-pulse-hash" style="grid-column: span 2;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. 0=Empty, 1-F=Deep Scale Level."><span class="color-fg-muted d-block text-small">Pulse Signature (YTD)</span><code class="f4" style="word-break: break-all; color: var(--color-accent-fg); font-family: monospace; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">0x${advanced.pulseHash}</code></div>`
+    'gh-network': `<div class="stat-card" id="gh-network"><span class="color-fg-muted d-block text-small">Network</span><strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong></div>`
   };
 
   const rpgClasses = getCodingClass(advanced);
 
   statsDiv.innerHTML = `
-    <div class="d-flex flex-justify-between flex-items-start mb-3" style="gap: 15px;">
+    <div class="d-flex flex-justify-between flex-items-start mb-2" style="gap: 15px;">
       <div class="d-flex flex-column" style="flex: 1; min-width: 0;">
         <div class="d-flex flex-items-center flex-wrap gap-2">
           <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
@@ -217,6 +217,13 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         </div>
       </div>
     </div>
+
+    <div id="gh-pulse-signature" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 4px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
+      <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all;">
+        SIG: 0x${advanced.pulseHash}
+      </span>
+    </div>
+
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">
       <div style="flex: 1; min-width: 160px;" id="gh-active-repos">
@@ -253,6 +260,14 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     dates.forEach(date => {
       const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
       if (dayEl) { dayEl.classList.add(className); dayEl.style.outline = ''; dayEl.style.border = ''; }
+    });
+  };
+
+  const highlightLevel = (level: number) => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: any) => {
+      day.classList.add('gh-highlight');
+      day.style.outline = '';
+      day.style.border = '';
     });
   };
 
