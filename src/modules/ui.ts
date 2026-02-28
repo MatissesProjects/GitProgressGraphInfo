@@ -358,21 +358,31 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     ${tickerHtml}
 
     <div id="gh-skill-tree" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
-      <div class="d-flex flex-justify-between flex-items-center mb-1">
+      <div class="d-flex flex-justify-between flex-items-center mb-2">
         <span class="color-fg-muted text-small font-weight-bold">SKILL TREE</span>
         <span class="text-small color-fg-accent" style="cursor: help;" title="Unlock skills by completing specific GitHub milestones.">? How to unlock</span>
       </div>
-      <div class="d-flex flex-wrap gap-2">
-        ${(advanced.skills || []).map((s: any) => `
-          <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
-               title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
-               style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.5'}; cursor: help;">
-            <span>${s.icon}</span>
-            <span style="font-weight: ${s.unlocked ? '600' : 'normal'};">${s.name}</span>
-            ${s.unlocked ? '<span style="font-size: 9px; color: var(--color-success-fg);">✓</span>' : ''}
+      
+      ${['Coding', 'Social', 'Consistency'].map(cat => {
+        const catSkills = (advanced.skills || []).filter((s: any) => s.category === cat);
+        if (catSkills.length === 0) return '';
+        return `
+          <div class="mb-2">
+            <div class="text-small color-fg-muted mb-1" style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;">${cat}</div>
+            <div class="d-flex flex-wrap gap-2">
+              ${catSkills.map((s: any) => `
+                <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
+                     title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
+                     style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
+                  <span>${s.icon}</span>
+                  <span style="font-weight: ${s.unlocked ? '600' : 'normal'};">${s.name}</span>
+                  ${s.unlocked ? '<span style="font-size: 9px; color: var(--color-success-fg);">✓</span>' : ''}
+                </div>
+              `).join('')}
+            </div>
           </div>
-        `).join('')}
-      </div>
+        `;
+      }).join('')}
     </div>
 
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
@@ -425,9 +435,12 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const highlightGranularLevel = (level: number) => {
     // 1. Highlight Graph Days
     document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"][data-date]`).forEach((day: any) => {
-      day.classList.add('gh-highlight');
-      day.style.outline = '';
-      day.style.border = '';
+      const date = day.getAttribute('data-date');
+      if (date && date <= todayStr) {
+        day.classList.add('gh-highlight');
+        day.style.outline = '';
+        day.style.border = '';
+      }
     });
     // 2. Highlight SIG characters
     document.querySelectorAll(`.gh-sig-char[data-level="${level}"]`).forEach((char: any) => {

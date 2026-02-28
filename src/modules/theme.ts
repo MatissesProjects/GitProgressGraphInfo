@@ -78,49 +78,9 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   console.log("GitHeat: Applying Deep Recoloring (v1.3 - High Resolution Gradient)...");
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
-  if (themeName === 'none') {
-    days.forEach((day: any) => {
-      day.style.removeProperty('background-color');
-      day.style.removeProperty('fill');
-    });
-    return;
-  }
-
   const pMarkers = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 98, 99];
   const totalLevels = pMarkers.length + 1; // 15 levels
 
-  let colors: string[];
-  if (themeName === 'custom') {
-    let start = customStart;
-    let stop = customStop;
-
-    if (!start || !stop) {
-      try {
-        const settings = await chrome.storage.local.get(['customStart', 'customStop']);
-        start = start || (settings.customStart as string) || '#4a207e';
-        stop = stop || (settings.customStop as string) || '#04ff00';
-      } catch (e) {
-        start = start || '#4a207e';
-        stop = stop || '#04ff00';
-      }
-    }
-    colors = generateCustomScale(start, stop, totalLevels);
-  } else {
-    // Interpolate predefined themes to match our 15-level scale
-    const baseColors = THEMES[themeName] || THEMES.green;
-    colors = [baseColors[0]]; // Index 0 is always the background
-    const gradientColors = baseColors.slice(1);
-    const steps = totalLevels;
-    for (let i = 0; i < steps; i++) {
-      const factor = i / (steps - 1);
-      const colorIdx = factor * (gradientColors.length - 1);
-      const low = Math.floor(colorIdx);
-      const high = Math.ceil(colorIdx);
-      const subFactor = colorIdx - low;
-      colors.push(interpolateColor(gradientColors[low], gradientColors[high], subFactor));
-    }
-  }
-  
   const getGranularLevel = (count: number) => {
     if (count <= 0) return 0;
     const c = Number(count);
@@ -133,17 +93,55 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     return 1;
   };
 
+  let colors: string[] = [];
+  if (themeName !== 'none') {
+    if (themeName === 'custom') {
+      let start = customStart;
+      let stop = customStop;
+
+      if (!start || !stop) {
+        try {
+          const settings = await chrome.storage.local.get(['customStart', 'customStop']);
+          start = start || (settings.customStart as string) || '#4a207e';
+          stop = stop || (settings.customStop as string) || '#04ff00';
+        } catch (e) {
+          start = start || '#4a207e';
+          stop = stop || '#04ff00';
+        }
+      }
+      colors = generateCustomScale(start, stop, totalLevels);
+    } else {
+      // Interpolate predefined themes to match our 15-level scale
+      const baseColors = THEMES[themeName] || THEMES.green;
+      colors = [baseColors[0]]; // Index 0 is always the background
+      const gradientColors = baseColors.slice(1);
+      const steps = totalLevels;
+      for (let i = 0; i < steps; i++) {
+        const factor = i / (steps - 1);
+        const colorIdx = factor * (gradientColors.length - 1);
+        const low = Math.floor(colorIdx);
+        const high = Math.ceil(colorIdx);
+        const subFactor = colorIdx - low;
+        colors.push(interpolateColor(gradientColors[low], gradientColors[high], subFactor));
+      }
+    }
+  }
+
+  // ALWAYS set the data-granular-level attribute so highlighting works
   days.forEach((day: any) => {
     const date = day.getAttribute('data-date');
     const dayData = data.find(d => d.date === date);
-    if (dayData && dayData.count > 0) {
-      const level = getGranularLevel(dayData.count);
-      day.setAttribute('data-granular-level', level.toString());
+    const level = getGranularLevel(dayData ? dayData.count : 0);
+    day.setAttribute('data-granular-level', level.toString());
+    
+    if (themeName !== 'none' && dayData && dayData.count > 0) {
       const color = colors[level] || colors[colors.length - 1];
       day.style.setProperty('background-color', color, 'important');
       day.style.setProperty('fill', color, 'important');
     }
   });
+
+  if (themeName === 'none') return;
 
   const footer = document.querySelector('.ContributionCalendar-footer');
   if (footer) {
