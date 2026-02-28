@@ -203,8 +203,14 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   if (!targetTickerData && tickerLineGradient) {
     const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
     if (sorted.length > 0) {
-      const yearFromData = new Date(sorted[sorted.length - 1].date + 'T00:00:00').getFullYear();
-      targetTickerData = sorted.filter(d => d.date >= `${yearFromData}-01-01`);
+      const now = new Date();
+      const lastDayInData = sorted[sorted.length - 1];
+      const yearFromData = new Date(lastDayInData.date + 'T00:00:00').getFullYear();
+      const isCurrentYear = yearFromData === now.getFullYear();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const periodEndStr = isCurrentYear ? todayStr : lastDayInData.date;
+      
+      targetTickerData = sorted.filter(d => d.date >= `${yearFromData}-01-01` && d.date <= periodEndStr);
     }
   }
   
