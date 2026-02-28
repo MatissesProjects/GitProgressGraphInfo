@@ -267,6 +267,31 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       </div>
 
       <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
+        ${advanced.avatar ? `
+          <div class="gh-avatar-wrapper" title="${advanced.avatar.description}" style="position: relative; width: 65px; height: 55px; cursor: help; user-select: none; margin-right: 5px;">
+            <!-- Companion -->
+            <div style="position: absolute; left: -15px; bottom: -5px; font-size: 22px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); z-index: 1;">
+              ${advanced.avatar.companion}
+            </div>
+            <!-- Base Character -->
+            <div style="position: absolute; left: 50%; top: 55%; transform: translate(-50%, -35%); font-size: 34px; z-index: 2;">
+              ${advanced.avatar.base}
+            </div>
+            <!-- Headgear -->
+            <div style="position: absolute; left: 50%; top: -6px; transform: translateX(-50%); font-size: 26px; z-index: 5; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+              ${advanced.avatar.headgear}
+            </div>
+            <!-- Weapon (Left Hand) -->
+            <div style="position: absolute; left: -8px; top: 62%; transform: translateY(-50%) rotate(-10deg); font-size: 28px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
+              ${advanced.avatar.weapon}
+            </div>
+            <!-- Shield (Right Hand) -->
+            <div style="position: absolute; right: -2px; top: 55%; transform: translateY(-50%) rotate(10deg); font-size: 28px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
+              ${advanced.avatar.shield}
+            </div>
+          </div>
+        ` : ''}
+
         ${advanced.todayCombo >= 2 ? `
           <div class="gh-combo-badge" title="${advanced.todayComboMath}">
             <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>

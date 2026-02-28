@@ -1,8 +1,48 @@
-import { ContributionDay, TimelineActivity } from '../types';
+import { ContributionDay, TimelineActivity, AvatarData, TodayActions } from '../types';
 
 export const getLevelThreshold = (l: number) => 25 * l * l;
 
 export const titles = ["Ghost", "Novice", "Script Kiddie", "Code Monkey", "Byte Basher", "Repo Ranger", "Commit Commander", "Git Guru", "Merge Master", "Branch Baron", "Pull Request Prince", "Octocat Overlord", "Code God"];
+
+export function getAvatar(level: number, currentStreak: number, totalStars: number, actions: TodayActions, todayCount: number): AvatarData {
+  let base = "👶";
+  if (level >= 20) base = "🧙‍♂️";
+  else if (level >= 15) base = "🦸‍♂️";
+  else if (level >= 10) base = "👨‍💻";
+  else if (level >= 5) base = "🐒";
+
+  const effectiveCommits = Math.max(actions.commits, todayCount);
+
+  let weapon = "";
+  let weaponDesc = "Unarmed";
+  if (effectiveCommits >= 20) { weapon = "⚡"; weaponDesc = "Legendary Lightning (20+ Commits)"; }
+  else if (effectiveCommits >= 12) { weapon = "⚔️"; weaponDesc = "Steel Claymore (12+ Commits)"; }
+  else if (effectiveCommits >= 7) { weapon = "🗡️"; weaponDesc = "Iron Sword (7+ Commits)"; }
+  else if (effectiveCommits >= 4) { weapon = "🔨"; weaponDesc = "Heavy Hammer (4+ Commits)"; }
+  else if (effectiveCommits >= 1) { weapon = "🦴"; weaponDesc = "Primitive Stick (1+ Commits)"; }
+
+  let shield = "";
+  let shieldDesc = "No Shield";
+  if (actions.reviews >= 3) { shield = "💠"; shieldDesc = "Energy Shield (3+ Reviews)"; }
+  else if (actions.reviews >= 1) { shield = "🛡️"; shieldDesc = "Wooden Shield (1+ Reviews)"; }
+
+  let headgear = "";
+  let headgearDesc = "No Headgear";
+  if (currentStreak >= 30) { headgear = "👑"; headgearDesc = "God Crown (30+ Day Streak)"; }
+  else if (currentStreak >= 14) { headgear = "🪖"; headgearDesc = "Steel Helmet (14+ Day Streak)"; }
+  else if (currentStreak >= 7) { headgear = "🧢"; headgearDesc = "Lucky Cap (7+ Day Streak)"; }
+
+  let companion = "";
+  let companionDesc = "Lone Wolf";
+  if (totalStars >= 500) { companion = "🐉"; companionDesc = "Ancient Dragon (500+ Stars)"; }
+  else if (totalStars >= 100) { companion = "🦄"; companionDesc = "Unicorn (100+ Stars)"; }
+  else if (totalStars >= 20) { companion = "🐕"; companionDesc = "Loyal Dog (20+ Stars)"; }
+
+  const full = `${companion} ${headgear}${base}${weapon}${shield}`.trim();
+  const description = `Level ${level} Character: ${weaponDesc}, ${shieldDesc}, ${headgearDesc}, ${companionDesc}.`;
+
+  return { base, weapon, shield, headgear, companion, full, description };
+}
 
 export function getPersona(weekendVolumeShare: number, consistency: string, velocity: string, weekendScore: number, totalStars: number) {
   if (weekendVolumeShare > 0.4) return "Weekend Warrior";
@@ -75,7 +115,7 @@ export function getCombo(todayScore: number, actions: any) {
   return { todayCombo, todayComboReason };
 }
 
-export function calculateRPGStats(pastAndPresentData: ContributionDay[], timeline: TimelineActivity, todayCount: number, currentStreak: number, velocity: string) {
+export function calculateRPGStats(pastAndPresentData: ContributionDay[], timeline: TimelineActivity, todayCount: number, currentStreak: number, velocity: string, totalStars: number) {
   let totalXPWithBonuses = 0;
   pastAndPresentData.forEach(day => {
     let dayXP = day.count;
@@ -106,8 +146,11 @@ export function calculateRPGStats(pastAndPresentData: ContributionDay[], timelin
   const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
   const todayComboMath = `Score: ${todayScore} ((HeatmapCommits:${heatmapCommits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus}) + (VelocityBonus:${velocityBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
 
+  const avatar = getAvatar(currentLevel, currentStreak, totalStars, actions, heatmapCommits);
+
   return {
     totalXP: totalXPWithBonuses, level: currentLevel, levelTitle, levelProgressXP: xpProgress, levelTotalXP: xpNeeded, progressPercent,
-    todayCombo, todayComboReason, todayComboMath, xpToNext: nextLevelXP - totalXPWithBonuses
+    todayCombo, todayComboReason, todayComboMath, xpToNext: nextLevelXP - totalXPWithBonuses,
+    avatar
   };
 }

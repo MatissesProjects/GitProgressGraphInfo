@@ -36,6 +36,16 @@ export interface TodayActions {
   reviews: number;
 }
 
+export interface AvatarData {
+  base: string;
+  weapon: string;
+  shield: string;
+  headgear: string;
+  companion: string;
+  full: string;
+  description: string;
+}
+
 export interface TimelineActivity {
   topRepos: RepoActivity[];
   createdRepos: number;

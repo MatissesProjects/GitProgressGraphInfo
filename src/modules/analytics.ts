@@ -179,7 +179,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
     if (weekdayHighActivityCounts[i] > maxHighFreq) { maxHighFreq = weekdayHighActivityCounts[i]; peakWeekdayIndex = i; }
   }
 
-  const rpg = calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity);
+  const rpg = calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars);
 
   // Velocity Trend (Last 7 days vs Previous 7 days)
   const sorted = [...pastAndPresentData].sort((a, b) => b.date.localeCompare(a.date));
