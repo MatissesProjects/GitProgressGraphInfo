@@ -101,38 +101,47 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
     `;
   }).join('');
 
-  // Vertical stops for the intensity gradient (maps color to height)
-  const stops = [1, 2, 3, 4].map(l => {
-    if (!thresholds[l]) return '';
-    const offset = 100 - (Math.min(thresholds[l].min, maxCount) / maxCount) * 100;
-    return `<stop class="gh-ticker-v-stop-l${l}" offset="${offset}%" />`;
+  // Horizontal stops for the line gradient (maps color to each specific day)
+  const lineStops = data.map((d, i) => {
+    const offset = (i / (Math.max(1, data.length - 1))) * 100;
+    let level = 0;
+    if (d.count > 0) {
+      level = 1;
+      if (thresholds[2] && d.count >= thresholds[2].min) level = 2;
+      if (thresholds[3] && d.count >= thresholds[3].min) level = 3;
+      if (thresholds[4] && d.count >= thresholds[4].min) level = 4;
+    }
+    // We use L1 as the baseline for the ticker fill even on level 0 days, but with very low opacity
+    const colorVar = `var(--color-calendar-graph-day-L${Math.max(1, level)}-bg, #40c463)`;
+    const stopOpacity = level === 0 ? 0.15 : 1;
+    return `<stop offset="${offset}%" stop-color="${colorVar}" stop-opacity="${stopOpacity}" />`;
   }).join('');
 
   return `
     <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px;">
       <span class="color-fg-muted text-small d-block mb-1">Activity Intensity Ticker (Vertical Heat Zones)</span>
-      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible; background: rgba(0,0,0,0.05); border-radius: 4px;">
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible; background: var(--color-canvas-default); border-radius: 4px; border: 1px solid var(--color-border-muted);">
         <defs>
-          <linearGradient id="ticker-vertical-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
-            <stop class="gh-ticker-v-stop-0" offset="0%" />
-            <stop class="gh-ticker-v-stop-l1" offset="10%" />
-            <stop class="gh-ticker-v-stop-l2" offset="30%" />
-            <stop class="gh-ticker-v-stop-l3" offset="60%" />
-            <stop class="gh-ticker-v-stop-l4" offset="90%" />
-            <stop class="gh-ticker-v-stop-top" offset="100%" />
+          <linearGradient id="ticker-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            ${lineStops}
           </linearGradient>
           <linearGradient id="pulse-area-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop class="gh-ticker-area-stop-top" offset="0%" style="stop-opacity:0.4" />
-            <stop class="gh-ticker-area-stop-bottom" offset="100%" style="stop-opacity:0.05" />
+            <stop offset="0%" stop-color="white" style="stop-opacity:1" />
+            <stop offset="100%" stop-color="white" style="stop-opacity:0.2" />
           </linearGradient>
+          <mask id="gh-ticker-area-mask">
+            <rect width="100%" height="100%" fill="url(#pulse-area-gradient)" />
+          </mask>
         </defs>
         <g id="gh-ticker-quadrants">${quadrantLines}</g>
-        <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#pulse-area-gradient)" />
-        <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="url(#ticker-vertical-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#ticker-line-gradient)" mask="url(#gh-ticker-area-mask)" style="filter: saturate(1.5) brightness(1.2);" />
+        <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="var(--color-fg-default, #1f2328)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));" />
       </svg>
     </div>
   `;
 }
+
+
 
 export function injectStats(thresholds: any, percentiles: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null, showTrends: boolean = true) {
   console.log("GitHeat: Injecting Stats (v1.3)...");

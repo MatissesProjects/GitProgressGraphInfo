@@ -87,7 +87,7 @@ function init() {
         
         await injectStats(t, p, data, advanced, order, showTrends);
         extendLegend(t);
-        await applyDeepRecoloring(data, p, theme, (s.customStart as string), (s.customStop as string));
+        await applyDeepRecoloring(data, p, theme, (s.customStart as string), (s.customStop as string), advanced.ytdDailyCounts);
         await applyVisibility();
       }
     } catch (e) {

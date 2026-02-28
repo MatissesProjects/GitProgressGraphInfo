@@ -74,7 +74,7 @@ export function generateCustomScale(start: string, stop: string, steps: number =
   return scale;
 }
 
-export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string) {
+export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string, tickerData?: { date: string; count: number }[]) {
   console.log("GitHeat: Applying Deep Recoloring (v1.3 - High Resolution Gradient)...");
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
@@ -196,36 +196,36 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     });
   }
 
-  // Recolor Activity Ticker Line (Commit Intensity Gradient)
+  // Recolor Activity Ticker Area (Horizontal Commit Intensity Gradient)
   const tickerLineGradient = document.getElementById('ticker-line-gradient');
-  const tickerStopTop = document.querySelector('.gh-ticker-stop-top');
-  const tickerStopBottom = document.querySelector('.gh-ticker-stop-bottom');
+  let targetTickerData = tickerData;
   
-  if (tickerLineGradient && data.length > 0) {
-    const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
+  if (!targetTickerData && tickerLineGradient) {
+    const sorted = [...data].sort((a, b) => a.date.localeCompare(b.date));
+    if (sorted.length > 0) {
+      const yearFromData = new Date(sorted[sorted.length - 1].date + 'T00:00:00').getFullYear();
+      targetTickerData = sorted.filter(d => d.date >= `${yearFromData}-01-01`);
+    }
+  }
+  
+  if (tickerLineGradient && targetTickerData && targetTickerData.length > 0) {
+    const sortedTicker = [...targetTickerData].sort((a, b) => a.date.localeCompare(b.date));
     
     // Clear existing stops
     tickerLineGradient.innerHTML = '';
     
     // Create a stop for every day to map color to commit intensity
-    sortedData.forEach((day, i) => {
+    sortedTicker.forEach((day, i) => {
       const level = getGranularLevel(day.count);
       const color = colors[level] || colors[0];
-      const offset = (i / (sortedData.length - 1)) * 100;
+      const offset = (i / (Math.max(1, sortedTicker.length - 1))) * 100;
       
       const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
       stop.setAttribute('offset', `${offset}%`);
       stop.setAttribute('stop-color', color);
+      // Ensure visibility: level 0 is faint, levels 1+ are solid (mask handles vertical fade)
+      stop.setAttribute('stop-opacity', level === 0 ? '0.2' : '1');
       tickerLineGradient.appendChild(stop);
     });
-
-    if (tickerStopTop && tickerStopBottom) {
-      const stopColor = colors[colors.length - 1];
-      const startColor = colors[1];
-      (tickerStopTop as HTMLElement).style.setProperty('stop-color', stopColor, 'important');
-      (tickerStopTop as HTMLElement).style.setProperty('stop-opacity', '0.5', 'important');
-      (tickerStopBottom as HTMLElement).style.setProperty('stop-color', startColor, 'important');
-      (tickerStopBottom as HTMLElement).style.setProperty('stop-opacity', '0', 'important');
-    }
   }
 }
