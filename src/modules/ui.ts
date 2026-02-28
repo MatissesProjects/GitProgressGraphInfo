@@ -365,6 +365,9 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     });
   });
 
+  const startOfYear = `${advanced.targetYear}-01-01`;
+  const endOfTargetPeriod = advanced.targetYear === now.getFullYear() ? todayStr : `${advanced.targetYear}-12-31`;
+
   addHover('#gh-today', () => highlightDates([todayStr]));
   addHover('#gh-streak', () => highlightDates([...new Set([...advanced.longestStreakDates, ...advanced.currentStreakDates])]));
   addHover('#gh-best-month', () => highlightDates(advanced.bestMonthDates));
@@ -374,11 +377,11 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-velocity-above', () => highlightDates(advanced.aboveVelocityDates, 'gh-highlight-special'));
   addHover('#gh-velocity-below', () => highlightDates(advanced.belowVelocityDates, 'gh-highlight-sad'));
   addHover('#gh-slump', () => highlightDates(advanced.longestSlumpDates, 'gh-highlight-sad'));
-  addHover('#gh-best-day', () => highlightWeekday(advanced.bestDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
-  addHover('#gh-worst-day', () => highlightWeekday(advanced.worstDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
-  addHover('#gh-current-weekday', () => highlightWeekday(advanced.currentWeekdayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
-  addHover('#gh-power-day', () => highlightWeekday(advanced.powerDayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
-  addHover('#gh-peak-day', () => highlightWeekday(advanced.peakWeekdayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
+  addHover('#gh-best-day', () => highlightWeekday(advanced.bestDayIndex, startOfYear, endOfTargetPeriod));
+  addHover('#gh-worst-day', () => highlightWeekday(advanced.worstDayIndex, startOfYear, endOfTargetPeriod));
+  addHover('#gh-current-weekday', () => highlightWeekday(advanced.currentWeekdayIndex, startOfYear, endOfTargetPeriod));
+  addHover('#gh-power-day', () => highlightWeekday(advanced.powerDayIndex, startOfYear, endOfTargetPeriod));
+  addHover('#gh-peak-day', () => highlightWeekday(advanced.peakWeekdayIndex, startOfYear, endOfTargetPeriod));
   addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   

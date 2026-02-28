@@ -165,9 +165,11 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
   const weekdayHighActivityCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
   const weekdayTotalDays: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
   pastAndPresentData.forEach(day => {
-    const wd = new Date(day.date + 'T00:00:00').getDay();
-    weekdayTotalDays[wd]++;
-    if (day.level >= 2) weekdayHighActivityCounts[wd]++;
+    if (day.date >= ytdStartStr && day.date <= periodEndStr) {
+      const wd = new Date(day.date + 'T00:00:00').getDay();
+      weekdayTotalDays[wd]++;
+      if (day.level >= 2) weekdayHighActivityCounts[wd]++;
+    }
   });
 
   let powerDayIndex = 0, maxAvg = -1, peakWeekdayIndex = 0, maxHighFreq = -1;
@@ -295,8 +297,8 @@ export function calculateBaseStats(pastAndPresentData: ContributionDay[], ytdSta
         ytdActiveDays++;
         if (isWeekend) { ytdActiveWeekendDays++; ytdWeekendContributions += day.count; }
         else { ytdWeekdayContributions += day.count; }
+        weekdayCounts[weekday] += day.count;
       }
-      weekdayCounts[weekday] += day.count;
     } else {
       if (tempStreak > longestStreak) { longestStreak = tempStreak; longestStreakDates = [...tempStreakDates]; }
       tempStreak = 0; tempStreakDates = []; 
