@@ -197,14 +197,25 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   }
 
   // Recolor Activity Ticker
-  const tickerPath = document.querySelector('.gh-ticker-path');
+  const tickerLineStart = document.querySelector('.gh-ticker-line-stop-start');
+  const tickerLineEnd = document.querySelector('.gh-ticker-line-stop-end');
   const tickerStopTop = document.querySelector('.gh-ticker-stop-top');
   const tickerStopBottom = document.querySelector('.gh-ticker-stop-bottom');
-  if (tickerPath && tickerStopTop && tickerStopBottom) {
+  
+  if (tickerStopTop && tickerStopBottom) {
     const startColor = colors[1];
     const stopColor = colors[colors.length - 1];
-    tickerPath.setAttribute('stroke', stopColor);
+    
+    // Horizontal Line Gradient
+    if (tickerLineStart && tickerLineEnd) {
+      (tickerLineStart as HTMLElement).style.setProperty('stop-color', startColor, 'important');
+      (tickerLineEnd as HTMLElement).style.setProperty('stop-color', stopColor, 'important');
+    }
+
+    // Vertical Area Gradient
     (tickerStopTop as HTMLElement).style.setProperty('stop-color', stopColor, 'important');
+    (tickerStopTop as HTMLElement).style.setProperty('stop-opacity', '0.5', 'important');
     (tickerStopBottom as HTMLElement).style.setProperty('stop-color', startColor, 'important');
+    (tickerStopBottom as HTMLElement).style.setProperty('stop-opacity', '0', 'important');
   }
 }
