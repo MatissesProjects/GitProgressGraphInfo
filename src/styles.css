@@ -228,12 +228,21 @@
   transition: all 0.1s ease-out;
 }
 
-.square-legend.highlighting {
+.square-legend.highlighting, .gh-sig-char.highlighting {
   outline: 1.5px solid #ffffff !important;
   outline-offset: 1px !important;
   transform: scale(1.4);
+  box-shadow: 0 0 8px var(--color-accent-fg);
   z-index: 10;
   position: relative;
+  color: var(--color-accent-fg) !important;
+  text-shadow: 0 0 4px var(--color-accent-fg);
+}
+
+.gh-sig-char {
+  display: inline-block;
+  transition: transform 0.1s ease, color 0.1s ease;
+  cursor: help;
 }
 
 .mr-3 {

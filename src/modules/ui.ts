@@ -331,7 +331,10 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     <div class="mt-2 pt-2 border-top color-border-muted" id="gh-footer">
       <div id="gh-pulse-signature" class="mb-2" style="min-height: 14px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
         <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block;">
-          SIG: 0x${advanced.pulseHash}
+          SIG: 0x${advanced.pulseHash.split('').map((char: string) => {
+            const level = parseInt(char, 16);
+            return `<span class="gh-sig-char" data-level="${level}">${char}</span>`;
+          }).join('')}
         </span>
       </div>
       <div class="d-flex flex-items-center flex-wrap mt-1">
@@ -358,19 +361,19 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   };
 
   const highlightGranularLevel = (level: number) => {
+    // 1. Highlight Graph Days
     document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"][data-date]`).forEach((day: any) => {
       day.classList.add('gh-highlight');
       day.style.outline = '';
       day.style.border = '';
     });
-  };
-
-  const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string) => {
-    document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: any) => {
-      const date = day.getAttribute('data-date');
-      if (!date || (startDate && date < startDate) || (endDate && date > endDate)) return;
-      if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { day.classList.add('gh-highlight'); day.style.outline = ''; day.style.border = ''; }
+    // 2. Highlight SIG characters
+    document.querySelectorAll(`.gh-sig-char[data-level="${level}"]`).forEach((char: any) => {
+      char.classList.add('highlighting');
     });
+    // 3. Highlight Legend Square
+    const sq = statsDiv.querySelector(`.square-legend.level-${level}`);
+    if (sq) sq.classList.add('highlighting');
   };
 
   const clearHighlights = () => {
@@ -378,6 +381,9 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       el.classList.remove('gh-highlight', 'gh-highlight-special', 'gh-highlight-sad');
       el.style.outline = 'none';
       el.style.border = 'none';
+    });
+    document.querySelectorAll('.square-legend, .gh-sig-char').forEach((el: any) => {
+      el.classList.remove('highlighting');
     });
   };
 
@@ -390,12 +396,21 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   statsDiv.querySelectorAll('.square-legend').forEach((sq, i) => {
     const level = i + 1;
     sq.addEventListener('mouseenter', () => { 
-      sq.classList.add('highlighting'); 
       highlightGranularLevel(level); 
     });
     sq.addEventListener('mouseleave', () => { 
-      sq.classList.remove('highlighting'); 
       clearHighlights(); 
+    });
+  });
+
+  // Add hover for SIG characters
+  statsDiv.querySelectorAll('.gh-sig-char').forEach((char: any) => {
+    char.addEventListener('mouseenter', () => {
+      const level = parseInt(char.getAttribute('data-level') || '0', 10);
+      highlightGranularLevel(level);
+    });
+    char.addEventListener('mouseleave', () => {
+      clearHighlights();
     });
   });
 
