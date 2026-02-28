@@ -24,7 +24,6 @@ export interface CreatedRepo {
 
 export interface SocialStats {
   followers: number;
-  following: number;
   organizations: number;
 }
 

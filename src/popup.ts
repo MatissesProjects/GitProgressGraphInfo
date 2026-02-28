@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleAchievements = document.getElementById('toggle-achievements') as HTMLInputElement;
   const toggleFooter = document.getElementById('toggle-footer') as HTMLInputElement;
   const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
-  const toggleTrends = document.getElementById('toggle-trends') as HTMLInputElement;
-  const toggleAvatar = document.getElementById('toggle-avatar') as HTMLInputElement;
   const toggleGearHead = document.getElementById('toggle-gear-head') as HTMLInputElement;
   const toggleGearWeapon = document.getElementById('toggle-gear-weapon') as HTMLInputElement;
   const toggleGearShield = document.getElementById('toggle-gear-shield') as HTMLInputElement;
@@ -27,6 +25,91 @@ document.addEventListener('DOMContentLoaded', async () => {
   const togglePulseHash = document.getElementById('toggle-pulse-hash') as HTMLInputElement;
   const toggleTicker = document.getElementById('toggle-ticker') as HTMLInputElement;
   const toggleIslandWrap = document.getElementById('toggle-island-wrap') as HTMLInputElement;
+
+  const saveAvatarBtn = document.getElementById('save-avatar-custom') as HTMLButtonElement;
+
+  const DEFAULT_AVATAR = {
+    bases: [
+      { min: 20, val: "🧙‍♂️", label: "Archmage" },
+      { min: 15, val: "🦸‍♂️", label: "Superhero" },
+      { min: 10, val: "👨‍💻", label: "Senior Dev" },
+      { min: 5, val: "🐒", label: "Code Monkey" },
+      { min: 0, val: "👶", label: "Newbie" }
+    ],
+    weapons: [
+      { min: 20, val: "⚡", label: "Legendary Lightning" },
+      { min: 12, val: "⚔️", label: "Steel Claymore" },
+      { min: 7, val: "🗡️", label: "Iron Sword" },
+      { min: 4, val: "🔨", label: "Heavy Hammer" },
+      { min: 1, val: "🦴", label: "Primitive Stick" }
+    ],
+    shields: [
+      { min: 3, val: "💠", label: "Energy Shield" },
+      { min: 1, val: "🛡️", label: "Wooden Shield" }
+    ],
+    headgear: [
+      { min: 30, val: "👑", label: "God Crown" },
+      { min: 14, val: "🪖", label: "Steel Helmet" },
+      { min: 7, val: "🧢", label: "Lucky Cap" }
+    ],
+    companions: [
+      { min: 500, val: "🐉", label: "Ancient Dragon" },
+      { min: 100, val: "🦄", label: "Unicorn" },
+      { min: 20, val: "🐕", label: "Loyal Dog" }
+    ]
+  };
+
+  const renderCustomFields = (id: string, list: any[]) => {
+    const container = document.getElementById(id)!;
+    container.innerHTML = '';
+    list.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.gap = '2px';
+      row.innerHTML = `
+        <span style="width: 25px;">${item.min}:</span>
+        <input type="text" class="custom-val" value="${item.val}" style="flex: 1; font-size: 9px;" title="Emoji or Image URL">
+        <input type="text" class="custom-label" value="${item.label}" style="flex: 1; font-size: 9px;" title="Label">
+      `;
+      container.appendChild(row);
+    });
+  };
+
+  const loadAvatarCustomization = async () => {
+    const s = await chrome.storage.local.get(['customAvatarSettings']);
+    const avatar = s.customAvatarSettings || DEFAULT_AVATAR;
+    
+    renderCustomFields('custom-bases', avatar.bases || DEFAULT_AVATAR.bases);
+    renderCustomFields('custom-weapons', avatar.weapons || DEFAULT_AVATAR.weapons);
+    renderCustomFields('custom-shields', avatar.shields || DEFAULT_AVATAR.shields);
+    renderCustomFields('custom-headgear', avatar.headgear || DEFAULT_AVATAR.headgear);
+    renderCustomFields('custom-companions', avatar.companions || DEFAULT_AVATAR.companions);
+  };
+
+  const getCustomValues = (id: string, defaultList: any[]) => {
+    const container = document.getElementById(id)!;
+    const rows = container.querySelectorAll('div');
+    return Array.from(rows).map((row, i) => ({
+      min: defaultList[i].min,
+      val: (row.querySelector('.custom-val') as HTMLInputElement).value,
+      label: (row.querySelector('.custom-label') as HTMLInputElement).value
+    }));
+  };
+
+  saveAvatarBtn.addEventListener('click', async () => {
+    const custom = {
+      bases: getCustomValues('custom-bases', DEFAULT_AVATAR.bases),
+      weapons: getCustomValues('custom-weapons', DEFAULT_AVATAR.weapons),
+      shields: getCustomValues('custom-shields', DEFAULT_AVATAR.shields),
+      headgear: getCustomValues('custom-headgear', DEFAULT_AVATAR.headgear),
+      companions: getCustomValues('custom-companions', DEFAULT_AVATAR.companions)
+    };
+    await chrome.storage.local.set({ customAvatarSettings: custom });
+    saveAvatarBtn.textContent = 'Saved!';
+    setTimeout(() => { saveAvatarBtn.textContent = 'Save Custom Gear'; }, 1500);
+  });
+
+  await loadAvatarCustomization();
 
   // Visibility Toggles - Grid Items
   const toggleTotal = document.getElementById('toggle-total') as HTMLInputElement;
@@ -225,8 +308,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleGearShield, settings.showGearShield);
   setChecked(toggleGearCompanion, settings.showGearCompanion);
   setChecked(toggleCombo, settings.showCombo);
+  setChecked(toggleAvatar, settings.showAvatar);
+  setChecked(toggleGearHead, settings.showGearHead);
+  setChecked(toggleGearWeapon, settings.showGearWeapon);
+  setChecked(toggleGearShield, settings.showGearShield);
+  setChecked(toggleGearCompanion, settings.showGearCompanion);
+  setChecked(toggleCombo, settings.showCombo);
   setChecked(toggleXPBar, settings.showXPBar);
   setChecked(toggleIslandWrap, settings.islandWrapAround);
+
 
   setChecked(toggleTotal, settings.showTotal);
   setChecked(toggleToday, settings.showTodayCount);

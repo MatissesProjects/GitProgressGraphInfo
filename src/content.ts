@@ -29,14 +29,15 @@ function init() {
         if (data) {
           const thresholds = calculateThresholds(data);
           const percentiles = calculatePercentiles(data);
-          const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, true, percentiles);
-          let total = data.reduce((sum, day) => sum + day.count, 0);
-          if (advanced.isYTD) {
-            const currentYear = new Date().getFullYear();
-            const ytdData = data.filter(d => d.date >= `${currentYear}-01-01`);
-            if (ytdData.length > 0) total = ytdData.reduce((sum, day) => sum + day.count, 0);
-          }
-          sendResponse({ thresholds, percentiles, total, advanced, success: true });
+          calculateAdvancedStats(data, pinned, timeline, achievements, socials, true, percentiles).then(advanced => {
+            let total = data.reduce((sum, day) => sum + day.count, 0);
+            if (advanced.isYTD) {
+              const currentYear = new Date().getFullYear();
+              const ytdData = data.filter(d => d.date >= `${currentYear}-01-01`);
+              if (ytdData.length > 0) total = ytdData.reduce((sum, day) => sum + day.count, 0);
+            }
+            sendResponse({ thresholds, percentiles, total, advanced, success: true });
+          });
         } else {
           sendResponse({ success: false, error: "No graph found" });
         }
@@ -50,13 +51,13 @@ function init() {
 
   chrome.storage.onChanged.addListener(async (changes) => {
     if (!isContextValid()) return;
-    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar'];
+    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar'];
     if (visibilityKeys.some(key => (changes as any)[key])) {
       await applyVisibility();
       // Trends change might need a re-injection
       if (changes.showTrends) runAnalysis().catch(() => {});
     }
-    if (changes.gridOrder || changes.islandWrapAround) runAnalysis().catch(() => {});
+    if (changes.gridOrder || changes.islandWrapAround || changes.customAvatarSettings) runAnalysis().catch(() => {});
     if (changes.theme || changes.customStart || changes.customStop) {
       const data = parseContributionGraph();
       if (data) {

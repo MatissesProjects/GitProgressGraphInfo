@@ -74,7 +74,7 @@ export function findIsland(targetData: ContributionDay[], thresholdFn: (d: Contr
   return biggest;
 }
 
-export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats, wrapAround: boolean = true, percentiles?: Record<number, number>) {
+export async function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats, wrapAround: boolean = true, percentiles?: Record<number, number>) {
   const now = new Date();
   const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
   
@@ -179,7 +179,7 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
     if (weekdayHighActivityCounts[i] > maxHighFreq) { maxHighFreq = weekdayHighActivityCounts[i]; peakWeekdayIndex = i; }
   }
 
-  const rpg = calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars);
+  const rpg = await calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars);
 
   // Velocity Trend (Last 7 days vs Overall YTD Velocity)
   const sorted = [...pastAndPresentData].sort((a, b) => b.date.localeCompare(a.date));

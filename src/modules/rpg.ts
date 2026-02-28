@@ -4,44 +4,69 @@ export const getLevelThreshold = (l: number) => 25 * l * l;
 
 export const titles = ["Ghost", "Novice", "Script Kiddie", "Code Monkey", "Byte Basher", "Repo Ranger", "Commit Commander", "Git Guru", "Merge Master", "Branch Baron", "Pull Request Prince", "Octocat Overlord", "Code God"];
 
-export function getAvatar(level: number, currentStreak: number, totalStars: number, actions: TodayActions, todayCount: number): AvatarData {
-  let base = "👶";
-  if (level >= 20) base = "🧙‍♂️";
-  else if (level >= 15) base = "🦸‍♂️";
-  else if (level >= 10) base = "👨‍💻";
-  else if (level >= 5) base = "🐒";
+export function getAvatar(level: number, currentStreak: number, totalStars: number, actions: TodayActions, todayCount: number, customSettings?: any): AvatarData {
+  // Default values
+  const defaults = {
+    bases: [
+      { min: 20, val: "🧙‍♂️", label: "Archmage" },
+      { min: 15, val: "🦸‍♂️", label: "Superhero" },
+      { min: 10, val: "👨‍💻", label: "Senior Dev" },
+      { min: 5, val: "🐒", label: "Code Monkey" },
+      { min: 0, val: "👶", label: "Newbie" }
+    ],
+    weapons: [
+      { min: 20, val: "⚡", label: "Legendary Lightning" },
+      { min: 12, val: "⚔️", label: "Steel Claymore" },
+      { min: 7, val: "🗡️", label: "Iron Sword" },
+      { min: 4, val: "🔨", label: "Heavy Hammer" },
+      { min: 1, val: "🦴", label: "Primitive Stick" }
+    ],
+    shields: [
+      { min: 3, val: "💠", label: "Energy Shield" },
+      { min: 1, val: "🛡️", label: "Wooden Shield" }
+    ],
+    headgear: [
+      { min: 30, val: "👑", label: "God Crown" },
+      { min: 14, val: "🪖", label: "Steel Helmet" },
+      { min: 7, val: "🧢", label: "Lucky Cap" }
+    ],
+    companions: [
+      { min: 500, val: "🐉", label: "Ancient Dragon" },
+      { min: 100, val: "🦄", label: "Unicorn" },
+      { min: 20, val: "🐕", label: "Loyal Dog" }
+    ]
+  };
 
-  const effectiveCommits = Math.max(actions.commits, todayCount);
+  const s = customSettings || defaults;
 
-  let weapon = "";
-  let weaponDesc = "Unarmed";
-  if (effectiveCommits >= 20) { weapon = "⚡"; weaponDesc = "Legendary Lightning (20+ Commits)"; }
-  else if (effectiveCommits >= 12) { weapon = "⚔️"; weaponDesc = "Steel Claymore (12+ Commits)"; }
-  else if (effectiveCommits >= 7) { weapon = "🗡️"; weaponDesc = "Iron Sword (7+ Commits)"; }
-  else if (effectiveCommits >= 4) { weapon = "🔨"; weaponDesc = "Heavy Hammer (4+ Commits)"; }
-  else if (effectiveCommits >= 1) { weapon = "🦴"; weaponDesc = "Primitive Stick (1+ Commits)"; }
+  const findBest = (list: any[], val: number) => {
+    return list.sort((a, b) => b.min - a.min).find(item => val >= item.min);
+  };
 
-  let shield = "";
-  let shieldDesc = "No Shield";
-  if (actions.reviews >= 3) { shield = "💠"; shieldDesc = "Energy Shield (3+ Reviews)"; }
-  else if (actions.reviews >= 1) { shield = "🛡️"; shieldDesc = "Wooden Shield (1+ Reviews)"; }
+  const renderItem = (item: any) => {
+    if (!item) return "";
+    const val = item.val;
+    if (val.startsWith('http') || val.startsWith('data:image')) {
+      return `<img src="${val}" style="width: 1em; height: 1em; object-fit: contain; vertical-align: middle;" />`;
+    }
+    return val;
+  };
 
-  let headgear = "";
-  let headgearDesc = "No Headgear";
-  if (currentStreak >= 30) { headgear = "👑"; headgearDesc = "God Crown (30+ Day Streak)"; }
-  else if (currentStreak >= 14) { headgear = "🪖"; headgearDesc = "Steel Helmet (14+ Day Streak)"; }
-  else if (currentStreak >= 7) { headgear = "🧢"; headgearDesc = "Lucky Cap (7+ Day Streak)"; }
+  const baseItem = findBest(s.bases || defaults.bases, level);
+  const weaponItem = findBest(s.weapons || defaults.weapons, Math.max(actions.commits, todayCount));
+  const shieldItem = findBest(s.shields || defaults.shields, actions.reviews);
+  const headgearItem = findBest(s.headgear || defaults.headgear, currentStreak);
+  const companionItem = findBest(s.companions || defaults.companions, totalStars);
 
-  let companion = "";
-  let companionDesc = "Lone Wolf";
-  if (totalStars >= 500) { companion = "🐉"; companionDesc = "Ancient Dragon (500+ Stars)"; }
-  else if (totalStars >= 100) { companion = "🦄"; companionDesc = "Unicorn (100+ Stars)"; }
-  else if (totalStars >= 20) { companion = "🐕"; companionDesc = "Loyal Dog (20+ Stars)"; }
+  const base = renderItem(baseItem);
+  const weapon = renderItem(weaponItem);
+  const shield = renderItem(shieldItem);
+  const headgear = renderItem(headgearItem);
+  const companion = renderItem(companionItem);
 
-  const full = `${companion} ${headgear}${base}${weapon}${shield}`.trim();
-  const description = `Level ${level} Character: ${weaponDesc}, ${shieldDesc}, ${headgearDesc}, ${companionDesc}.`;
+  const description = `Level ${level} Character: ${weaponItem?.label || 'Unarmed'}, ${shieldItem?.label || 'No Shield'}, ${headgearItem?.label || 'No Headgear'}, ${companionItem?.label || 'Lone Wolf'}.`;
 
-  return { base, weapon, shield, headgear, companion, full, description };
+  return { base, weapon, shield, headgear, companion, full: "", description };
 }
 
 export function getPersona(weekendVolumeShare: number, consistency: string, velocity: string, weekendScore: number, totalStars: number) {
@@ -115,7 +140,7 @@ export function getCombo(todayScore: number, actions: any) {
   return { todayCombo, todayComboReason };
 }
 
-export function calculateRPGStats(pastAndPresentData: ContributionDay[], timeline: TimelineActivity, todayCount: number, currentStreak: number, velocity: string, totalStars: number) {
+export async function calculateRPGStats(pastAndPresentData: ContributionDay[], timeline: TimelineActivity, todayCount: number, currentStreak: number, velocity: string, totalStars: number) {
   let totalXPWithBonuses = 0;
   pastAndPresentData.forEach(day => {
     let dayXP = day.count;
@@ -146,7 +171,8 @@ export function calculateRPGStats(pastAndPresentData: ContributionDay[], timelin
   const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
   const todayComboMath = `Score: ${todayScore} ((HeatmapCommits:${heatmapCommits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus}) + (VelocityBonus:${velocityBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
 
-  const avatar = getAvatar(currentLevel, currentStreak, totalStars, actions, heatmapCommits);
+  const settings = await chrome.storage.local.get(['customAvatarSettings']);
+  const avatar = getAvatar(currentLevel, currentStreak, totalStars, actions, heatmapCommits, settings.customAvatarSettings);
 
   return {
     totalXP: totalXPWithBonuses, level: currentLevel, levelTitle, levelProgressXP: xpProgress, levelTotalXP: xpNeeded, progressPercent,
