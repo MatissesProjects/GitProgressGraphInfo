@@ -206,8 +206,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
   const itemMap: Record<string, string> = {
-    'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${advanced.currentStreakDates.join(',')}" data-longest-streak="${advanced.longestStreakDates.join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
-    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${advanced.bestMonthDates.join(',')}" title="Best month score vs average month score. (${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak)">
+    'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${(advanced.currentStreakDates || []).join(',')}" data-longest-streak="${(advanced.longestStreakDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
+    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${(advanced.bestMonthDates || []).join(',')}" title="Best month score vs average month score. (${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak)">
       <span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong>
@@ -217,11 +217,11 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
           </span>` : ''}
       </div>
     </div>`,
-    'gh-worst-month': `<div class="stat-card highlightable" id="gh-worst-month" data-month-dates="${advanced.worstMonthDates.join(',')}">
+    'gh-worst-month': `<div class="stat-card highlightable" id="gh-worst-month" data-month-dates="${(advanced.worstMonthDates || []).join(',')}">
       <span class="color-fg-muted d-block text-small">Worst Month (${advanced.worstMonthName})</span>
       <strong class="f3-light">Score: ${advanced.worstMonthStats.score}</strong>
     </div>`,
-    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${advanced.bestWeekDates.join(',')}" title="Best week score vs average week score. (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak)">
+    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${(advanced.bestWeekDates || []).join(',')}" title="Best week score vs average week score. (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak)">
       <span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong>
@@ -232,8 +232,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       </div>
     </div>`,
     'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday"><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
-    'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${advanced.biggestIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
-    'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${advanced.biggestSlumpIslandDates.join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
+    'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${(advanced.biggestIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
+    'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${(advanced.biggestSlumpIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
     'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Avg commits per active day (${advanced.statsForTooltips.velocity.count} total / ${advanced.statsForTooltips.velocity.active} active). Trend compares the last 7 days vs the 7 days prior.">
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
       <div class="d-flex flex-items-center gap-1">
@@ -248,7 +248,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-velocity-below': `<div class="stat-card highlightable" id="gh-velocity-below"><span class="color-fg-muted d-block text-small">Below Average Days</span><strong class="f3-light">${advanced.belowVelocityDates.length} days</strong></div>`,
     'gh-consistency': `<div class="stat-card" id="gh-consistency" title="${advanced.statsForTooltips.consistency.active} / ${advanced.statsForTooltips.consistency.total} days active"><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
     'gh-weekend': `<div class="stat-card" id="gh-weekend" title="${advanced.statsForTooltips.weekend.active} / ${advanced.statsForTooltips.weekend.total} weekend days active"><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
-    'gh-slump': `<div class="stat-card highlightable" id="gh-slump" title="${advanced.longestSlumpDates.length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
+    'gh-slump': `<div class="stat-card highlightable" id="gh-slump" title="${(advanced.longestSlumpDates || []).length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
     'gh-best-day': `<div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}" title="Avg for this day vs overall avg across all weekdays.">
       <span class="color-fg-muted d-block text-small">Best Weekday</span>
       <div class="d-flex flex-items-center gap-1">
@@ -277,7 +277,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-stars': `<div class="stat-card" id="gh-stars"><span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span><strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong></div>`,
     'gh-pr': `<div class="stat-card" id="gh-pr"><span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span><strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong></div>`,
     'gh-issue-created': `<div class="stat-card" id="gh-issue-created"><span class="color-fg-muted d-block text-small">Issues / Created Repos</span><strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong></div>`,
-    'gh-langs': `<div class="stat-card" id="gh-langs"><span class="color-fg-muted d-block text-small">Top Languages</span><strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong></div>`,
+    'gh-langs': `<div class="stat-card" id="gh-langs"><span class="color-fg-muted d-block text-small">Top Languages</span><strong class="f3-light">${(advanced.topLangs || []).join(', ') || 'N/A'}</strong></div>`,
     'gh-network': `<div class="stat-card" id="gh-network"><span class="color-fg-muted d-block text-small">Network</span><strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong></div>`
   };
 

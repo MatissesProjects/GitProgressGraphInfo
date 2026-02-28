@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleAchievements = document.getElementById('toggle-achievements') as HTMLInputElement;
   const toggleFooter = document.getElementById('toggle-footer') as HTMLInputElement;
   const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
+  const toggleTrends = document.getElementById('toggle-trends') as HTMLInputElement;
+  const toggleAvatar = document.getElementById('toggle-avatar') as HTMLInputElement;
   const toggleGearHead = document.getElementById('toggle-gear-head') as HTMLInputElement;
   const toggleGearWeapon = document.getElementById('toggle-gear-weapon') as HTMLInputElement;
   const toggleGearShield = document.getElementById('toggle-gear-shield') as HTMLInputElement;
@@ -180,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar',
     'gridOrder'
   ]);
 
@@ -290,7 +292,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (settings.customStop) colorStop.value = settings.customStop as string;
 
   // Set toggle states
-  const setChecked = (el: HTMLInputElement, val: any) => el.checked = val !== false;
+  const setChecked = (el: HTMLInputElement, val: any) => {
+    if (el) el.checked = val !== false;
+  };
   
   setChecked(toggleGrid, settings.showGrid);
   setChecked(togglePersona, settings.showPersona);
@@ -308,15 +312,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleGearShield, settings.showGearShield);
   setChecked(toggleGearCompanion, settings.showGearCompanion);
   setChecked(toggleCombo, settings.showCombo);
-  setChecked(toggleAvatar, settings.showAvatar);
-  setChecked(toggleGearHead, settings.showGearHead);
-  setChecked(toggleGearWeapon, settings.showGearWeapon);
-  setChecked(toggleGearShield, settings.showGearShield);
-  setChecked(toggleGearCompanion, settings.showGearCompanion);
-  setChecked(toggleCombo, settings.showCombo);
   setChecked(toggleXPBar, settings.showXPBar);
   setChecked(toggleIslandWrap, settings.islandWrapAround);
-
 
   setChecked(toggleTotal, settings.showTotal);
   setChecked(toggleToday, settings.showTodayCount);
@@ -364,7 +361,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Toggle Event Listeners
   const addToggleListener = (el: HTMLInputElement, key: string) => {
-    el.addEventListener('change', () => chrome.storage.local.set({ [key]: el.checked }));
+    if (el) el.addEventListener('change', () => chrome.storage.local.set({ [key]: el.checked }));
   };
 
   addToggleListener(toggleGrid, 'showGrid');
@@ -513,7 +510,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('most-active-day')!.textContent = `${adv.mostActiveDay}`;
         document.getElementById('max-commits')!.textContent = `${adv.mostActiveDayCount}`;
         document.getElementById('pinned-stats')!.textContent = `${adv.totalStars} / ${adv.totalForks}`;
-        document.getElementById('top-langs')!.textContent = adv.topLangs.join(', ') || 'N/A';
+        document.getElementById('top-langs')!.textContent = (adv.topLangs || []).join(', ') || 'N/A';
         document.getElementById('socials')!.textContent = `${adv.socials.followers} Follow / ${adv.socials.organizations} Orgs`;
 
         // Render Top Repos

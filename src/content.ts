@@ -84,7 +84,7 @@ function init() {
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
         const wrapAround = true; 
         const showTrends = s.showTrends !== false;
-        const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p);
+        const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p);
         
         await injectStats(t, p, data, advanced, order, showTrends);
         await extendLegend(t);
