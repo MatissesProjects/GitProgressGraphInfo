@@ -86,7 +86,7 @@ function init() {
         const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p);
         
         await injectStats(t, p, data, advanced, order, showTrends);
-        extendLegend(t);
+        await extendLegend(t);
         await applyDeepRecoloring(data, p, theme, (s.customStart as string), (s.customStop as string), advanced.ytdDailyCounts);
         await applyVisibility();
       }

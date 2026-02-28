@@ -380,6 +380,14 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     if (sq) sq.classList.add('highlighting');
   };
 
+  const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string) => {
+    document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: any) => {
+      const date = day.getAttribute('data-date');
+      if (!date || (startDate && date < startDate) || (endDate && date > endDate)) return;
+      if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { day.classList.add('gh-highlight'); day.style.outline = ''; day.style.border = ''; }
+    });
+  };
+
   const clearHighlights = () => {
     document.querySelectorAll('.gh-highlight, .gh-highlight-special, .gh-highlight-sad').forEach((el: any) => {
       el.classList.remove('gh-highlight', 'gh-highlight-special', 'gh-highlight-sad');
@@ -484,10 +492,17 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   });
 }
 
-export function extendLegend(thresholds: any) {
+export async function extendLegend(thresholds: any) {
   const legend = document.querySelector('.ContributionCalendar-footer');
   if (!legend) return;
+  
+  const settings = await chrome.storage.local.get(['showLegendNumbers']);
+  const show = settings.showLegendNumbers !== false;
+
   legend.querySelectorAll('.git-heat-legend-label').forEach(el => el.remove());
+  
+  if (!show) return;
+
   legend.querySelectorAll('.ContributionCalendar-day').forEach(square => {
     const level = parseInt(square.getAttribute('data-level') || '0', 10);
     if (level > 0 && thresholds[level]) {
