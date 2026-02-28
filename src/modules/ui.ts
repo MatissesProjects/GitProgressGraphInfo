@@ -7,30 +7,31 @@ export async function applyVisibility() {
       'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
       'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
       'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash'
-    ]);
-
-    const grid = document.getElementById('gh-grid-stats');
-    const detailed = document.getElementById('gh-detailed-stats');
-    const activeRepos = document.getElementById('gh-active-repos');
-    const createdRepos = document.getElementById('gh-created-repos');
-    const achievements = document.getElementById('gh-achievements');
-    const persona = document.getElementById('gh-persona');
-    const footer = document.getElementById('gh-footer');
-    const headerLevel = document.getElementById('gh-header-level');
-    const pulseSignature = document.getElementById('gh-pulse-signature');
-
-    if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
-    if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
-    if (createdRepos) createdRepos.style.display = (settings.showCreatedRepos !== false) ? 'block' : 'none';
-    if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
-    if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
-    if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
-    if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
-    if (pulseSignature) pulseSignature.style.display = (settings.showPulseHash !== false) ? 'block' : 'none';
-
-    const toggleMap: Record<string, any> = {
-      'gh-total': settings.showTotal,
+          'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker'
+        ]);
+      
+        const grid = document.getElementById('gh-grid-stats');
+        const detailed = document.getElementById('gh-detailed-stats');
+        const activeRepos = document.getElementById('gh-active-repos');
+        const createdRepos = document.getElementById('gh-created-repos');
+        const achievements = document.getElementById('gh-achievements');
+        const persona = document.getElementById('gh-persona');
+        const footer = document.getElementById('gh-footer');
+        const headerLevel = document.getElementById('gh-header-level');
+        const pulseSignature = document.getElementById('gh-pulse-signature');
+        const tickerGraph = document.getElementById('gh-ticker-container');
+      
+        if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
+        if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
+        if (createdRepos) createdRepos.style.display = (settings.showCreatedRepos !== false) ? 'block' : 'none';
+        if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
+        if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
+        if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
+        if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
+        if (pulseSignature) pulseSignature.style.display = (settings.showPulseHash !== false) ? 'block' : 'none';
+        if (tickerGraph) tickerGraph.style.display = (settings.showTicker !== false) ? 'block' : 'none';
+      
+        const toggleMap: Record<string, any> = {      'gh-total': settings.showTotal,
       'gh-today': settings.showTodayCount,
       'gh-streak': settings.showStreak,
       'gh-best-month': settings.showBestMonth,
@@ -75,6 +76,34 @@ export async function applyVisibility() {
   } catch (e) {
     console.error("GitHeat: Error applying visibility", e);
   }
+}
+
+function renderTickerGraph(data: { date: string; count: number }[]) {
+  if (data.length < 2) return '';
+  const width = 800;
+  const height = 40;
+  const maxCount = Math.max(...data.map(d => d.count), 1);
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - (d.count / maxCount) * height;
+    return `${x},${y}`;
+  }).join(' ');
+
+  return `
+    <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px;">
+      <span class="color-fg-muted text-small d-block mb-1">Activity Pulse Ticker (YTD)</span>
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible;">
+        <path d="M ${points}" fill="none" stroke="var(--color-accent-fg)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#pulse-gradient)" opacity="0.1" />
+        <defs>
+          <linearGradient id="pulse-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color:var(--color-accent-fg);stop-opacity:1" />
+            <stop offset="100%" style="stop-color:var(--color-accent-fg);stop-opacity:0" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  `;
 }
 
 export function injectStats(thresholds: any, percentiles: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null, showTrends: boolean = true) {
@@ -178,6 +207,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   };
 
   const rpgClasses = getCodingClass(advanced);
+  const tickerHtml = renderTickerGraph(advanced.ytdDailyCounts);
 
   statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-start mb-2" style="gap: 15px;">
@@ -218,6 +248,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         </div>
       </div>
     </div>
+
+    ${tickerHtml}
 
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">

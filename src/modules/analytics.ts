@@ -254,7 +254,8 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
     issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,
     achievements: achievements.slice(0, 4), socials,
-    pulseHash
+    pulseHash,
+    ytdDailyCounts: ytdDays.map(d => ({ date: d.date, count: d.count }))
   };
 }
 
