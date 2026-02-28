@@ -7,7 +7,7 @@ export async function applyVisibility() {
       'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
       'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
       'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar'
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar'
     ]);
 
     const grid = document.getElementById('gh-grid-stats');
@@ -40,6 +40,7 @@ export async function applyVisibility() {
       'gh-today': settings.showTodayCount,
       'gh-streak': settings.showStreak,
       'gh-best-month': settings.showBestMonth,
+      'gh-worst-month': settings.showWorstMonth,
       'gh-best-week': settings.showBestWeek,
       'gh-dominant-weekday': settings.showDominantWeekday,
       'gh-island': settings.showIsland,
@@ -121,6 +122,15 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
     return `<stop offset="${offset}%" stop-color="${colorVar}" stop-opacity="${stopOpacity}" />`;
   }).join('');
 
+  // Calculate Average Velocity line
+  const counts = data.filter(d => d.count > 0).map(d => d.count);
+  const avgVelocityValue = counts.length > 0 ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
+  const avgY = height - (Math.min(avgVelocityValue, maxCount) / maxCount) * height;
+  const avgLineHtml = avgVelocityValue > 0 ? `
+    <line x1="0" y1="${avgY}" x2="${width}" y2="${avgY}" stroke="var(--color-accent-fg)" stroke-width="1" stroke-dasharray="2,2" opacity="0.5" />
+    <text x="5" y="${avgY - 2}" font-size="6" fill="var(--color-accent-fg)" opacity="0.7">AVG VELOCITY (${avgVelocityValue.toFixed(1)})</text>
+  ` : '';
+
   return `
     <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px;">
       <span class="color-fg-muted text-small d-block mb-1">Activity Intensity Ticker (Vertical Heat Zones)</span>
@@ -137,7 +147,7 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
             <rect width="100%" height="100%" fill="url(#pulse-area-gradient)" />
           </mask>
         </defs>
-        <g id="gh-ticker-quadrants">${quadrantLines}</g>
+        <g id="gh-ticker-quadrants">${quadrantLines}${avgLineHtml}</g>
         <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#ticker-line-gradient)" mask="url(#gh-ticker-area-mask)" style="filter: saturate(1.5) brightness(1.2);" />
         <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="var(--color-fg-default, #1f2328)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));" />
       </svg>
@@ -166,7 +176,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
   const defaultOrder = [
-    'gh-streak', 'gh-best-month', 'gh-best-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
+    'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
     'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
     'gh-island', 'gh-slump-island', 'gh-slump',
     'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
@@ -186,6 +196,10 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
             ${advanced.bestMonthIcon} ${Math.abs(advanced.bestMonthTrend)}%
           </span>` : ''}
       </div>
+    </div>`,
+    'gh-worst-month': `<div class="stat-card highlightable" id="gh-worst-month" data-month-dates="${advanced.worstMonthDates.join(',')}">
+      <span class="color-fg-muted d-block text-small">Worst Month (${advanced.worstMonthName})</span>
+      <strong class="f3-light">Score: ${advanced.worstMonthStats.score}</strong>
     </div>`,
     'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${advanced.bestWeekDates.join(',')}" title="Best week score vs average week score. (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak)">
       <span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span>
@@ -432,6 +446,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-today', () => highlightDates([todayStr]));
   addHover('#gh-streak', () => highlightDates([...new Set([...advanced.longestStreakDates, ...advanced.currentStreakDates])]));
   addHover('#gh-best-month', () => highlightDates(advanced.bestMonthDates));
+  addHover('#gh-worst-month', () => highlightDates(advanced.worstMonthDates));
   addHover('#gh-best-week', () => highlightDates(advanced.bestWeekDates));
   addHover('#gh-island', () => highlightDates(advanced.biggestIslandDates, 'gh-highlight-special'));
   addHover('#gh-slump-island', () => highlightDates(advanced.biggestSlumpIslandDates, 'gh-highlight-sad'));

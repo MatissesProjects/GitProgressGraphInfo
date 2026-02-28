@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleStreak = document.getElementById('toggle-streak') as HTMLInputElement;
   const toggleLevel = document.getElementById('toggle-level') as HTMLInputElement;
   const toggleBestMonth = document.getElementById('toggle-best-month') as HTMLInputElement;
+  const toggleWorstMonth = document.getElementById('toggle-worst-month') as HTMLInputElement;
   const toggleBestWeek = document.getElementById('toggle-best-week') as HTMLInputElement;
   const toggleDominantWeekday = document.getElementById('toggle-dominant-weekday') as HTMLInputElement;
   const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
@@ -58,6 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const ITEM_LABELS: Record<string, string> = {
     'gh-streak': 'Current / Best Streak',
     'gh-best-month': 'Best Month',
+    'gh-worst-month': 'Worst Month',
     'gh-best-week': 'Best Week',
     'gh-dominant-weekday': 'Dominant Weekday',
     'gh-island': 'Biggest Island (L2+)',
@@ -89,7 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar',
     'gridOrder'
   ]);
 
@@ -219,6 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleStreak, settings.showStreak);
   setChecked(toggleLevel, settings.showLevel);
   setChecked(toggleBestMonth, settings.showBestMonth);
+  setChecked(toggleWorstMonth, settings.showWorstMonth);
   setChecked(toggleBestWeek, settings.showBestWeek);
   setChecked(toggleDominantWeekday, settings.showDominantWeekday);
   setChecked(toggleIsland, settings.showIsland);
@@ -280,6 +283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleStreak, 'showStreak');
   addToggleListener(toggleLevel, 'showLevel');
   addToggleListener(toggleBestMonth, 'showBestMonth');
+  addToggleListener(toggleWorstMonth, 'showWorstMonth');
   addToggleListener(toggleBestWeek, 'showBestWeek');
   addToggleListener(toggleDominantWeekday, 'showDominantWeekday');
   addToggleListener(toggleIsland, 'showIsland');
@@ -372,6 +376,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         const bestMonthTrendHtml = adv.bestMonthTrend !== 0 ? ` <span style="color: ${adv.bestMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best month vs average month score">${adv.bestMonthIcon} ${Math.abs(adv.bestMonthTrend)}%</span>` : '';
         document.getElementById('best-month')!.innerHTML = `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})${bestMonthTrendHtml}`;
+        
+        document.getElementById('worst-month')!.innerHTML = `${adv.worstMonthName} (Score: ${adv.worstMonthStats.score})`;
         
         const bestWeekTrendHtml = adv.bestWeekTrend !== 0 ? ` <span style="color: ${adv.bestWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best week vs average week score">${adv.bestWeekIcon} ${Math.abs(adv.bestWeekTrend)}%</span>` : '';
         document.getElementById('best-week')!.innerHTML = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})${bestWeekTrendHtml}`;

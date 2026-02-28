@@ -181,20 +181,18 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
 
   const rpg = calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars);
 
-  // Velocity Trend (Last 7 days vs Previous 7 days)
+  // Velocity Trend (Last 7 days vs Overall YTD Velocity)
   const sorted = [...pastAndPresentData].sort((a, b) => b.date.localeCompare(a.date));
   let velocityTrend = 0, velocityIcon = '';
-  if (sorted.length >= 14) {
-    const cw = sorted.slice(0, 7), pw = sorted.slice(7, 14);
-    const cAct = cw.filter(d => d.count > 0), pAct = pw.filter(d => d.count > 0);
+  const overallVel = parseFloat(velocity);
+  
+  if (sorted.length >= 7 && overallVel > 0) {
+    const cw = sorted.slice(0, 7);
+    const cAct = cw.filter(d => d.count > 0);
     const cVel = cAct.length > 0 ? cw.reduce((s, d) => s + d.count, 0) / cAct.length : 0;
-    const pVel = pAct.length > 0 ? pw.reduce((s, d) => s + d.count, 0) / pAct.length : 0;
-    if (pVel > 0) {
-      velocityTrend = Math.round(((cVel - pVel) / pVel) * 100);
-      velocityIcon = velocityTrend > 0 ? '▲' : (velocityTrend < 0 ? '▼' : '');
-    } else if (cVel > 0) {
-      velocityTrend = 100; velocityIcon = '▲';
-    }
+    
+    velocityTrend = Math.round(((cVel - overallVel) / overallVel) * 100);
+    velocityIcon = velocityTrend > 0 ? '▲' : (velocityTrend < 0 ? '▼' : '');
   }
 
   const avgVel = parseFloat(velocity);
@@ -337,18 +335,47 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   });
 
   let bestMonthName = "N/A", bestMonthScore = -1, bestMonthDates: string[] = [], bestMonthStats = { score: 0, count: 0, consistency: "0", streak: 0 };
+  let worstMonthName = "N/A", worstMonthScore = Infinity, worstMonthDates: string[] = [], worstMonthStats = { score: 0, count: 0, consistency: "0", streak: 0 };
   const allMonthScores: number[] = [];
-  Object.entries(monthData).forEach(([month, data]) => {
+  
+  const monthEntries = Object.entries(monthData);
+  monthEntries.forEach(([month, data]) => {
     const consistency = data.activeDays / data.totalDays;
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
     if (score > 0) allMonthScores.push(score);
+    
     if (score > bestMonthScore) {
       bestMonthScore = score;
       bestMonthName = new Date(month + '-01T00:00:00').toLocaleString('default', { month: 'long', year: 'numeric' });
       bestMonthDates = data.dates;
       bestMonthStats = { score, count: data.count, consistency: (consistency * 100).toFixed(1), streak: data.maxStreak };
     }
+    
+    if (score < worstMonthScore && score >= 0) {
+      worstMonthScore = score;
+    }
   });
+
+  // Collect all months that match the worst score
+  const worstMonths = monthEntries.filter(([month, data]) => {
+    const consistency = data.activeDays / data.totalDays;
+    const score = Math.round(data.count * consistency * (data.maxStreak || 1));
+    return score === worstMonthScore;
+  });
+
+  if (worstMonths.length > 0) {
+    if (worstMonths.length === 1) {
+      const [month, data] = worstMonths[0];
+      worstMonthName = new Date(month + '-01T00:00:00').toLocaleString('default', { month: 'long', year: 'numeric' });
+      worstMonthDates = data.dates;
+      const consistency = data.activeDays / data.totalDays;
+      worstMonthStats = { score: worstMonthScore, count: data.count, consistency: (consistency * 100).toFixed(1), streak: data.maxStreak };
+    } else {
+      worstMonthName = `${worstMonths.length} Months`;
+      worstMonthDates = worstMonths.flatMap(([_, data]) => data.dates);
+      worstMonthStats = { score: worstMonthScore, count: 0, consistency: "0", streak: 0 };
+    }
+  }
 
   const avgMonthScore = allMonthScores.length > 0 ? allMonthScores.reduce((a, b) => a + b, 0) / allMonthScores.length : 0;
   let bestMonthTrend = 0, bestMonthIcon = '';
@@ -417,5 +444,5 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     bestWeekIcon = bestWeekTrend > 0 ? '▲' : (bestWeekTrend < 0 ? '▼' : '');
   }
 
-  return { bestMonthName, bestMonthDates, bestMonthStats, bestWeekName, bestWeekDates, bestWeekStats, dominantWeekday, dominantWeekdayWins: maxWins, bestMonthTrend, bestMonthIcon, bestWeekTrend, bestWeekIcon };
+  return { bestMonthName, bestMonthDates, bestMonthStats, worstMonthName, worstMonthDates, worstMonthStats, bestWeekName, bestWeekDates, bestWeekStats, dominantWeekday, dominantWeekdayWins: maxWins, bestMonthTrend, bestMonthIcon, bestWeekTrend, bestWeekIcon };
 }
