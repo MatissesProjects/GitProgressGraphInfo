@@ -7,31 +7,32 @@ export async function applyVisibility() {
       'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
       'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
       'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-          'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker'
-        ]);
-      
-        const grid = document.getElementById('gh-grid-stats');
-        const detailed = document.getElementById('gh-detailed-stats');
-        const activeRepos = document.getElementById('gh-active-repos');
-        const createdRepos = document.getElementById('gh-created-repos');
-        const achievements = document.getElementById('gh-achievements');
-        const persona = document.getElementById('gh-persona');
-        const footer = document.getElementById('gh-footer');
-        const headerLevel = document.getElementById('gh-header-level');
-        const pulseSignature = document.getElementById('gh-pulse-signature');
-        const tickerGraph = document.getElementById('gh-ticker-container');
-      
-        if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
-        if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
-        if (createdRepos) createdRepos.style.display = (settings.showCreatedRepos !== false) ? 'block' : 'none';
-        if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
-        if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
-        if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
-        if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
-        if (pulseSignature) pulseSignature.style.display = (settings.showPulseHash !== false) ? 'block' : 'none';
-        if (tickerGraph) tickerGraph.style.display = (settings.showTicker !== false) ? 'block' : 'none';
-      
-        const toggleMap: Record<string, any> = {      'gh-total': settings.showTotal,
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker'
+    ]);
+
+    const grid = document.getElementById('gh-grid-stats');
+    const detailed = document.getElementById('gh-detailed-stats');
+    const activeRepos = document.getElementById('gh-active-repos');
+    const createdRepos = document.getElementById('gh-created-repos');
+    const achievements = document.getElementById('gh-achievements');
+    const persona = document.getElementById('gh-persona');
+    const footer = document.getElementById('gh-footer');
+    const headerLevel = document.getElementById('gh-header-level');
+    const pulseSignature = document.getElementById('gh-pulse-signature');
+    const tickerGraph = document.getElementById('gh-ticker-container');
+
+    if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
+    if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
+    if (createdRepos) createdRepos.style.display = (settings.showCreatedRepos !== false) ? 'block' : 'none';
+    if (achievements) achievements.style.display = (settings.showAchievements !== false) ? 'block' : 'none';
+    if (persona) persona.style.display = (settings.showPersona !== false) ? 'inline-block' : 'none';
+    if (footer) footer.style.display = (settings.showFooter !== false) ? 'block' : 'none';
+    if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
+    if (pulseSignature) pulseSignature.style.display = (settings.showPulseHash !== false) ? 'block' : 'none';
+    if (tickerGraph) tickerGraph.style.display = (settings.showTicker !== false) ? 'block' : 'none';
+
+    const toggleMap: Record<string, any> = {
+      'gh-total': settings.showTotal,
       'gh-today': settings.showTodayCount,
       'gh-streak': settings.showStreak,
       'gh-best-month': settings.showBestMonth,
@@ -65,7 +66,8 @@ export async function applyVisibility() {
       if (el) el.style.display = (val !== false) ? 'block' : 'none';
     });
 
-    document.querySelectorAll('.git-heat-legend-label').forEach((el: any) => {
+    const legendLabels = document.querySelectorAll('.git-heat-legend-label');
+    legendLabels.forEach((el: any) => {
       el.style.display = (settings.showLegendNumbers !== false) ? 'inline' : 'none';
     });
 
@@ -78,10 +80,10 @@ export async function applyVisibility() {
   }
 }
 
-function renderTickerGraph(data: { date: string; count: number }[]) {
+function renderTickerGraph(data: { date: string; count: number }[], thresholds: any) {
   if (data.length < 2) return '';
   const width = 800;
-  const height = 40;
+  const height = 80; // Increased height for better intensity visualization
   const maxCount = Math.max(...data.map(d => d.count), 1);
   const points = data.map((d, i) => {
     const x = (i / (data.length - 1)) * width;
@@ -89,21 +91,44 @@ function renderTickerGraph(data: { date: string; count: number }[]) {
     return `${x},${y}`;
   }).join(' ');
 
+  // Create horizontal quadrant lines for the 4 main levels
+  const quadrantLines = [1, 2, 3, 4].map(l => {
+    if (!thresholds[l]) return '';
+    const y = height - (Math.min(thresholds[l].min, maxCount) / maxCount) * height;
+    return `
+      <line x1="0" y1="${y}" x2="${width}" y2="${y}" stroke="var(--color-border-muted)" stroke-width="0.5" stroke-dasharray="4,4" />
+      <text x="${width - 5}" y="${y - 2}" text-anchor="end" font-size="7" fill="var(--color-fg-muted)" opacity="0.8">L${l}</text>
+    `;
+  }).join('');
+
+  // Vertical stops for the intensity gradient (maps color to height)
+  const stops = [1, 2, 3, 4].map(l => {
+    if (!thresholds[l]) return '';
+    const offset = 100 - (Math.min(thresholds[l].min, maxCount) / maxCount) * 100;
+    return `<stop class="gh-ticker-v-stop-l${l}" offset="${offset}%" />`;
+  }).join('');
+
   return `
     <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px;">
-      <span class="color-fg-muted text-small d-block mb-1">Activity Pulse Ticker</span>
-      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible;">
+      <span class="color-fg-muted text-small d-block mb-1">Activity Intensity Ticker (Vertical Heat Zones)</span>
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible; background: rgba(0,0,0,0.05); border-radius: 4px;">
         <defs>
-          <linearGradient id="ticker-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <!-- Dynamic stops injected by theme engine -->
+          <linearGradient id="ticker-vertical-gradient" x1="0%" y1="100%" x2="0%" y2="0%">
+            <stop class="gh-ticker-v-stop-0" offset="0%" />
+            <stop class="gh-ticker-v-stop-l1" offset="10%" />
+            <stop class="gh-ticker-v-stop-l2" offset="30%" />
+            <stop class="gh-ticker-v-stop-l3" offset="60%" />
+            <stop class="gh-ticker-v-stop-l4" offset="90%" />
+            <stop class="gh-ticker-v-stop-top" offset="100%" />
           </linearGradient>
-          <linearGradient id="pulse-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop class="gh-ticker-stop-top" offset="0%" style="stop-color:var(--color-accent-fg);stop-opacity:0.4" />
-            <stop class="gh-ticker-stop-bottom" offset="100%" style="stop-color:var(--color-accent-fg);stop-opacity:0" />
+          <linearGradient id="pulse-area-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop class="gh-ticker-area-stop-top" offset="0%" style="stop-opacity:0.4" />
+            <stop class="gh-ticker-area-stop-bottom" offset="100%" style="stop-opacity:0.05" />
           </linearGradient>
         </defs>
-        <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#pulse-gradient)" />
-        <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="url(#ticker-line-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        <g id="gh-ticker-quadrants">${quadrantLines}</g>
+        <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#pulse-area-gradient)" />
+        <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="url(#ticker-vertical-gradient)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
     </div>
   `;
@@ -210,7 +235,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   };
 
   const rpgClasses = getCodingClass(advanced);
-  const tickerHtml = renderTickerGraph(advanced.ytdDailyCounts);
+  const tickerHtml = renderTickerGraph(advanced.ytdDailyCounts, thresholds);
 
   statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-start mb-2" style="gap: 15px;">
@@ -298,14 +323,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     });
   };
 
-  const highlightLevel = (level: number) => {
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: any) => {
-      day.classList.add('gh-highlight');
-      day.style.outline = '';
-      day.style.border = '';
-    });
-  };
-
   const highlightGranularLevel = (level: number) => {
     document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"][data-date]`).forEach((day: any) => {
       day.classList.add('gh-highlight');
@@ -364,6 +381,23 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-peak-day', () => highlightWeekday(advanced.peakWeekdayIndex, advanced.isYTD ? `${now.getFullYear()}-01-01` : undefined, todayStr));
   addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
+  
+  // Bidirectional highlighting: Hover graph day -> Highlight legend square
+  document.querySelectorAll('.ContributionCalendar-day').forEach((day: any) => {
+    if (day._githeatListener) return;
+    day._githeatListener = true;
+    day.addEventListener('mouseenter', () => {
+      const level = day.getAttribute('data-granular-level');
+      if (level) {
+        const sq = document.querySelector(`.square-legend.level-${level}`);
+        if (sq) sq.classList.add('highlighting');
+      }
+    });
+    day.addEventListener('mouseleave', () => {
+      document.querySelectorAll('.square-legend').forEach(sq => sq.classList.remove('highlighting'));
+    });
+  });
+
   addHover('#gh-thresh-1', () => {
     document.querySelectorAll(`.ContributionCalendar-day[data-level="1"][data-date]`).forEach((day: any) => {
       day.classList.add('gh-highlight');
@@ -390,22 +424,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       day.classList.add('gh-highlight');
       day.style.outline = '';
       day.style.border = '';
-    });
-  });
-
-  // Bidirectional highlighting: Hover graph day -> Highlight legend square
-  document.querySelectorAll('.ContributionCalendar-day').forEach((day: any) => {
-    if (day._githeatListener) return;
-    day._githeatListener = true;
-    day.addEventListener('mouseenter', () => {
-      const level = day.getAttribute('data-granular-level');
-      if (level) {
-        const sq = document.querySelector(`.square-legend.level-${level}`);
-        if (sq) sq.classList.add('highlighting');
-      }
-    });
-    day.addEventListener('mouseleave', () => {
-      document.querySelectorAll('.square-legend').forEach(sq => sq.classList.remove('highlighting'));
     });
   });
 }
