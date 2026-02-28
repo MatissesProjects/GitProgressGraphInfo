@@ -78,7 +78,7 @@ export function findIsland(targetData: ContributionDay[], thresholdFn: (d: Contr
   return biggest;
 }
 
-export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats, wrapAround: boolean = true, percentiles: Record<number, number> = {}) {
+export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats, wrapAround: boolean = true, percentiles?: Record<number, number>) {
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const ytdStartStr = `${now.getFullYear()}-01-01`;
@@ -87,20 +87,23 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
   const pastAndPresentData = sortedData.filter(d => d.date <= todayStr);
   const dateMap = new Map(data.map(d => [d.date, d]));
 
-  // Calculate Pulse Hash (Hex signature from Jan 1st)
-  const ytdDays = pastAndPresentData.filter(d => d.date >= ytdStartStr);
+  // Ensure we have percentiles for the signature calculation
+  const p = percentiles && Object.keys(percentiles).length > 0 ? percentiles : calculatePercentiles(pastAndPresentData);
   const pMarkers = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 98, 99];
   
   const getLevel = (count: number) => {
     if (count <= 0) return 0;
     if (count === 1) return 1;
+    // Iterate through markers to find level
     for (let i = pMarkers.length - 1; i >= 0; i--) {
       const m = pMarkers[i];
-      if (count >= (percentiles[m] || 999)) return i + 2;
+      if (count >= (p[m] || 999)) return i + 2;
     }
     return 1;
   };
 
+  // Calculate Pulse Hash (Hex signature from Jan 1st)
+  const ytdDays = pastAndPresentData.filter(d => d.date >= ytdStartStr);
   const pulseHash = ytdDays.map(d => getLevel(d.count).toString(16).toUpperCase()).reverse().join('');
 
   const base = calculateBaseStats(pastAndPresentData, ytdStartStr, todayStr);
