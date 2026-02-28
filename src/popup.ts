@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
   const toggleTrends = document.getElementById('toggle-trends') as HTMLInputElement;
   const toggleAvatar = document.getElementById('toggle-avatar') as HTMLInputElement;
+  const toggleGearHead = document.getElementById('toggle-gear-head') as HTMLInputElement;
+  const toggleGearWeapon = document.getElementById('toggle-gear-weapon') as HTMLInputElement;
+  const toggleGearShield = document.getElementById('toggle-gear-shield') as HTMLInputElement;
+  const toggleGearCompanion = document.getElementById('toggle-gear-companion') as HTMLInputElement;
+  const toggleCombo = document.getElementById('toggle-combo') as HTMLInputElement;
+  const toggleXPBar = document.getElementById('toggle-xp-bar') as HTMLInputElement;
   const togglePulseHash = document.getElementById('toggle-pulse-hash') as HTMLInputElement;
   const toggleTicker = document.getElementById('toggle-ticker') as HTMLInputElement;
   const toggleIslandWrap = document.getElementById('toggle-island-wrap') as HTMLInputElement;
@@ -214,6 +220,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(togglePulseHash, settings.showPulseHash);
   setChecked(toggleTicker, settings.showTicker);
   setChecked(toggleAvatar, settings.showAvatar);
+  setChecked(toggleGearHead, settings.showGearHead);
+  setChecked(toggleGearWeapon, settings.showGearWeapon);
+  setChecked(toggleGearShield, settings.showGearShield);
+  setChecked(toggleGearCompanion, settings.showGearCompanion);
+  setChecked(toggleCombo, settings.showCombo);
+  setChecked(toggleXPBar, settings.showXPBar);
   setChecked(toggleIslandWrap, settings.islandWrapAround);
 
   setChecked(toggleTotal, settings.showTotal);
@@ -274,6 +286,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleLegendNums, 'showLegendNumbers');
   addToggleListener(toggleTrends, 'showTrends');
   addToggleListener(toggleAvatar, 'showAvatar');
+  addToggleListener(toggleGearHead, 'showGearHead');
+  addToggleListener(toggleGearWeapon, 'showGearWeapon');
+  addToggleListener(toggleGearShield, 'showGearShield');
+  addToggleListener(toggleGearCompanion, 'showGearCompanion');
+  addToggleListener(toggleCombo, 'showCombo');
+  addToggleListener(toggleXPBar, 'showXPBar');
   addToggleListener(togglePulseHash, 'showPulseHash');
   addToggleListener(toggleTicker, 'showTicker');
   addToggleListener(toggleIslandWrap, 'islandWrapAround');

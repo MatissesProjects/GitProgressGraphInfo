@@ -22,6 +22,9 @@ export async function applyVisibility() {
     const tickerGraph = document.getElementById('gh-ticker-container');
     const avatar = document.querySelector('.gh-avatar-wrapper') as HTMLElement;
     const thresholdsContainer = document.getElementById('gh-thresholds-container');
+    const comboBadge = document.querySelector('.gh-combo-badge') as HTMLElement;
+    const xpBar = document.querySelector('.gh-progress-container') as HTMLElement;
+    const xpText = document.querySelector('.gh-xp-text') as HTMLElement;
 
     if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
     if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
@@ -34,6 +37,23 @@ export async function applyVisibility() {
     if (tickerGraph) tickerGraph.style.display = (settings.showTicker !== false) ? 'block' : 'none';
     if (avatar) avatar.style.display = (settings.showAvatar !== false) ? 'block' : 'none';
     if (thresholdsContainer) thresholdsContainer.style.display = (settings.showLegendNumbers !== false) ? 'flex' : 'none';
+    
+    if (comboBadge) comboBadge.style.display = (settings.showCombo !== false) ? 'block' : 'none';
+    if (xpBar) xpBar.style.display = (settings.showXPBar !== false) ? 'block' : 'none';
+    if (xpText) xpText.style.display = (settings.showXPBar !== false) ? 'block' : 'none';
+
+    // Gear toggles
+    if (avatar) {
+      const head = avatar.querySelector('div:nth-child(3)') as HTMLElement; // Headgear is 3rd child
+      const weapon = avatar.querySelector('div:nth-child(4)') as HTMLElement; // Weapon is 4th
+      const shield = avatar.querySelector('div:nth-child(5)') as HTMLElement; // Shield is 5th
+      const companion = avatar.querySelector('div:nth-child(1)') as HTMLElement; // Companion is 1st
+
+      if (head) head.style.display = (settings.showGearHead !== false) ? 'block' : 'none';
+      if (weapon) weapon.style.display = (settings.showGearWeapon !== false) ? 'block' : 'none';
+      if (shield) shield.style.display = (settings.showGearShield !== false) ? 'block' : 'none';
+      if (companion) companion.style.display = (settings.showGearCompanion !== false) ? 'block' : 'none';
+    }
 
     const toggleMap: Record<string, any> = {
       'gh-total': settings.showTotal,
