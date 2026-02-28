@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends',
     'gridOrder'
   ]);
 
@@ -207,6 +207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleFooter, settings.showFooter);
   setChecked(toggleLegendNums, settings.showLegendNumbers);
   setChecked(toggleTrends, settings.showTrends);
+  setChecked(togglePulseHash, settings.showPulseHash);
   setChecked(toggleIslandWrap, settings.islandWrapAround);
 
   setChecked(toggleTotal, settings.showTotal);
@@ -265,6 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleFooter, 'showFooter');
   addToggleListener(toggleLegendNums, 'showLegendNumbers');
   addToggleListener(toggleTrends, 'showTrends');
+  addToggleListener(togglePulseHash, 'showPulseHash');
   addToggleListener(toggleIslandWrap, 'islandWrapAround');
 
   addToggleListener(toggleTotal, 'showTotal');
