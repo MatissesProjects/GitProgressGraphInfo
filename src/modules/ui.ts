@@ -55,7 +55,8 @@ export async function applyVisibility() {
       'gh-pr': settings.showPR,
       'gh-issue-created': settings.showIssueCreated,
       'gh-langs': settings.showLangs,
-      'gh-network': settings.showNetwork
+      'gh-network': settings.showNetwork,
+      'gh-pulse-signature': settings.showPulseHash
     };
 
     Object.entries(toggleMap).forEach(([id, val]) => {
