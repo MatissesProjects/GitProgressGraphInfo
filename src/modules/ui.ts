@@ -21,6 +21,7 @@ export async function applyVisibility() {
     const pulseSignature = document.getElementById('gh-pulse-signature');
     const tickerGraph = document.getElementById('gh-ticker-container');
     const avatar = document.querySelector('.gh-avatar-wrapper') as HTMLElement;
+    const thresholdsContainer = document.getElementById('gh-thresholds-container');
 
     if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
     if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
@@ -32,6 +33,7 @@ export async function applyVisibility() {
     if (pulseSignature) pulseSignature.style.display = (settings.showPulseHash !== false) ? 'block' : 'none';
     if (tickerGraph) tickerGraph.style.display = (settings.showTicker !== false) ? 'block' : 'none';
     if (avatar) avatar.style.display = (settings.showAvatar !== false) ? 'block' : 'none';
+    if (thresholdsContainer) thresholdsContainer.style.display = (settings.showLegendNumbers !== false) ? 'flex' : 'none';
 
     const toggleMap: Record<string, any> = {
       'gh-total': settings.showTotal,
@@ -344,7 +346,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         <div id="granular-legend" class="d-flex gap-1 mr-3">
           ${Array.from({ length: 15 }).map((_, i) => `<div class="square-legend level-${i+1}"></div>`).join('')}
         </div>
-        <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
+        <div id="gh-thresholds-container" class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
           <span class="color-fg-muted text-small mr-1">Thresholds: </span>
           <span id="gh-thresh-1" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
           <span id="gh-thresh-2" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
