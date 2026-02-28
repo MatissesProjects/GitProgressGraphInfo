@@ -219,12 +219,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       </div>
     </div>
 
-    <div id="gh-pulse-signature" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 4px; min-height: 14px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
-      <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block;">
-        SIG: 0x${advanced.pulseHash}
-      </span>
-    </div>
-
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">
       <div style="flex: 1; min-width: 160px;" id="gh-active-repos">
@@ -241,7 +235,12 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       </div>
     </div>
     <div class="mt-2 pt-2 border-top color-border-muted" id="gh-footer">
-      <div class="d-flex flex-items-center flex-wrap">
+      <div id="gh-pulse-signature" class="mb-2" style="min-height: 14px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
+        <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block;">
+          SIG: 0x${advanced.pulseHash}
+        </span>
+      </div>
+      <div class="d-flex flex-items-center flex-wrap mt-1">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
         <div id="granular-legend" class="d-flex gap-1 mr-3">
           ${Array.from({ length: 15 }).map((_, i) => `<div class="square-legend level-${i+1}"></div>`).join('')}
