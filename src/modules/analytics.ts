@@ -193,8 +193,10 @@ export function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedPr
   }
 
   const avgVel = parseFloat(velocity);
-  const aboveVelocityDates = pastAndPresentData.filter(d => d.count >= avgVel && d.count > 0).map(d => d.date);
-  const belowVelocityDates = pastAndPresentData.filter(d => d.count < avgVel && d.count > 0).map(d => d.date);
+  const targetDaysForVelocity = base.ytdTotalDays > 0 ? pastAndPresentData.filter(d => d.date >= ytdStartStr) : pastAndPresentData;
+  
+  const aboveVelocityDates = targetDaysForVelocity.filter(d => d.count >= avgVel && d.count > 0).map(d => d.date);
+  const belowVelocityDates = targetDaysForVelocity.filter(d => d.count < avgVel).map(d => d.date);
 
   // Weekday Trends
   // Current Weekday Trend (Today's count vs avg for this weekday)
