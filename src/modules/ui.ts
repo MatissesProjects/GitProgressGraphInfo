@@ -7,7 +7,7 @@ export async function applyVisibility() {
       'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
       'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
       'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker'
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar'
     ]);
 
     const grid = document.getElementById('gh-grid-stats');
@@ -20,6 +20,7 @@ export async function applyVisibility() {
     const headerLevel = document.getElementById('gh-header-level');
     const pulseSignature = document.getElementById('gh-pulse-signature');
     const tickerGraph = document.getElementById('gh-ticker-container');
+    const avatar = document.querySelector('.gh-avatar-wrapper') as HTMLElement;
 
     if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
     if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
@@ -30,6 +31,7 @@ export async function applyVisibility() {
     if (headerLevel) headerLevel.style.display = (settings.showLevel !== false) ? 'flex' : 'none';
     if (pulseSignature) pulseSignature.style.display = (settings.showPulseHash !== false) ? 'block' : 'none';
     if (tickerGraph) tickerGraph.style.display = (settings.showTicker !== false) ? 'block' : 'none';
+    if (avatar) avatar.style.display = (settings.showAvatar !== false) ? 'block' : 'none';
 
     const toggleMap: Record<string, any> = {
       'gh-total': settings.showTotal,

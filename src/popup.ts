@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleFooter = document.getElementById('toggle-footer') as HTMLInputElement;
   const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
   const toggleTrends = document.getElementById('toggle-trends') as HTMLInputElement;
+  const toggleAvatar = document.getElementById('toggle-avatar') as HTMLInputElement;
   const togglePulseHash = document.getElementById('toggle-pulse-hash') as HTMLInputElement;
   const toggleTicker = document.getElementById('toggle-ticker') as HTMLInputElement;
   const toggleIslandWrap = document.getElementById('toggle-island-wrap') as HTMLInputElement;
@@ -88,7 +89,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar',
     'gridOrder'
   ]);
 
@@ -210,6 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleTrends, settings.showTrends);
   setChecked(togglePulseHash, settings.showPulseHash);
   setChecked(toggleTicker, settings.showTicker);
+  setChecked(toggleAvatar, settings.showAvatar);
   setChecked(toggleIslandWrap, settings.islandWrapAround);
 
   setChecked(toggleTotal, settings.showTotal);
@@ -268,6 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleFooter, 'showFooter');
   addToggleListener(toggleLegendNums, 'showLegendNumbers');
   addToggleListener(toggleTrends, 'showTrends');
+  addToggleListener(toggleAvatar, 'showAvatar');
   addToggleListener(togglePulseHash, 'showPulseHash');
   addToggleListener(toggleTicker, 'showTicker');
   addToggleListener(toggleIslandWrap, 'islandWrapAround');
