@@ -98,7 +98,7 @@ async function runStandalone() {
       console.log("Graph found with " + data.length + " days of data, calculating stats...");
       const t = calculateThresholds(data);
       const p = calculatePercentiles(data);
-      const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, true);
+      const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, true, p);
       
       injectStats(t, p, data, advanced, null, true);
       extendLegend(t);

@@ -29,7 +29,7 @@ function init() {
         if (data) {
           const thresholds = calculateThresholds(data);
           const percentiles = calculatePercentiles(data);
-          const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials);
+          const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, true, percentiles);
           let total = data.reduce((sum, day) => sum + day.count, 0);
           if (advanced.isYTD) {
             const currentYear = new Date().getFullYear();
