@@ -218,8 +218,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       </div>
     </div>
 
-    <div id="gh-pulse-signature" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 4px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
-      <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all;">
+    <div id="gh-pulse-signature" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 4px; min-height: 14px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
+      <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block;">
         SIG: 0x${advanced.pulseHash}
       </span>
     </div>
