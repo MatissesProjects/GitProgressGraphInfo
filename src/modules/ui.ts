@@ -357,6 +357,22 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       day.style.border = '';
     });
   });
+
+  // Bidirectional highlighting: Hover graph day -> Highlight legend square
+  document.querySelectorAll('.ContributionCalendar-day').forEach((day: any) => {
+    if (day._githeatListener) return;
+    day._githeatListener = true;
+    day.addEventListener('mouseenter', () => {
+      const level = day.getAttribute('data-granular-level');
+      if (level) {
+        const sq = document.querySelector(`.square-legend.level-${level}`);
+        if (sq) sq.classList.add('highlighting');
+      }
+    });
+    day.addEventListener('mouseleave', () => {
+      document.querySelectorAll('.square-legend').forEach(sq => sq.classList.remove('highlighting'));
+    });
+  });
 }
 
 export function extendLegend(thresholds: any) {
