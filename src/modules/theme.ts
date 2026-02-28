@@ -196,26 +196,36 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     });
   }
 
-  // Recolor Activity Ticker
-  const tickerLineStart = document.querySelector('.gh-ticker-line-stop-start');
-  const tickerLineEnd = document.querySelector('.gh-ticker-line-stop-end');
+  // Recolor Activity Ticker Line (Commit Intensity Gradient)
+  const tickerLineGradient = document.getElementById('ticker-line-gradient');
   const tickerStopTop = document.querySelector('.gh-ticker-stop-top');
   const tickerStopBottom = document.querySelector('.gh-ticker-stop-bottom');
   
-  if (tickerStopTop && tickerStopBottom) {
-    const startColor = colors[1];
-    const stopColor = colors[colors.length - 1];
+  if (tickerLineGradient && data.length > 0) {
+    const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
     
-    // Horizontal Line Gradient
-    if (tickerLineStart && tickerLineEnd) {
-      (tickerLineStart as HTMLElement).style.setProperty('stop-color', startColor, 'important');
-      (tickerLineEnd as HTMLElement).style.setProperty('stop-color', stopColor, 'important');
-    }
+    // Clear existing stops
+    tickerLineGradient.innerHTML = '';
+    
+    // Create a stop for every day to map color to commit intensity
+    sortedData.forEach((day, i) => {
+      const level = getGranularLevel(day.count);
+      const color = colors[level] || colors[0];
+      const offset = (i / (sortedData.length - 1)) * 100;
+      
+      const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+      stop.setAttribute('offset', `${offset}%`);
+      stop.setAttribute('stop-color', color);
+      tickerLineGradient.appendChild(stop);
+    });
 
-    // Vertical Area Gradient
-    (tickerStopTop as HTMLElement).style.setProperty('stop-color', stopColor, 'important');
-    (tickerStopTop as HTMLElement).style.setProperty('stop-opacity', '0.5', 'important');
-    (tickerStopBottom as HTMLElement).style.setProperty('stop-color', startColor, 'important');
-    (tickerStopBottom as HTMLElement).style.setProperty('stop-opacity', '0', 'important');
+    if (tickerStopTop && tickerStopBottom) {
+      const stopColor = colors[colors.length - 1];
+      const startColor = colors[1];
+      (tickerStopTop as HTMLElement).style.setProperty('stop-color', stopColor, 'important');
+      (tickerStopTop as HTMLElement).style.setProperty('stop-opacity', '0.5', 'important');
+      (tickerStopBottom as HTMLElement).style.setProperty('stop-color', startColor, 'important');
+      (tickerStopBottom as HTMLElement).style.setProperty('stop-opacity', '0', 'important');
+    }
   }
 }

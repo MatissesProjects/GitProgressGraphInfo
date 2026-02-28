@@ -95,8 +95,7 @@ function renderTickerGraph(data: { date: string; count: number }[]) {
       <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible;">
         <defs>
           <linearGradient id="ticker-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop class="gh-ticker-line-stop-start" offset="0%" style="stop-color:var(--color-accent-fg)" />
-            <stop class="gh-ticker-line-stop-end" offset="100%" style="stop-color:var(--color-accent-fg)" />
+            <!-- Dynamic stops injected by theme engine -->
           </linearGradient>
           <linearGradient id="pulse-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop class="gh-ticker-stop-top" offset="0%" style="stop-color:var(--color-accent-fg);stop-opacity:0.4" />
