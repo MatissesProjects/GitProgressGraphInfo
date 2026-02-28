@@ -62,6 +62,13 @@ async function run() {
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     page.on('pageerror', (err: Error) => console.error('PAGE ERROR:', err.message));
 
+    // Inject configuration into the page context
+    const startColor = process.env.CUSTOM_START_COLOR || '#4a207e';
+    const stopColor = process.env.CUSTOM_STOP_COLOR || '#04ff00';
+    await page.evaluateOnNewDocument((start, stop) => {
+      (window as any).githeatConfig = { startColor: start, stopColor: stop };
+    }, startColor, stopColor);
+
     console.log(`Navigating to https://github.com/${username}...`);
     
     const now = new Date();

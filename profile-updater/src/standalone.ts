@@ -16,6 +16,11 @@ import { injectStats, extendLegend, applyVisibility } from '../../src/modules/ui
 async function runStandalone() {
   console.log("GitHeat Standalone: Initializing (v1.2 - Quantile Scale) on " + window.location.href + "...");
   
+  // Read configuration injected by Puppeteer
+  const config = (window as any).githeatConfig || { startColor: '#4a207e', stopColor: '#04ff00' };
+  const { startColor, stopColor } = config;
+  console.log(`Using custom colors: ${startColor} to ${stopColor}`);
+
   // Mock chrome API
   (window as any).chrome = {
     storage: {
@@ -64,8 +69,8 @@ async function runStandalone() {
             showNetwork: false,
 
             theme: 'custom',
-            customStart: '#4a207e',
-            customStop: '#04ff00'
+            customStart: startColor,
+            customStop: stopColor
           };
 
           if (typeof keys === 'string') return Promise.resolve({ [keys]: (settings as any)[keys] });
@@ -97,7 +102,7 @@ async function runStandalone() {
       
       injectStats(t, p, data, advanced, null, true);
       extendLegend(t);
-      await applyDeepRecoloring(data, p, 'custom', '#4a207e', '#04ff00');
+      await applyDeepRecoloring(data, p, 'custom', startColor, stopColor);
       await applyVisibility();
       
       console.log("GitHeat Standalone: Analysis complete.");

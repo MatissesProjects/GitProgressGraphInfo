@@ -12,6 +12,14 @@ on:
         description: 'Timezone for analytics (e.g. America/Los_Angeles)'
         required: false
         default: 'America/Los_Angeles'
+      custom_start_color:
+        description: 'Start color for custom range (HEX, e.g. #4a207e)'
+        required: false
+        default: '#4a207e'
+      custom_stop_color:
+        description: 'Stop color for custom range (HEX, e.g. #04ff00)'
+        required: false
+        default: '#04ff00'
 
 jobs:
   update-profile:
@@ -46,6 +54,8 @@ jobs:
         env:
           GITHUB_USERNAME: ${{ github.repository_owner }}
           TIMEZONE: ${{ github.event.inputs.timezone || 'America/Los_Angeles' }}
+          CUSTOM_START_COLOR: ${{ github.event.inputs.custom_start_color || '#4a207e' }}
+          CUSTOM_STOP_COLOR: ${{ github.event.inputs.custom_stop_color || '#04ff00' }}
         run: npm start
 
       - name: Check for generated image

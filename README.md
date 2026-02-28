@@ -29,8 +29,9 @@ A Chrome extension that turns your GitHub contribution graph into a deep-dive an
 - **Precision Metrics:** Track your Velocity (commits/day), Consistency %, and Weekend Score.
 
 ### Deep Scale & Themes
-- **12-Level Heatmap:** Re-calculates your contribution graph into 12 granular levels (instead of the standard 5) using percentile-based scaling.
+- **15-Level Heatmap:** Re-calculates your contribution graph into 15 granular levels (instead of the standard 5) using data-driven quantile scaling for maximum contrast.
 - **Color Themes:** Toggle between "Classic Green," "Flame Heat," or create your own **Custom Range** with a built-in color picker.
+- **Interactive Legend:** Hover over any square in the 15-level legend to highlight all matching days in your contribution graph.
 - **Legend Decoding:** Displays the exact commit ranges for every level directly in the GitHub legend.
 
 ### Customizable UI
@@ -64,6 +65,13 @@ To display your GitHeat analytics in your GitHub profile README, add the followi
 ```
 
 Replace `YOUR_USERNAME` with your GitHub username.
+
+### Customization
+You can customize the generated image by providing inputs when manually triggering the workflow:
+- **Timezone:** Set your local timezone (e.g., `America/Los_Angeles`) to fix off-by-one errors in streaks.
+- **Custom Colors:** Change the `custom_start_color` and `custom_stop_color` (HEX format) to match your profile's aesthetic.
+
+To change these for the **automatic daily run**, edit the `env` section in `.github/workflows/update-githeat.yml`.
 
 ### Local Development
 To run the profile updater locally:
