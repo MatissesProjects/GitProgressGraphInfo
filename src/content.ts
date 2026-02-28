@@ -83,9 +83,9 @@ function init() {
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
         const wrapAround = true; 
         const showTrends = s.showTrends !== false;
-        const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround);
+        const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p);
         
-        injectStats(t, p, data, advanced, order, showTrends);
+        await injectStats(t, p, data, advanced, order, showTrends);
         extendLegend(t);
         await applyDeepRecoloring(data, p, theme, (s.customStart as string), (s.customStop as string));
         await applyVisibility();

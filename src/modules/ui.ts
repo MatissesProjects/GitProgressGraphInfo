@@ -7,7 +7,7 @@ export async function applyVisibility() {
       'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
       'showTotal', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
       'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends'
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash'
     ]);
 
     const grid = document.getElementById('gh-grid-stats');
@@ -53,7 +53,8 @@ export async function applyVisibility() {
       'gh-pr': settings.showPR,
       'gh-issue-created': settings.showIssueCreated,
       'gh-langs': settings.showLangs,
-      'gh-network': settings.showNetwork
+      'gh-network': settings.showNetwork,
+      'gh-pulse-hash': settings.showPulseHash
     };
 
     Object.entries(toggleMap).forEach(([id, val]) => {
@@ -97,7 +98,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
     'gh-island', 'gh-slump-island', 'gh-slump',
     'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
-    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
+    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network', 'gh-pulse-hash'
   ];
   let gridOrder = savedOrder || defaultOrder;
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
@@ -171,28 +172,9 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-pr': `<div class="stat-card" id="gh-pr"><span class="color-fg-muted d-block text-small">PR Activity (O/M/R)</span><strong class="f3-light">${advanced.pullRequests} / ${advanced.mergedPullRequests} / ${advanced.pullRequestReviews}</strong></div>`,
     'gh-issue-created': `<div class="stat-card" id="gh-issue-created"><span class="color-fg-muted d-block text-small">Issues / Created Repos</span><strong class="f3-light">${advanced.issuesOpened} / ${advanced.createdRepos}</strong></div>`,
     'gh-langs': `<div class="stat-card" id="gh-langs"><span class="color-fg-muted d-block text-small">Top Languages</span><strong class="f3-light">${advanced.topLangs.join(', ') || 'N/A'}</strong></div>`,
-    'gh-network': `<div class="stat-card" id="gh-network"><span class="color-fg-muted d-block text-small">Network</span><strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong></div>`
+    'gh-network': `<div class="stat-card" id="gh-network"><span class="color-fg-muted d-block text-small">Network</span><strong class="f3-light">${advanced.socials.followers} Followers / ${advanced.socials.organizations} Orgs</strong></div>`,
+    'gh-pulse-hash': `<div class="stat-card" id="gh-pulse-hash" style="grid-column: span 2;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. 0=Empty, 1-F=Deep Scale Level."><span class="color-fg-muted d-block text-small">Pulse Signature (YTD)</span><code class="f4" style="word-break: break-all; color: var(--color-accent-fg); font-family: monospace; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">0x${advanced.pulseHash}</code></div>`
   };
-
-  const p = percentiles;
-  const p10 = Math.max(2, p[10] || 2);
-  const legendRanges = [
-    p10 === 2 ? "1 commit" : `1 to ${p10 - 1} commits`,
-    `${p10} to ${p[20] > p10 ? p[20]-1 : p10} commits`,
-    `${p[20]} to ${p[30] > p[20] ? p[30]-1 : p[20]} commits`,
-    `${p[30]} to ${p[40] > p[30] ? p[40]-1 : p[30]} commits`,
-    `${p[40]} to ${p[50] > p[40] ? p[50]-1 : p[40]} commits`,
-    `${p[50]} to ${p[60] > p[50] ? p[60]-1 : p[50]} commits`,
-    `${p[60]} to ${p[70] > p[60] ? p[70]-1 : p[60]} commits`,
-    `${p[70]} to ${p[75] > p[70] ? p[75]-1 : p[70]} commits`,
-    `${p[75]} to ${p[80] > p[75] ? p[80]-1 : p[75]} commits`,
-    `${p[80]} to ${p[85] > p[80] ? p[85]-1 : p[80]} commits`,
-    `${p[85]} to ${p[90] > p[85] ? p[90]-1 : p[85]} commits`,
-    `${p[90]} to ${p[95] > p[90] ? p[95]-1 : p[90]} commits`,
-    `${p[95]} to ${p[98] > p[95] ? p[98]-1 : p[95]} commits`,
-    `${p[98]} to ${p[99] > p[98] ? p[99]-1 : p[98]} commits`,
-    `${p[99]}+ commits`
-  ];
 
   const rpgClasses = getCodingClass(advanced);
 
@@ -235,9 +217,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         </div>
       </div>
     </div>
-        
-      </div>
-    </div>
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">
       <div style="flex: 1; min-width: 160px;" id="gh-active-repos">
@@ -257,7 +236,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center flex-wrap">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
         <div id="granular-legend" class="d-flex gap-1 mr-3">
-          ${legendRanges.map((range, i) => `<div class="square-legend level-${i+1}" title="${range}"></div>`).join('')}
+          ${Array.from({ length: 15 }).map((_, i) => `<div class="square-legend level-${i+1}"></div>`).join('')}
         </div>
         <div class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
           <span class="color-fg-muted text-small mr-1">Thresholds: </span>
