@@ -179,7 +179,7 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     if (weekdayHighActivityCounts[i] > maxHighFreq) { maxHighFreq = weekdayHighActivityCounts[i]; peakWeekdayIndex = i; }
   }
 
-  const rpg = await calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars);
+  const rpg = await calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars, socials, pinned, base.longestStreak);
 
   // Velocity Trend (Last 7 days vs Overall YTD Velocity)
   const sorted = [...pastAndPresentData].sort((a, b) => b.date.localeCompare(a.date));

@@ -7,7 +7,7 @@ export async function applyVisibility() {
       'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
       'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
       'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar'
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
     ]);
 
     const grid = document.getElementById('gh-grid-stats');
@@ -25,6 +25,7 @@ export async function applyVisibility() {
     const comboBadge = document.querySelector('.gh-combo-badge') as HTMLElement;
     const xpBar = document.querySelector('.gh-progress-container') as HTMLElement;
     const xpText = document.querySelector('.gh-xp-text') as HTMLElement;
+    const skillTree = document.getElementById('gh-skill-tree');
 
     if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
     if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
@@ -41,6 +42,7 @@ export async function applyVisibility() {
     if (comboBadge) comboBadge.style.display = (settings.showCombo !== false) ? 'block' : 'none';
     if (xpBar) xpBar.style.display = (settings.showXPBar !== false) ? 'block' : 'none';
     if (xpText) xpText.style.display = (settings.showXPBar !== false) ? 'block' : 'none';
+    if (skillTree) skillTree.style.display = (settings.showSkillTree !== false) ? 'block' : 'none';
 
     // Gear toggles
     if (avatar) {
@@ -354,6 +356,24 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     </div>
 
     ${tickerHtml}
+
+    <div id="gh-skill-tree" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
+      <div class="d-flex flex-justify-between flex-items-center mb-1">
+        <span class="color-fg-muted text-small font-weight-bold">SKILL TREE</span>
+        <span class="text-small color-fg-accent" style="cursor: help;" title="Unlock skills by completing specific GitHub milestones.">? How to unlock</span>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        ${(advanced.skills || []).map((s: any) => `
+          <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
+               title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
+               style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.5'}; cursor: help;">
+            <span>${s.icon}</span>
+            <span style="font-weight: ${s.unlocked ? '600' : 'normal'};">${s.name}</span>
+            ${s.unlocked ? '<span style="font-size: 9px; color: var(--color-success-fg);">✓</span>' : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
 
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">

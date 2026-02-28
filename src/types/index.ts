@@ -56,6 +56,16 @@ export interface TimelineActivity {
   todayActions: TodayActions;
 }
 
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  unlocked: boolean;
+  requirement: string;
+  category: 'Coding' | 'Social' | 'Consistency';
+}
+
 export interface AdvancedStats {
   total: number;
   streak: number;
@@ -90,4 +100,5 @@ export interface AdvancedStats {
   xpToNext: number;
   combo: { title: string; multiplier: number; points: number; bonusReasons: string[] };
   persona: string;
+  skills: Skill[];
 }

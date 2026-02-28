@@ -1,8 +1,84 @@
-import { ContributionDay, TimelineActivity, AvatarData, TodayActions } from '../types';
+import { ContributionDay, TimelineActivity, AvatarData, TodayActions, Skill, SocialStats, PinnedProject } from '../types';
 
 export const getLevelThreshold = (l: number) => 25 * l * l;
 
 export const titles = ["Ghost", "Novice", "Script Kiddie", "Code Monkey", "Byte Basher", "Repo Ranger", "Commit Commander", "Git Guru", "Merge Master", "Branch Baron", "Pull Request Prince", "Octocat Overlord", "Code God"];
+
+export function calculateSkills(
+  timeline: TimelineActivity, 
+  socials: SocialStats, 
+  pinned: PinnedProject[],
+  level: number,
+  longestStreak: number
+): Skill[] {
+  const uniqueLangs = new Set(pinned.map(p => p.language).filter(l => l !== "Unknown")).size;
+  
+  return [
+    {
+      id: 'polyglot',
+      name: 'Polyglot Adept',
+      description: 'Master of multiple languages.',
+      icon: '🌍',
+      unlocked: uniqueLangs >= 3,
+      requirement: '3+ unique languages in pinned projects',
+      category: 'Coding'
+    },
+    {
+      id: 'reviewer',
+      name: 'Eagle Eye Reviewer',
+      description: 'Carefully inspecting every line.',
+      icon: '👁️',
+      unlocked: timeline.pullRequestReviews >= 10,
+      requirement: '10+ total PR reviews',
+      category: 'Social'
+    },
+    {
+      id: 'architect',
+      name: 'System Architect',
+      description: 'Creating worlds from scratch.',
+      icon: '🏗️',
+      unlocked: timeline.createdRepos >= 5,
+      requirement: '5+ created repositories',
+      category: 'Coding'
+    },
+    {
+      id: 'marathoner',
+      name: 'Code Marathoner',
+      description: 'Unstoppable consistency.',
+      icon: '🏃',
+      unlocked: longestStreak >= 30,
+      requirement: '30+ day longest streak',
+      category: 'Consistency'
+    },
+    {
+      id: 'socialite',
+      name: 'Social Butterfly',
+      description: 'Building a massive network.',
+      icon: '🦋',
+      unlocked: socials.followers >= 50,
+      requirement: '50+ followers',
+      category: 'Social'
+    },
+    {
+      id: 'maintainer',
+      name: 'Lead Maintainer',
+      description: 'Guiding projects to success.',
+      icon: '👑',
+      unlocked: timeline.mergedPullRequests >= 20,
+      requirement: '20+ merged pull requests',
+      category: 'Coding'
+    },
+    {
+      id: 'cleanup',
+      name: 'Refactoring Master',
+      description: 'Proxy: High PR review count.',
+      icon: '🧹',
+      unlocked: timeline.pullRequestReviews >= 50,
+      requirement: '50+ total PR reviews (proxy for refactoring/cleanup)',
+      category: 'Coding'
+    }
+  ];
+}
 
 export function getAvatar(level: number, currentStreak: number, totalStars: number, actions: TodayActions, todayCount: number, customSettings?: any): AvatarData {
   // Default values
@@ -16,7 +92,7 @@ export function getAvatar(level: number, currentStreak: number, totalStars: numb
     ],
     weapons: [
       { min: 20, val: "⚡", label: "Legendary Lightning" },
-      { min: 12, val: "⚔️", label: "Steel Claymore" },
+      { min: 12, val: "🪓", label: "Battle Axe" },
       { min: 7, val: "🗡️", label: "Iron Sword" },
       { min: 4, val: "🔨", label: "Heavy Hammer" },
       { min: 1, val: "🦴", label: "Primitive Stick" }
@@ -140,7 +216,7 @@ export function getCombo(todayScore: number, actions: any) {
   return { todayCombo, todayComboReason };
 }
 
-export async function calculateRPGStats(pastAndPresentData: ContributionDay[], timeline: TimelineActivity, todayCount: number, currentStreak: number, velocity: string, totalStars: number) {
+export async function calculateRPGStats(pastAndPresentData: ContributionDay[], timeline: TimelineActivity, todayCount: number, currentStreak: number, velocity: string, totalStars: number, socials: SocialStats, pinned: PinnedProject[], longestStreak: number) {
   let totalXPWithBonuses = 0;
   pastAndPresentData.forEach(day => {
     let dayXP = day.count;
@@ -174,9 +250,11 @@ export async function calculateRPGStats(pastAndPresentData: ContributionDay[], t
   const settings = await chrome.storage.local.get(['customAvatarSettings']);
   const avatar = getAvatar(currentLevel, currentStreak, totalStars, actions, heatmapCommits, settings.customAvatarSettings);
 
+  const skills = calculateSkills(timeline, socials, pinned, currentLevel, longestStreak);
+
   return {
     totalXP: totalXPWithBonuses, level: currentLevel, levelTitle, levelProgressXP: xpProgress, levelTotalXP: xpNeeded, progressPercent,
     todayCombo, todayComboReason, todayComboMath, xpToNext: nextLevelXP - totalXPWithBonuses,
-    avatar
+    avatar, skills
   };
 }

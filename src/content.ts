@@ -51,7 +51,7 @@ function init() {
 
   chrome.storage.onChanged.addListener(async (changes) => {
     if (!isContextValid()) return;
-    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar'];
+    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'];
     if (visibilityKeys.some(key => (changes as any)[key])) {
       await applyVisibility();
       // Trends change might need a re-injection
@@ -80,7 +80,7 @@ function init() {
       const socials = parseSocials();
       if (data) {
         const t = calculateThresholds(data), p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround', 'showTrends', 'customStart', 'customStop', 'showTicker', 'showPulseHash', 'showAvatar', 'showWorstMonth', 'showCurrentWeek']);
+        const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround', 'showTrends', 'customStart', 'customStop', 'showTicker', 'showPulseHash', 'showAvatar', 'showWorstMonth', 'showCurrentWeek', 'showSkillTree']);
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
         const wrapAround = true; 
         const showTrends = s.showTrends !== false;

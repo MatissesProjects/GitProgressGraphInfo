@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleGearCompanion = document.getElementById('toggle-gear-companion') as HTMLInputElement;
   const toggleCombo = document.getElementById('toggle-combo') as HTMLInputElement;
   const toggleXPBar = document.getElementById('toggle-xp-bar') as HTMLInputElement;
+  const toggleSkillTree = document.getElementById('toggle-skill-tree') as HTMLInputElement;
   const togglePulseHash = document.getElementById('toggle-pulse-hash') as HTMLInputElement;
   const toggleTicker = document.getElementById('toggle-ticker') as HTMLInputElement;
   const toggleIslandWrap = document.getElementById('toggle-island-wrap') as HTMLInputElement;
@@ -315,6 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleGearCompanion, settings.showGearCompanion);
   setChecked(toggleCombo, settings.showCombo);
   setChecked(toggleXPBar, settings.showXPBar);
+  setChecked(toggleSkillTree, settings.showSkillTree);
   setChecked(toggleIslandWrap, settings.islandWrapAround);
 
   setChecked(toggleTotal, settings.showTotal);
