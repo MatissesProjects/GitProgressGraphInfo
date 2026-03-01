@@ -150,8 +150,8 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
   const avgVelocityValue = counts.length > 0 ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
   const avgY = height - (Math.min(avgVelocityValue, maxCount) / maxCount) * height;
   const avgLineHtml = avgVelocityValue > 0 ? `
-    <line x1="0" y1="${avgY}" x2="${width}" y2="${avgY}" stroke="var(--color-accent-fg)" stroke-width="1" stroke-dasharray="2,2" opacity="0.5" />
-    <text x="5" y="${avgY - 2}" font-size="6" fill="var(--color-accent-fg)" opacity="0.7">AVG VELOCITY (${avgVelocityValue.toFixed(1)})</text>
+    <line x1="0" y1="${avgY}" x2="${width}" y2="${avgY}" stroke="var(--color-accent-fg)" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.8" />
+    <text x="5" y="${avgY - 3}" font-size="7" font-weight="bold" fill="var(--color-accent-fg)" style="text-shadow: 0 0 2px var(--color-canvas-default);">AVG VELOCITY (${avgVelocityValue.toFixed(1)})</text>
   ` : '';
 
   return `
@@ -361,8 +361,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     <details id="gh-skill-tree" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
       <summary class="color-fg-muted text-small font-weight-bold" style="cursor: pointer; outline: none; list-style: none;">
         <span class="d-flex flex-justify-between flex-items-center">
-          <span>SKILL TREE (Expand to view)</span>
-          <span class="text-small color-fg-accent" style="cursor: help;" title="Unlock skills by completing specific GitHub milestones.">? How to unlock</span>
+          <span style="font-size: 10px; letter-spacing: 0.5px;">SKILL TREE (Expand)</span>
+          <span class="text-small color-fg-accent" style="cursor: help; font-size: 9px;" title="Unlock skills by completing specific GitHub milestones.">? How to unlock</span>
         </span>
       </summary>
       
@@ -371,16 +371,15 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
           const catSkills = (advanced.skills || []).filter((s: any) => s.category === cat);
           if (catSkills.length === 0) return '';
           return `
-            <div class="mb-2">
-              <div class="text-small color-fg-muted mb-1" style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;">${cat}</div>
-              <div class="d-flex flex-wrap gap-2">
+            <div class="mb-1">
+              <div class="text-small color-fg-muted" style="font-size: 8px; text-transform: uppercase; margin-bottom: 2px;">${cat}</div>
+              <div class="d-flex flex-wrap gap-1">
                 ${catSkills.map((s: any) => `
                   <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
                        title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
-                       style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
-                    <span>${s.icon}</span>
+                       style="display: flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 10px; font-size: 10px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
+                    <span style="font-size: 12px;">${s.icon}</span>
                     <span style="font-weight: ${s.unlocked ? '600' : 'normal'};">${s.name}</span>
-                    ${s.unlocked ? '<span style="font-size: 9px; color: var(--color-success-fg);">✓</span>' : ''}
                   </div>
                 `).join('')}
               </div>

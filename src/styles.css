@@ -322,6 +322,38 @@
   pointer-events: none;
 }
 
-.ContributionCalendar-day.gh-highlight-sad {
-  transform-box: fill-box;
+details#gh-skill-tree {
+  transition: all 0.3s ease;
+}
+
+details#gh-skill-tree summary {
+  list-style: none;
+  display: block;
+}
+
+details#gh-skill-tree summary::-webkit-details-marker {
+  display: none;
+}
+
+details#gh-skill-tree summary::after {
+  content: '▼';
+  font-size: 8px;
+  margin-left: 6px;
+  color: var(--color-fg-muted);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+details#gh-skill-tree[open] summary::after {
+  transform: rotate(180deg);
+}
+
+.skill-node {
+  transition: all 0.2s ease;
+}
+
+.skill-node:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
