@@ -1,43 +1,51 @@
 # GitHeat (GitHub Pulse)
 
-A Chrome extension that turns your GitHub contribution graph into a deep-dive analytical dashboard and gamified experience.
+A Chrome extension that turns your GitHub contribution graph into a deep-dive analytical dashboard and a fully gamified RPG experience.
 
 ![Graph And Data](githeat.png)
 
 ## Core Features
 
-### RPG Gamification
-- **Leveling System:** Earn XP through commits. Progress through levels with titles from "Novice" to "Code God."
-- **Bonus XP:** 
-  - **Multi-Commit Bonus:** Get extra XP for 5+ contributions in a single day.
-  - **Reviewer Bonus:** Earn massive XP (+3 per review) for performing Code Reviews.
-  - **Velocity Bonus:** Gain +2 XP if today's commits exceed your daily average velocity.
-- **Combo System:** Achieve a **COMBO x#** badge in the header for high daily activity (2+ contributions). The badge features a fiery animation and dynamic "Combo Reasons" like:
-  - **Multi-Tasker:** For doing commits, PRs, and reviews in one day.
-  - **Guardian of Code:** For focusing on Code Reviews.
-  - **Commit Frenzy:** For high-volume commit days.
-  - **Problem Solver:** For combining PRs and Issues.
-  - **Architect:** For creating new repositories.
-- **Progress Tracking:** A sleek, high-contrast progress bar in the panel header shows exactly how much XP you need for the next level.
+### ⚔️ RPG Gamification & Hero Avatar
+- **Evolving Avatar:** Your profile now features a dynamic RPG hero that evolves as you level up. The avatar is visually assembled with layered gear:
+  - **Evolution:** Your base character changes from a "Newbie" to a "Code God" as you gain levels.
+  - **Daily Weaponry:** Reflects today's commit volume (Stick ➔ Club ➔ Sword ➔ Battle Axe ➔ Lightning).
+  - **Defensive Gear:** Gain shields based on your PR Review activity.
+  - **Legendary Headgear:** Long streaks unlock rare crowns and helmets.
+  - **Companions:** Higher star counts attract loyal pets and dragons.
+- **Leveling System:** Earn XP through commits. Progress through 20+ levels with unique titles.
+- **Bonus XP & Buffs:** 
+  - **Multi-Commit Bonus:** Extra XP for 5+ contributions in a day.
+  - **Reviewer Bonus:** Gain massive XP (+3 per review).
+  - **Skill Tree Bonuses:** Earn permanent **+20 XP** and **+1 Daily Combo point** for every skill unlocked.
+- **Combo System:** Achieve a **COMBO x#** badge for high daily activity. The badge features a fiery animation and dynamic reasons like "Guardian of Code" or "Architect."
 
-### Advanced Analytics
-- **Best Month & Week:** Automatically identifies your peak performance periods using a smart score based on volume, consistency, and streaks.
-- **Island Discovery:** 
-  - **Biggest Island (L2+):** Find your largest cluster of high-intensity work.
-  - **Worst Island (0-1):** Identify your most significant slumps with a unique "sad" shrinking animation.
-- **Weekday Deep-Dive:** See which days of the week you are most productive, both by total count and average volume.
-- **Precision Metrics:** Track your Velocity (commits/day), Consistency %, and Weekend Score.
+### 🌲 Branching Skill Tree
+- **Milestone Unlocks:** Explicitly unlock skills by reaching specific GitHub milestones.
+- **Three Disciplines:** Skills are categorized into **Coding** (e.g., System Architect, Lead Maintainer), **Social** (e.g., Eagle Eye Reviewer, Socialite), and **Consistency** (e.g., Code Marathoner).
+- **Expandable View:** A space-saving, expandable Skill Tree panel lets you track your long-term goals without cluttering your profile.
+- **Permanent Power-ups:** Unlocked skills provide permanent stat boosts to your XP and daily combo scores.
 
-### Deep Scale & Themes
-- **15-Level Heatmap:** Re-calculates your contribution graph into 15 granular levels (instead of the standard 5) using data-driven quantile scaling for maximum contrast.
-- **Color Themes:** Toggle between "Classic Green," "Flame Heat," or create your own **Custom Range** with a built-in color picker.
-- **Interactive Legend:** Hover over any square in the 15-level legend to highlight all matching days in your contribution graph.
-- **Legend Decoding:** Displays the exact commit ranges for every level directly in the GitHub legend.
+### 📊 Advanced Analytics & Ticker
+- **Activity Intensity Ticker:** A high-resolution horizontal line graph showing your daily commit intensity.
+  - **Average Velocity Line:** A visual reference line representing your overall YTD average velocity.
+  - **Dynamic Colorization:** The area under the graph is colorized based on each day's specific contribution level.
+- **Precision Metrics:**
+  - **Current Week Progress:** Track your ongoing performance for the current week in real-time.
+  - **Worst Month:** Identifies your lowest-activity periods with multi-month highlighting support.
+  - **Island Discovery:** Find your largest clusters of high-intensity work or significant slumps.
+- **Scoped Scaling:** Analytics are accurately scoped to the year you are currently viewing, including full support for previous years.
 
-### Customizable UI
-- **Drag-and-Drop Reordering:** Use the extension popup to reorder your analytics grid cards to prioritize what matters most to you.
-- **Granular Toggles:** Hide or show any section (Persona, Active Repos, Achievements) or individual grid items.
-- **Interactive Highlighting:** Hover over any card (Streak, Island, Best Week) to highlight those specific days directly on your contribution graph.
+### 🎨 Deep Scale & Themes
+- **15-Level Heatmap:** Re-calculates your contribution graph into 15 granular levels using data-driven quantile scaling.
+- **Pulse Signature (SIG):** A unique hexadecimal string (e.g., `0x5A3...`) representing your activity levels. Hovering over any character highlights matching days on the graph.
+- **Custom Themes:** Toggle between predefined themes (Flame, Ocean, Sunset) or use the **Custom Range** picker to match your personal aesthetic.
+- **Multi-Way Highlighting:** Full synchronization between the Graph, the Legend, and the Pulse Signature.
+
+### ⚙️ Full Customization
+- **Total Control:** Every single element (Avatar, Skill Tree, Ticker, SIG, etc.) can be toggled on or off via the extension popup.
+- **Custom Gear:** Set your own **Emojis**, **Image URLs**, or **Labels** for your avatar's growth tiers.
+- **Drag-and-Drop Reordering:** Move your analytics grid cards to prioritize the stats that matter most to you.
 
 ## How to Load
 1. Clone this repository.
@@ -65,21 +73,6 @@ To display your GitHeat analytics in your GitHub profile README, add the followi
 ```
 
 Replace `YOUR_USERNAME` with your GitHub username.
-
-### Customization
-You can customize the generated image by providing inputs when manually triggering the workflow:
-- **Timezone:** Set your local timezone (e.g., `America/Los_Angeles`) to fix off-by-one errors in streaks.
-- **Custom Colors:** Change the `custom_start_color` and `custom_stop_color` (HEX format) to match your profile's aesthetic.
-
-To change these for the **automatic daily run**, edit the `env` section in `.github/workflows/update-githeat.yml`.
-
-### Local Development
-To run the profile updater locally:
-1. Navigate to the `profile-updater` directory: `cd profile-updater`
-2. Install dependencies: `npm install`
-3. Create a `.env` file based on `.env.example` and set your `GITHUB_USERNAME`.
-4. Run the updater: `npm start`
-5. The resulting `githeat.png` will be saved in the root directory.
 
 ## Development
 - **Tech Stack:** TypeScript, CSS, Chrome Extension API.
