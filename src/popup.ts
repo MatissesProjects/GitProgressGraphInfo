@@ -384,6 +384,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleGearCompanion, 'showGearCompanion');
   addToggleListener(toggleCombo, 'showCombo');
   addToggleListener(toggleXPBar, 'showXPBar');
+  addToggleListener(toggleSkillTree, 'showSkillTree');
   addToggleListener(togglePulseHash, 'showPulseHash');
   addToggleListener(toggleTicker, 'showTicker');
   addToggleListener(toggleIslandWrap, 'islandWrapAround');
