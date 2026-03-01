@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     ],
     headgear: [
       { min: 30, val: "👑", label: "God Crown" },
-      { min: 14, val: "🪖", label: "Steel Helmet" },
+      { min: 14, val: "💂", label: "Royal Guard Hat" },
       { min: 7, val: "🧢", label: "Lucky Cap" }
     ],
     companions: [
