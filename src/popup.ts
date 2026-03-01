@@ -1,3 +1,5 @@
+import { GitHeatSettings, CustomAvatarSettings } from './types';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const loading = document.getElementById('loading')!;
   const error = document.getElementById('error')!;
@@ -79,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const loadAvatarCustomization = async () => {
-    const s = await chrome.storage.local.get(['customAvatarSettings']);
+    const s: GitHeatSettings = await chrome.storage.local.get(['customAvatarSettings']);
     const avatar = s.customAvatarSettings || DEFAULT_AVATAR;
     
     renderCustomFields('custom-bases', avatar.bases || DEFAULT_AVATAR.bases);

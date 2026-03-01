@@ -66,6 +66,76 @@ export interface Skill {
   category: 'Coding' | 'Social' | 'Consistency';
 }
 
+export interface CustomAvatarItem {
+  min: number;
+  val: string;
+  label: string;
+}
+
+export interface CustomAvatarSettings {
+  bases: CustomAvatarItem[];
+  weapons: CustomAvatarItem[];
+  shields: CustomAvatarItem[];
+  headgear: CustomAvatarItem[];
+  companions: CustomAvatarItem[];
+}
+
+export interface GitHeatSettings {
+  theme?: string;
+  customStart?: string;
+  customStop?: string;
+  showGrid?: boolean;
+  showActiveRepos?: boolean;
+  showCreatedRepos?: boolean;
+  showAchievements?: boolean;
+  showPersona?: boolean;
+  showFooter?: boolean;
+  showLegendNumbers?: boolean;
+  islandWrapAround?: boolean;
+  showTotal?: boolean;
+  showTodayCount?: boolean;
+  showStreak?: boolean;
+  showVelocity?: boolean;
+  showVelocityAbove?: boolean;
+  showVelocityBelow?: boolean;
+  showConsistency?: boolean;
+  showWeekend?: boolean;
+  showSlump?: boolean;
+  showBestDay?: boolean;
+  showWorstDay?: boolean;
+  showCurrentWeekday?: boolean;
+  showPowerDay?: boolean;
+  showPeakDay?: boolean;
+  showMostActiveDay?: boolean;
+  showMaxCommits?: boolean;
+  showIsland?: boolean;
+  showSlumpIsland?: boolean;
+  showStars?: boolean;
+  showPR?: boolean;
+  showIssueCreated?: boolean;
+  showLangs?: boolean;
+  showNetwork?: boolean;
+  showBestMonth?: boolean;
+  showWorstMonth?: boolean;
+  showBestWeek?: boolean;
+  showCurrentWeek?: boolean;
+  showLevel?: boolean;
+  showDominantWeekday?: boolean;
+  showPulseHash?: boolean;
+  showTrends?: boolean;
+  showTicker?: boolean;
+  showAvatar?: boolean;
+  showGearHead?: boolean;
+  showGearWeapon?: boolean;
+  showGearShield?: boolean;
+  showGearCompanion?: boolean;
+  showCombo?: boolean;
+  showXPBar?: boolean;
+  showSkillTree?: boolean;
+  gridOrder?: string[];
+  customAvatarSettings?: CustomAvatarSettings;
+}
+
 export interface AdvancedStats {
   total: number;
   streak: number;
