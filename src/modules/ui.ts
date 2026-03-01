@@ -110,13 +110,14 @@ export async function applyVisibility() {
 function renderTickerGraph(data: { date: string; count: number }[], thresholds: any) {
   if (data.length < 2) return '';
   const width = 800;
-  const height = 80; // Increased height for better intensity visualization
+  const height = 80; // Restored height
   const maxCount = Math.max(...data.map(d => d.count), 1);
   const points = data.map((d, i) => {
     const x = (i / (data.length - 1)) * width;
     const y = height - (d.count / maxCount) * height;
     return `${x},${y}`;
   }).join(' ');
+
 
   // Create horizontal quadrant lines for the 4 main levels
   const quadrantLines = [1, 2, 3, 4].map(l => {
@@ -357,33 +358,37 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
     ${tickerHtml}
 
-    <div id="gh-skill-tree" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
-      <div class="d-flex flex-justify-between flex-items-center mb-2">
-        <span class="color-fg-muted text-small font-weight-bold">SKILL TREE</span>
-        <span class="text-small color-fg-accent" style="cursor: help;" title="Unlock skills by completing specific GitHub milestones.">? How to unlock</span>
-      </div>
+    <details id="gh-skill-tree" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
+      <summary class="color-fg-muted text-small font-weight-bold" style="cursor: pointer; outline: none; list-style: none;">
+        <span class="d-flex flex-justify-between flex-items-center">
+          <span>SKILL TREE (Expand to view)</span>
+          <span class="text-small color-fg-accent" style="cursor: help;" title="Unlock skills by completing specific GitHub milestones.">? How to unlock</span>
+        </span>
+      </summary>
       
-      ${['Coding', 'Social', 'Consistency'].map(cat => {
-        const catSkills = (advanced.skills || []).filter((s: any) => s.category === cat);
-        if (catSkills.length === 0) return '';
-        return `
-          <div class="mb-2">
-            <div class="text-small color-fg-muted mb-1" style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;">${cat}</div>
-            <div class="d-flex flex-wrap gap-2">
-              ${catSkills.map((s: any) => `
-                <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
-                     title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
-                     style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
-                  <span>${s.icon}</span>
-                  <span style="font-weight: ${s.unlocked ? '600' : 'normal'};">${s.name}</span>
-                  ${s.unlocked ? '<span style="font-size: 9px; color: var(--color-success-fg);">✓</span>' : ''}
-                </div>
-              `).join('')}
+      <div class="mt-2">
+        ${['Coding', 'Social', 'Consistency'].map(cat => {
+          const catSkills = (advanced.skills || []).filter((s: any) => s.category === cat);
+          if (catSkills.length === 0) return '';
+          return `
+            <div class="mb-2">
+              <div class="text-small color-fg-muted mb-1" style="font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;">${cat}</div>
+              <div class="d-flex flex-wrap gap-2">
+                ${catSkills.map((s: any) => `
+                  <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
+                       title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
+                       style="display: flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
+                    <span>${s.icon}</span>
+                    <span style="font-weight: ${s.unlocked ? '600' : 'normal'};">${s.name}</span>
+                    ${s.unlocked ? '<span style="font-size: 9px; color: var(--color-success-fg);">✓</span>' : ''}
+                  </div>
+                `).join('')}
+              </div>
             </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
+          `;
+        }).join('')}
+      </div>
+    </details>
 
     <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">
