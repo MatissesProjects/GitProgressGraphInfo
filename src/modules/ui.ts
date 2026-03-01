@@ -416,9 +416,9 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         </div>
         <div id="gh-thresholds-container" class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
           <span class="color-fg-muted text-small mr-1">Thresholds: </span>
-          <span id="gh-thresh-1" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L1: ${thresholds[1]?.min ?? '?'}-${thresholds[1]?.max ?? '?'}</span>
-          <span id="gh-thresh-2" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L2: ${thresholds[2]?.min ?? '?'}-${thresholds[2]?.max ?? '?'}</span>
-          <span id="gh-thresh-3" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L3: ${thresholds[3]?.min ?? '?'}-${thresholds[3]?.max ?? '?'}</span>
+          <span id="gh-thresh-1" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L1: ${thresholds[1]?.min ?? '?'}${thresholds[1]?.min === thresholds[1]?.max ? '' : `-${thresholds[1]?.max ?? '?'}`}</span>
+          <span id="gh-thresh-2" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L2: ${thresholds[2]?.min ?? '?'}${thresholds[2]?.min === thresholds[2]?.max ? '' : `-${thresholds[2]?.max ?? '?'}`}</span>
+          <span id="gh-thresh-3" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L3: ${thresholds[3]?.min ?? '?'}${thresholds[3]?.min === thresholds[3]?.max ? '' : `-${thresholds[3]?.max ?? '?'}`}</span>
           <span id="gh-thresh-4" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L4: ${thresholds[4]?.min ?? '?'}+</span>
         </div>
       </div>
@@ -579,7 +579,8 @@ export async function extendLegend(thresholds: any) {
   legend.querySelectorAll('.ContributionCalendar-day').forEach(square => {
     const level = parseInt(square.getAttribute('data-level') || '0', 10);
     if (level > 0 && thresholds[level]) {
-      const range = level === 4 ? `${thresholds[level].min}+` : `${thresholds[level].min}-${thresholds[level].max}`;
+      const { min, max } = thresholds[level];
+      const range = level === 4 ? `${min}+` : (min === max ? `${min}` : `${min}-${max}`);
       const span = document.createElement('span');
       span.className = 'text-small color-fg-muted ml-1 git-heat-legend-label';
       span.style.cssText = 'font-size: 10px; margin-left: 2px; margin-right: 4px;';
