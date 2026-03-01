@@ -227,6 +227,16 @@ export async function calculateRPGStats(pastAndPresentData: ContributionDay[], t
   });
   totalXPWithBonuses += (timeline.pullRequestReviews * 3);
 
+  // Skill Tree Calculation & Bonuses
+  // We need level for skills, but skills contribute to total XP which determines level.
+  // We'll calculate a preliminary level first.
+  const tempLevel = Math.floor(Math.sqrt(totalXPWithBonuses / 25));
+  const skills = calculateSkills(timeline, socials, pinned, tempLevel, longestStreak);
+  const unlockedSkillsCount = skills.filter(s => s.unlocked).length;
+  
+  // Add +20 XP for each unlocked skill
+  totalXPWithBonuses += (unlockedSkillsCount * 20);
+
   const currentLevel = Math.floor(Math.sqrt(totalXPWithBonuses / 25));
   const nextLevel = currentLevel + 1;
   const currentLevelXP = getLevelThreshold(currentLevel);
@@ -241,16 +251,18 @@ export async function calculateRPGStats(pastAndPresentData: ContributionDay[], t
   const streakBonus = Math.floor(currentStreak / 3);
   const avgVelocity = parseFloat(velocity);
   const velocityBonus = (heatmapCommits > avgVelocity && avgVelocity > 0) ? 2 : 0;
-  const todayScore = (heatmapCommits + actions.reviews * 2 + actions.repos * 3) + streakBonus + velocityBonus;
+  
+  // Skill Bonus (+1 to today's score per unlocked skill)
+  const skillComboBonus = unlockedSkillsCount;
+  
+  const todayScore = (heatmapCommits + actions.reviews * 2 + actions.repos * 3) + streakBonus + velocityBonus + skillComboBonus;
   
   const { todayCombo, todayComboReason } = getCombo(todayScore, actions);
   const fib = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
-  const todayComboMath = `Score: ${todayScore} ((HeatmapCommits:${heatmapCommits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (StreakBonus:${streakBonus}) + (VelocityBonus:${velocityBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
+  const todayComboMath = `Score: ${todayScore} ((Commits:${heatmapCommits}) + (Reviews:${actions.reviews}*2) + (Repos:${actions.repos}*3) + (Streak:${streakBonus}) + (Vel:${velocityBonus}) + (Skills:${skillComboBonus})). Next level at ${fib[todayCombo] || '??'} XP.`;
 
   const settings = await chrome.storage.local.get(['customAvatarSettings']);
   const avatar = getAvatar(currentLevel, currentStreak, totalStars, actions, heatmapCommits, settings.customAvatarSettings);
-
-  const skills = calculateSkills(timeline, socials, pinned, currentLevel, longestStreak);
 
   return {
     totalXP: totalXPWithBonuses, level: currentLevel, levelTitle, levelProgressXP: xpProgress, levelTotalXP: xpNeeded, progressPercent,
