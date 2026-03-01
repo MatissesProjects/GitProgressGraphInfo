@@ -9,11 +9,39 @@ export function calculateSkills(
   socials: SocialStats, 
   pinned: PinnedProject[],
   level: number,
-  longestStreak: number
+  longestStreak: number,
+  totalCommits: number
 ): Skill[] {
   const uniqueLangs = new Set(pinned.map(p => p.language).filter(l => l !== "Unknown")).size;
   
   return [
+    {
+      id: 'hello_world',
+      name: 'Hello World',
+      description: 'The journey of a thousand miles begins with a single commit.',
+      icon: '🌱',
+      unlocked: totalCommits >= 1,
+      requirement: '1+ total commits',
+      category: 'Coding'
+    },
+    {
+      id: 'deca_coder',
+      name: 'Deca-Coder',
+      description: 'Double digits! You are starting to get the hang of this.',
+      icon: '🔟',
+      unlocked: totalCommits >= 10,
+      requirement: '10+ total commits',
+      category: 'Coding'
+    },
+    {
+      id: 'quarter_century',
+      name: 'Quarter-Century',
+      description: 'A solid foundation of work built commit by commit.',
+      icon: '🏛️',
+      unlocked: totalCommits >= 25,
+      requirement: '25+ total commits',
+      category: 'Coding'
+    },
     {
       id: 'polyglot',
       name: 'Polyglot Adept',
@@ -218,7 +246,9 @@ export function getCombo(todayScore: number, actions: any) {
 
 export async function calculateRPGStats(pastAndPresentData: ContributionDay[], timeline: TimelineActivity, todayCount: number, currentStreak: number, velocity: string, totalStars: number, socials: SocialStats, pinned: PinnedProject[], longestStreak: number) {
   let totalXPWithBonuses = 0;
+  let totalCommits = 0;
   pastAndPresentData.forEach(day => {
+    totalCommits += day.count;
     let dayXP = day.count;
     if (day.count >= 5) {
       dayXP += Math.floor(day.count / 5) * 2;
@@ -228,10 +258,8 @@ export async function calculateRPGStats(pastAndPresentData: ContributionDay[], t
   totalXPWithBonuses += (timeline.pullRequestReviews * 3);
 
   // Skill Tree Calculation & Bonuses
-  // We need level for skills, but skills contribute to total XP which determines level.
-  // We'll calculate a preliminary level first.
   const tempLevel = Math.floor(Math.sqrt(totalXPWithBonuses / 25));
-  const skills = calculateSkills(timeline, socials, pinned, tempLevel, longestStreak);
+  const skills = calculateSkills(timeline, socials, pinned, tempLevel, longestStreak, totalCommits);
   const unlockedSkillsCount = skills.filter(s => s.unlocked).length;
   
   // Add +20 XP for each unlocked skill
