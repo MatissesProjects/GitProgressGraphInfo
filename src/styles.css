@@ -228,21 +228,28 @@
   transition: all 0.1s ease-out;
 }
 
-.square-legend.highlighting, .gh-sig-char.highlighting {
+.square-legend.highlighting {
   outline: 1.5px solid #ffffff !important;
   outline-offset: 1px !important;
   transform: scale(1.4);
   box-shadow: 0 0 8px var(--color-accent-fg);
   z-index: 10;
   position: relative;
+}
+
+.gh-sig-char.highlighting {
+  transform: scale(1.1);
   color: var(--color-accent-fg) !important;
-  text-shadow: 0 0 4px var(--color-accent-fg);
+  text-shadow: 0 0 2px var(--color-accent-fg);
+  font-weight: bold;
+  text-decoration: underline;
 }
 
 .gh-sig-char {
   display: inline-block;
-  transition: transform 0.1s ease, color 0.1s ease;
+  transition: all 0.1s ease;
   cursor: help;
+  padding: 0 0.5px;
 }
 
 .mr-3 {
