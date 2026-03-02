@@ -502,7 +502,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
         
         const velTrendHtml = adv.velocityTrend !== 0 ? ` <span style="color: ${adv.velocityTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Change vs previous 7-day period">${adv.velocityIcon} ${Math.abs(adv.velocityTrend)}%</span>` : '';
-        document.getElementById('velocity')!.innerHTML = `${adv.velocity} c/d${velTrendHtml}`;
+        document.getElementById('velocity')!.innerHTML = `${adv.velocity} <span style="font-size: 0.8em; opacity: 0.8;">c/d</span>${velTrendHtml}`;
         
         document.getElementById('pr-stats')!.textContent = `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`;
         document.getElementById('issue-repo-stats')!.textContent = `${adv.issuesOpened} / ${adv.createdRepos}`;

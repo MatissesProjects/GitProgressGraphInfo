@@ -244,7 +244,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Avg commits per active day (${advanced.statsForTooltips.velocity.count} total / ${advanced.statsForTooltips.velocity.active} active). Trend compares the last 7 days vs the 7 days prior.">
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
       <div class="d-flex flex-items-center gap-1">
-        <strong class="f3-light">${advanced.velocity} commits/day</strong>
+        <strong class="f3-light">${advanced.velocity} <span style="font-size: 0.7em; opacity: 0.85;">c/d</span></strong>
         ${(showTrends !== false && advanced.velocityTrend !== 0) ? `
           <span class="${advanced.velocityTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
             ${advanced.velocityIcon} ${Math.abs(advanced.velocityTrend)}%
@@ -501,6 +501,32 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     });
   });
 
+  const highlightThreshold = (level: number) => {
+    const range = thresholds[level];
+    if (!range) return;
+
+    // 1. Highlight Graph Days
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: any) => {
+      day.classList.add('gh-highlight');
+      day.style.outline = '';
+      day.style.border = '';
+    });
+
+    // 2. Highlight SIG characters that fall into this threshold's commit range
+    // We do this by finding which granular levels (1-15) map to this standard level (1-4)
+    const granularLevelsForThisThreshold = new Set<number>();
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-granular-level]`).forEach((day: any) => {
+      const gLevel = parseInt(day.getAttribute('data-granular-level'), 10);
+      if (!isNaN(gLevel)) granularLevelsForThisThreshold.add(gLevel);
+    });
+
+    granularLevelsForThisThreshold.forEach(gLevel => {
+      document.querySelectorAll(`.gh-sig-char[data-level="${gLevel}"]`).forEach((char: any) => {
+        char.classList.add('highlighting');
+      });
+    });
+  };
+
   const startOfYear = `${advanced.targetYear}-01-01`;
   const endOfTargetPeriod = advanced.targetYear === now.getFullYear() ? todayStr : `${advanced.targetYear}-12-31`;
 
@@ -539,34 +565,10 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     });
   });
 
-  addHover('#gh-thresh-1', () => {
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="1"][data-date]`).forEach((day: any) => {
-      day.classList.add('gh-highlight');
-      day.style.outline = '';
-      day.style.border = '';
-    });
-  });
-  addHover('#gh-thresh-2', () => {
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="2"][data-date]`).forEach((day: any) => {
-      day.classList.add('gh-highlight');
-      day.style.outline = '';
-      day.style.border = '';
-    });
-  });
-  addHover('#gh-thresh-3', () => {
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="3"][data-date]`).forEach((day: any) => {
-      day.classList.add('gh-highlight');
-      day.style.outline = '';
-      day.style.border = '';
-    });
-  });
-  addHover('#gh-thresh-4', () => {
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="4"][data-date]`).forEach((day: any) => {
-      day.classList.add('gh-highlight');
-      day.style.outline = '';
-      day.style.border = '';
-    });
-  });
+  addHover('#gh-thresh-1', () => highlightThreshold(1));
+  addHover('#gh-thresh-2', () => highlightThreshold(2));
+  addHover('#gh-thresh-3', () => highlightThreshold(3));
+  addHover('#gh-thresh-4', () => highlightThreshold(4));
 }
 
 export async function extendLegend(thresholds: any) {
