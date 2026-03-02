@@ -93,70 +93,81 @@ async function run() {
     await page.evaluate(standaloneScript);
 
     console.log('Waiting for GitHeat to be ready...');
-    await page.waitForSelector('body.githeat-ready', { timeout: 60000 });
+    // Wait for either success or failure flag
+    await page.waitForSelector('body.githeat-ready, body.githeat-failed', { timeout: 60000 });
     
+    const isFailed = await page.evaluate(() => document.body.classList.contains('githeat-failed'));
+    if (isFailed) {
+      throw new Error('GitHeat analysis failed on the page. Check PAGE LOG for details.');
+    }
+
     // Give a small buffer for the UI to actually render after the flag is set
     await new Promise(r => setTimeout(r, 2000));
 
     console.log('Isolating stats and graph for clean capture...');
-    await page.evaluate(() => {
-      const stats = document.getElementById('git-heat-stats') as HTMLElement | null;
+    const isolationSuccess = await page.evaluate(() => {
+      const stats = document.getElementById('git-heat-stats');
       const graphContainer = document.querySelector('.js-yearly-contributions') as HTMLElement | null;
       
-      if (stats && graphContainer) {
-        // 1. Create a truly isolated wrapper at the top of the body
-        const wrapper = document.createElement('div');
-        wrapper.id = 'githeat-screenshot-wrapper';
-        
-        // Style wrapper with fixed positioning and high z-index to ignore page layout
-        Object.assign(wrapper.style, {
-          backgroundColor: '#0d1117',
-          padding: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px',
-          width: '820px', 
-          borderRadius: '12px',
-          border: '1px solid #30363d',
-          boxSizing: 'border-box',
-          position: 'fixed',
-          top: '0',
-          left: '0',
-          zIndex: '2147483647',
-          boxShadow: 'none'
+      if (!stats || !graphContainer) return false;
+
+      // 1. Create a truly isolated wrapper at the top of the body
+      const wrapper = document.createElement('div');
+      wrapper.id = 'githeat-screenshot-wrapper';
+      
+      // Style wrapper with fixed positioning and high z-index to ignore page layout
+      Object.assign(wrapper.style, {
+        backgroundColor: '#0d1117',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        width: '820px', 
+        borderRadius: '12px',
+        border: '1px solid #30363d',
+        boxSizing: 'border-box',
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        zIndex: '2147483647',
+        boxShadow: 'none'
+      });
+
+      // 2. Aggressively hide the year list and other UI elements
+      const killList = [
+        '.js-profile-timeline-year-list',
+        '.profile-timeline-year-list',
+        '#user-activity-overview',
+        '.activity-listing',
+        '.js-yearly-contributions .float-right',
+        'ul.filter-list', // Common for year lists
+        '.contrib-footer-link',
+        'details' // Hide contribution settings dropdown
+      ];
+      
+      killList.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+          (el as HTMLElement).style.setProperty('display', 'none', 'important');
         });
+      });
 
-        // 2. Aggressively hide the year list and other UI elements
-        const killList = [
-          '.js-profile-timeline-year-list',
-          '.profile-timeline-year-list',
-          '#user-activity-overview',
-          '.activity-listing',
-          '.js-yearly-contributions .float-right',
-          'ul.filter-list', // Common for year lists
-          '.contrib-footer-link',
-          'details' // Hide contribution settings dropdown
-        ];
-        
-        killList.forEach(selector => {
-          document.querySelectorAll(selector).forEach(el => {
-            (el as HTMLElement).style.setProperty('display', 'none', 'important');
-          });
-        });
+      // 3. Clean up the moved elements
+      stats.style.margin = '0';
+      stats.style.width = '100%';
+      graphContainer.style.margin = '0';
+      graphContainer.style.width = '100%';
+      graphContainer.style.border = 'none';
 
-        // 3. Clean up the moved elements
-        stats.style.margin = '0';
-        stats.style.width = '100%';
-        graphContainer.style.margin = '0';
-        graphContainer.style.width = '100%';
-        graphContainer.style.border = 'none';
-
-        // 4. Move them into our isolated wrapper
-        wrapper.appendChild(stats);
-        wrapper.appendChild(graphContainer);
-        document.body.appendChild(wrapper);
-      }
+      // 4. Move them into our isolated wrapper
+      wrapper.appendChild(stats);
+      wrapper.appendChild(graphContainer);
+      document.body.appendChild(wrapper);
+      return true;
     });
+
+    if (!isolationSuccess) {
+      throw new Error('Failed to isolate stats or graph container. Elements may not have been injected correctly.');
+    }
 
     const wrapper = await page.$('#githeat-screenshot-wrapper');
     if (!wrapper) {
