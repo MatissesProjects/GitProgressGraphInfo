@@ -517,7 +517,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     const granularLevelsForThisThreshold = new Set<number>();
     document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-granular-level]`).forEach((day: any) => {
       const gLevel = parseInt(day.getAttribute('data-granular-level'), 10);
-      if (!isNaN(gLevel)) granularLevelsForThisThreshold.add(gLevel);
+      if (!isNaN(gLevel) && gLevel > 0) granularLevelsForThisThreshold.add(gLevel);
     });
 
     granularLevelsForThisThreshold.forEach(gLevel => {
