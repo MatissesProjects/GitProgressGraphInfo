@@ -98,10 +98,10 @@ async function runStandalone() {
       console.log("Graph found with " + data.length + " days of data, calculating stats...");
       const t = calculateThresholds(data);
       const p = calculatePercentiles(data);
-      const advanced = calculateAdvancedStats(data, pinned, timeline, achievements, socials, true, p);
+      const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, true, p);
       
       injectStats(t, p, data, advanced, null, true);
-      extendLegend(t);
+      await extendLegend(t);
       await applyDeepRecoloring(data, p, 'custom', startColor, stopColor);
       await applyVisibility();
       
@@ -120,7 +120,7 @@ async function runStandalone() {
     document.body.classList.add('githeat-ready');
   } catch (e: any) {
     console.error("GitHeat Standalone: Error during analysis: " + e.message);
-    document.body.classList.add('githeat-ready');
+    document.body.classList.add('githeat-failed');
   }
 }
 
