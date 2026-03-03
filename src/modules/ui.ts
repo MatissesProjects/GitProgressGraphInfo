@@ -672,19 +672,29 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   
-  // Bidirectional highlighting: Hover graph day -> Highlight legend square
+  // Bidirectional highlighting: Hover graph day -> Highlight SIG, Ticker, and Legend
   document.querySelectorAll('.ContributionCalendar-day').forEach((day: any) => {
     if (day._githeatListener) return;
     day._githeatListener = true;
     day.addEventListener('mouseenter', () => {
-      const level = day.getAttribute('data-granular-level');
-      if (level) {
-        const sq = document.querySelector(`.square-legend.level-${level}`);
+      const date = day.getAttribute('data-date');
+      const level = day.getAttribute('data-granular-level') || day.getAttribute('data-level');
+      
+      if (date) {
+        highlightDates([date]);
+        // Also highlight legend if we have a granular level
+        const gLevel = day.getAttribute('data-granular-level');
+        if (gLevel) {
+          const sq = statsDiv.querySelector(`.square-legend.level-${gLevel}`);
+          if (sq) sq.classList.add('highlighting');
+        }
+      } else if (level) {
+        const sq = statsDiv.querySelector(`.square-legend.level-${level}`);
         if (sq) sq.classList.add('highlighting');
       }
     });
     day.addEventListener('mouseleave', () => {
-      document.querySelectorAll('.square-legend').forEach(sq => sq.classList.remove('highlighting'));
+      clearHighlights();
     });
   });
 
