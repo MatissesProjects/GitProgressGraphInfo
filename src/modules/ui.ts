@@ -431,8 +431,49 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
   const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
     dates.forEach(date => {
+      // 1. Highlight Graph
       const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
-      if (dayEl) { dayEl.classList.add(className); dayEl.style.outline = ''; dayEl.style.border = ''; }
+      if (dayEl) { 
+        dayEl.classList.add(className); 
+        dayEl.style.outline = ''; 
+        dayEl.style.border = ''; 
+        
+        // 2. Highlight Ticker (SIG characters already handled if we use highlightGranularLevel, 
+        // but here we are highlighting specific dates, so we should highlight their SIG char)
+        const gLevel = dayEl.getAttribute('data-granular-level');
+        if (gLevel && gLevel !== '0') {
+          // We can't easily find the EXACT sig char for a date because the hash is reversed 
+          // and only contains levels. But we can highlight all chars of that level.
+        }
+      }
+      
+      // 3. Highlight Ticker SVG point (if it's in the YTD daily counts)
+      const tickerContainer = document.getElementById('gh-ticker-container');
+      if (tickerContainer) {
+        // The ticker represents advanced.ytdDailyCounts (Jan 1 to today)
+        const ytdIdx = advanced.ytdDailyCounts.findIndex((d: any) => d.date === date);
+        if (ytdIdx !== -1) {
+          const path = tickerContainer.querySelector('.gh-ticker-path') as SVGPathElement;
+          if (path) {
+            // Create a small highlight circle at this point
+            const svg = tickerContainer.querySelector('svg');
+            const width = 800;
+            const height = 80;
+            const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: any) => d.count), 1);
+            const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
+            const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
+            
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', x.toString());
+            circle.setAttribute('cy', y.toString());
+            circle.setAttribute('r', '5');
+            circle.setAttribute('fill', 'var(--color-accent-fg)');
+            circle.setAttribute('class', 'gh-ticker-highlight');
+            circle.style.pointerEvents = 'none';
+            svg?.appendChild(circle);
+          }
+        }
+      }
     });
   };
 
@@ -444,6 +485,29 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         day.classList.add('gh-highlight');
         day.style.outline = '';
         day.style.border = '';
+        
+        // Highlight Ticker SVG points for these days
+        const tickerContainer = document.getElementById('gh-ticker-container');
+        if (tickerContainer) {
+          const ytdIdx = advanced.ytdDailyCounts.findIndex((d: any) => d.date === date);
+          if (ytdIdx !== -1) {
+             const svg = tickerContainer.querySelector('svg');
+             const width = 800;
+             const height = 80;
+             const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: any) => d.count), 1);
+             const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
+             const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
+             
+             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+             circle.setAttribute('cx', x.toString());
+             circle.setAttribute('cy', y.toString());
+             circle.setAttribute('r', '3');
+             circle.setAttribute('fill', 'var(--color-accent-fg)');
+             circle.setAttribute('class', 'gh-ticker-highlight');
+             circle.style.pointerEvents = 'none';
+             svg?.appendChild(circle);
+          }
+        }
       }
     });
     // 2. Highlight SIG characters
@@ -459,7 +523,34 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: any) => {
       const date = day.getAttribute('data-date');
       if (!date || (startDate && date < startDate) || (endDate && date > endDate)) return;
-      if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { day.classList.add('gh-highlight'); day.style.outline = ''; day.style.border = ''; }
+      if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { 
+        day.classList.add('gh-highlight'); 
+        day.style.outline = ''; 
+        day.style.border = ''; 
+
+        // Highlight Ticker SVG points
+        const tickerContainer = document.getElementById('gh-ticker-container');
+        if (tickerContainer) {
+          const ytdIdx = advanced.ytdDailyCounts.findIndex((d: any) => d.date === date);
+          if (ytdIdx !== -1) {
+             const svg = tickerContainer.querySelector('svg');
+             const width = 800;
+             const height = 80;
+             const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: any) => d.count), 1);
+             const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
+             const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
+             
+             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+             circle.setAttribute('cx', x.toString());
+             circle.setAttribute('cy', y.toString());
+             circle.setAttribute('r', '3');
+             circle.setAttribute('fill', 'var(--color-accent-fg)');
+             circle.setAttribute('class', 'gh-ticker-highlight');
+             circle.style.pointerEvents = 'none';
+             svg?.appendChild(circle);
+          }
+        }
+      }
     });
   };
 
@@ -472,6 +563,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     document.querySelectorAll('.square-legend, .gh-sig-char').forEach((el: any) => {
       el.classList.remove('highlighting');
     });
+    document.querySelectorAll('.gh-ticker-highlight').forEach(el => el.remove());
   };
 
   const addHover = (id: string, fn: () => void) => {
