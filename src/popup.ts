@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toggleDominantWeekday = document.getElementById('toggle-dominant-weekday') as HTMLInputElement;
   const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
   const toggleSlumpIsland = document.getElementById('toggle-slump-island') as HTMLInputElement;
+  const toggleAboveAvgIsland = document.getElementById('toggle-above-avg-island') as HTMLInputElement;
   const toggleVelocity = document.getElementById('toggle-velocity') as HTMLInputElement;
   const toggleVelocityAbove = document.getElementById('toggle-velocity-above') as HTMLInputElement;
   const toggleVelocityBelow = document.getElementById('toggle-velocity-below') as HTMLInputElement;
@@ -160,6 +161,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-dominant-weekday': 'Dominant Weekday',
     'gh-island': 'Biggest Island (L2+)',
     'gh-slump-island': 'Worst Island (0-1)',
+    'gh-above-avg-island': 'Longest Above Avg Island',
     'gh-velocity': 'Average Velocity',
     'gh-velocity-above': 'Above Average Days',
     'gh-velocity-below': 'Below Average Days',
@@ -187,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'theme', 'customStart', 'customStop', 
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar',
+    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showAboveAvgIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar',
     'gridOrder'
   ]);
 
@@ -332,6 +334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setChecked(toggleDominantWeekday, settings.showDominantWeekday);
   setChecked(toggleIsland, settings.showIsland);
   setChecked(toggleSlumpIsland, settings.showSlumpIsland);
+  setChecked(toggleAboveAvgIsland, settings.showAboveAvgIsland);
   setChecked(toggleVelocity, settings.showVelocity);
   setChecked(toggleVelocityAbove, settings.showVelocityAbove);
   setChecked(toggleVelocityBelow, settings.showVelocityBelow);
@@ -402,6 +405,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   addToggleListener(toggleDominantWeekday, 'showDominantWeekday');
   addToggleListener(toggleIsland, 'showIsland');
   addToggleListener(toggleSlumpIsland, 'showSlumpIsland');
+  addToggleListener(toggleAboveAvgIsland, 'showAboveAvgIsland');
   addToggleListener(toggleVelocity, 'showVelocity');
   addToggleListener(toggleVelocityAbove, 'showVelocityAbove');
   addToggleListener(toggleVelocityBelow, 'showVelocityBelow');
@@ -518,6 +522,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('peak-day')!.textContent = `${adv.peakWeekday} (${adv.peakWeekdayCount})`;
         document.getElementById('biggest-island')!.textContent = `${adv.biggestIslandSize} days`;
         document.getElementById('slump-island')!.textContent = `${adv.biggestSlumpIslandSize} days`;
+        document.getElementById('biggest-above-avg-island')!.textContent = `${adv.biggestAboveAvgIslandSize} days`;
         document.getElementById('most-active-day')!.textContent = `${adv.mostActiveDay}`;
         document.getElementById('max-commits')!.textContent = `${adv.mostActiveDayCount}`;
         document.getElementById('pinned-stats')!.textContent = `${adv.totalStars} / ${adv.totalForks}`;

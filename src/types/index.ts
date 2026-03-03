@@ -110,6 +110,7 @@ export interface GitHeatSettings {
   showMaxCommits?: boolean;
   showIsland?: boolean;
   showSlumpIsland?: boolean;
+  showAboveAvgIsland?: boolean;
   showStars?: boolean;
   showPR?: boolean;
   showIssueCreated?: boolean;
@@ -152,6 +153,8 @@ export interface AdvancedStats {
   maxCommits: number;
   island: { count: number; start: string; end: string } | null;
   slumpIsland: { count: number; start: string; end: string } | null;
+  biggestAboveAvgIslandSize?: number;
+  biggestAboveAvgIslandDates?: string[];
   powerDays: number;
   peakDays: number;
   starsTotal: number;

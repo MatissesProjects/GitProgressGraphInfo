@@ -158,9 +158,11 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
 
   const timeBased = calculateTimeBasedStats(pastAndPresentData);
   const todayCount = data.find(d => d.date === todayStr)?.count || 0;
+  const avgVel = parseFloat(velocity);
 
   const biggestIslandDates = findIsland(pastAndPresentData, d => d.level >= 2, dateMap, periodEndStr, wrapAround);
   const biggestSlumpIslandDates = findIsland(pastAndPresentData, d => d.count <= 1, dateMap, periodEndStr, wrapAround);
+  const biggestAboveAvgIslandDates = findIsland(pastAndPresentData, d => d.count >= avgVel && d.count > 0, dateMap, periodEndStr, wrapAround);
 
   const weekdayHighActivityCounts: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
   const weekdayTotalDays: Record<number, number> = { 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
@@ -195,7 +197,6 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     velocityIcon = velocityTrend > 0 ? '▲' : (velocityTrend < 0 ? '▼' : '');
   }
 
-  const avgVel = parseFloat(velocity);
   const targetDaysForVelocity = base.ytdTotalDays > 0 ? pastAndPresentData.filter(d => d.date >= ytdStartStr) : pastAndPresentData;
   
   const aboveVelocityDates = targetDaysForVelocity.filter(d => d.count >= avgVel && d.count > 0).map(d => d.date);
@@ -250,6 +251,7 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     peakWeekday: daysOfWeek[peakWeekdayIndex], peakWeekdayIndex, peakWeekdayCount: maxHighFreq,
     biggestIslandSize: biggestIslandDates.length, biggestIslandDates,
     biggestSlumpIslandSize: biggestSlumpIslandDates.length, biggestSlumpIslandDates,
+    biggestAboveAvgIslandSize: biggestAboveAvgIslandDates.length, biggestAboveAvgIslandDates,
     aboveVelocityDates, belowVelocityDates,
     statsForTooltips,
     velocityTrend, velocityIcon,

@@ -67,6 +67,7 @@ export async function applyVisibility() {
       'gh-dominant-weekday': settings.showDominantWeekday,
       'gh-island': settings.showIsland,
       'gh-slump-island': settings.showSlumpIsland,
+      'gh-above-avg-island': settings.showAboveAvgIsland,
       'gh-velocity': settings.showVelocity,
       'gh-velocity-above': settings.showVelocityAbove,
       'gh-velocity-below': settings.showVelocityBelow,
@@ -81,8 +82,7 @@ export async function applyVisibility() {
       'gh-most-active-day': settings.showMostActiveDay,
       'gh-max-commits': settings.showMaxCommits,
       'gh-stars': settings.showStars,
-      'gh-pr': settings.showPR,
-      'gh-issue-created': settings.showIssueCreated,
+      'gh-pr': settings.showPR,      'gh-issue-created': settings.showIssueCreated,
       'gh-langs': settings.showLangs,
       'gh-network': settings.showNetwork,
       'gh-pulse-signature': settings.showPulseHash
@@ -198,13 +198,13 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   statsDiv.style.marginTop = '8px';
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
-  const defaultOrder = [
-    'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
-    'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
-    'gh-island', 'gh-slump-island', 'gh-slump',
-    'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
-    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
-  ];
+    const defaultOrder = [
+      'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
+      'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
+      'gh-island', 'gh-slump-island', 'gh-above-avg-island', 'gh-slump',
+      'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
+      'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
+    ];
   let gridOrder = savedOrder || defaultOrder;
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
@@ -241,6 +241,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday"><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${(advanced.biggestIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${(advanced.biggestSlumpIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
+    'gh-above-avg-island': `<div class="stat-card highlightable" id="gh-above-avg-island" data-island="${(advanced.biggestAboveAvgIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Longest Above Avg Island</span><strong class="f3-light">${advanced.biggestAboveAvgIslandSize} days</strong></div>`,
     'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Avg commits per active day (${advanced.statsForTooltips.velocity.count} total / ${advanced.statsForTooltips.velocity.active} active). Trend compares the last 7 days vs the 7 days prior.">
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
       <div class="d-flex flex-items-center gap-1">
@@ -630,6 +631,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-current-week', () => highlightDates(advanced.currentWeekDates));
   addHover('#gh-island', () => highlightDates(advanced.biggestIslandDates, 'gh-highlight-special'));
   addHover('#gh-slump-island', () => highlightDates(advanced.biggestSlumpIslandDates, 'gh-highlight-sad'));
+  addHover('#gh-above-avg-island', () => highlightDates(advanced.biggestAboveAvgIslandDates, 'gh-highlight-special'));
   addHover('#gh-velocity-above', () => highlightDates(advanced.aboveVelocityDates, 'gh-highlight-special'));
   addHover('#gh-velocity-below', () => highlightDates(advanced.belowVelocityDates, 'gh-highlight-sad'));
   addHover('#gh-slump', () => highlightDates(advanced.longestSlumpDates, 'gh-highlight-sad'));
