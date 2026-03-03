@@ -408,9 +408,12 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     <div class="mt-2 pt-2 border-top color-border-muted" id="gh-footer">
       <div id="gh-pulse-signature" class="mb-2" style="min-height: 14px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
         <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block;">
-          SIG: 0x${advanced.pulseHash.split('').map((char: string) => {
+          SIG: 0x${advanced.pulseHash.split('').map((char: string, i: number) => {
             const level = parseInt(char, 16);
-            return `<span class="gh-sig-char" data-level="${level}">${char}</span>`;
+            const dateIdx = advanced.ytdDailyCounts.length - 1 - i;
+            const date = advanced.ytdDailyCounts[dateIdx]?.date || '';
+            const count = advanced.ytdDailyCounts[dateIdx]?.count || 0;
+            return `<span class="gh-sig-char" data-level="${level}" data-date="${date}" title="${date}: ${count} commits">${char}</span>`;
           }).join('')}
         </span>
       </div>
@@ -586,8 +589,16 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   // Add hover for SIG characters
   statsDiv.querySelectorAll('.gh-sig-char').forEach((char: any) => {
     char.addEventListener('mouseenter', () => {
+      const date = char.getAttribute('data-date');
       const level = parseInt(char.getAttribute('data-level') || '0', 10);
-      highlightGranularLevel(level);
+      
+      if (date) {
+        highlightDates([date]);
+      }
+      
+      // Also highlight the legend square for the level
+      const sq = statsDiv.querySelector(`.square-legend.level-${level}`);
+      if (sq) sq.classList.add('highlighting');
     });
     char.addEventListener('mouseleave', () => {
       clearHighlights();
