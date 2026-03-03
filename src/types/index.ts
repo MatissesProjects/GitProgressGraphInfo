@@ -84,6 +84,7 @@ export interface GitHeatSettings {
   theme?: string;
   customStart?: string;
   customStop?: string;
+  colorMode?: 'rgb' | 'hsl' | 'hsl-far';
   showGrid?: boolean;
   showActiveRepos?: boolean;
   showCreatedRepos?: boolean;

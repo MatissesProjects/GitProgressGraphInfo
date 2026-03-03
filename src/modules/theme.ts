@@ -23,7 +23,7 @@ export const THEMES: Record<string, string[]> = {
   ]
 };
 
-export function interpolateColor(color1: string, color2: string, factor: number) {
+export function interpolateColor(color1: string, color2: string, factor: number, mode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb') {
   const hex = (x: number) => {
     const s = Math.max(0, Math.min(255, Math.round(x))).toString(16);
     return s.length === 1 ? '0' + s : s;
@@ -55,26 +55,89 @@ export function interpolateColor(color1: string, color2: string, factor: number)
     return { r: 235, g: 237, b: 240 };
   };
 
+  const rgbToHsl = (r: number, g: number, b: number) => {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s, l = (max + min) / 2;
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+    return { h, s, l };
+  };
+
+  const hslToRgb = (h: number, s: number, l: number) => {
+    let r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+  };
+
   const c1 = parseToRgb(color1);
   const c2 = parseToRgb(color2);
 
-  const r = c1.r + factor * (c2.r - c1.r);
-  const g = c1.g + factor * (c2.g - c1.g);
-  const b = c1.b + factor * (c2.b - c1.b);
+  if (mode === 'rgb') {
+    const r = c1.r + factor * (c2.r - c1.r);
+    const g = c1.g + factor * (c2.g - c1.g);
+    const b = c1.b + factor * (c2.b - c1.b);
+    return `#${hex(r)}${hex(g)}${hex(b)}`;
+  } else {
+    const hsl1 = rgbToHsl(c1.r, c1.g, c1.b);
+    const hsl2 = rgbToHsl(c2.r, c2.g, c2.b);
+    let h1 = hsl1.h;
+    let h2 = hsl2.h;
 
-  return `#${hex(r)}${hex(g)}${hex(b)}`;
+    if (mode === 'hsl') {
+      let dh = h2 - h1;
+      if (dh > 0.5) h1 += 1;
+      else if (dh < -0.5) h2 += 1;
+    } else if (mode === 'hsl-far') {
+      let dh = h2 - h1;
+      if (dh >= 0 && dh < 0.5) h1 += 1;
+      else if (dh < 0 && dh > -0.5) h2 += 1;
+    }
+
+    const h = (h1 + factor * (h2 - h1)) % 1;
+    const s = hsl1.s + factor * (hsl2.s - hsl1.s);
+    const l = hsl1.l + factor * (hsl2.l - hsl1.l);
+    const rgb = hslToRgb(h < 0 ? h + 1 : h, s, l);
+    return `#${hex(rgb.r)}${hex(rgb.g)}${hex(rgb.b)}`;
+  }
 }
 
-export function generateCustomScale(start: string, stop: string, steps: number = 11): string[] {
+export function generateCustomScale(start: string, stop: string, steps: number = 11, mode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb'): string[] {
   const scale = ['#161b22']; 
   for (let i = 0; i < steps; i++) {
     const factor = i / (steps - 1);
-    scale.push(interpolateColor(start, stop, factor));
+    scale.push(interpolateColor(start, stop, factor, mode));
   }
   return scale;
 }
 
-export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string, tickerData?: { date: string; count: number }[]) {
+export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string, tickerData?: { date: string; count: number }[], colorMode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb') {
   console.log("GitHeat: Applying Deep Recoloring (v1.3 - High Resolution Gradient)...");
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
@@ -101,15 +164,17 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
 
       if (!start || !stop) {
         try {
-          const settings = await chrome.storage.local.get(['customStart', 'customStop']);
+          const settings = await chrome.storage.local.get(['customStart', 'customStop', 'colorMode']);
           start = start || (settings.customStart as string) || '#4a207e';
           stop = stop || (settings.customStop as string) || '#04ff00';
+          colorMode = colorMode || (settings.colorMode as any) || 'rgb';
         } catch (e) {
           start = start || '#4a207e';
           stop = stop || '#04ff00';
+          colorMode = colorMode || 'rgb';
         }
       }
-      colors = generateCustomScale(start, stop, totalLevels);
+      colors = generateCustomScale(start, stop, totalLevels, colorMode);
     } else {
       // Interpolate predefined themes to match our 15-level scale
       const baseColors = THEMES[themeName] || THEMES.green;

@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const customColors = document.getElementById('custom-colors') as HTMLDivElement;
   const colorStart = document.getElementById('color-start') as HTMLInputElement;
   const colorStop = document.getElementById('color-stop') as HTMLInputElement;
+  const colorModeSelect = document.getElementById('color-mode-select') as HTMLSelectElement;
 
   // Visibility Toggles - Sections
   const toggleGrid = document.getElementById('toggle-grid') as HTMLInputElement;
@@ -186,7 +187,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Load saved theme and colors
   const settings = await chrome.storage.local.get([
-    'theme', 'customStart', 'customStop', 
+    'theme', 'customStart', 'customStop', 'colorMode',
     'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
     'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
     'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showAboveAvgIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar',
@@ -297,6 +298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   if (settings.customStart) colorStart.value = settings.customStart as string;
   if (settings.customStop) colorStop.value = settings.customStop as string;
+  if (settings.colorMode) colorModeSelect.value = settings.colorMode as string;
 
   // Set toggle states
   const setChecked = (el: HTMLInputElement, val: any) => {
@@ -362,12 +364,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const saveColors = async () => {
     await chrome.storage.local.set({ 
       customStart: colorStart.value,
-      customStop: colorStop.value 
+      customStop: colorStop.value,
+      colorMode: colorModeSelect.value
     });
   };
 
   colorStart.addEventListener('input', saveColors);
   colorStop.addEventListener('input', saveColors);
+  colorModeSelect.addEventListener('change', saveColors);
 
   // Toggle Event Listeners
   const addToggleListener = (el: HTMLInputElement, key: string) => {

@@ -58,12 +58,12 @@ function init() {
       if (changes.showTrends) runAnalysis().catch(() => {});
     }
     if (changes.gridOrder || changes.islandWrapAround || changes.customAvatarSettings) runAnalysis().catch(() => {});
-    if (changes.theme || changes.customStart || changes.customStop) {
+    if (changes.theme || changes.customStart || changes.customStop || changes.colorMode) {
       const data = parseContributionGraph();
       if (data) {
         const p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(['theme', 'customStart', 'customStop']);
-        await applyDeepRecoloring(data, p, (s.theme as string) || 'green', (s.customStart as string), (s.customStop as string));
+        const s = await chrome.storage.local.get(['theme', 'customStart', 'customStop', 'colorMode']);
+        await applyDeepRecoloring(data, p, (s.theme as string) || 'green', (s.customStart as string), (s.customStop as string), undefined, s.colorMode as any);
       }
     }
   });
@@ -80,7 +80,7 @@ function init() {
       const socials = parseSocials();
       if (data) {
         const t = calculateThresholds(data), p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround', 'showTrends', 'customStart', 'customStop', 'showTicker', 'showPulseHash', 'showAvatar', 'showWorstMonth', 'showCurrentWeek', 'showSkillTree']);
+        const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround', 'showTrends', 'customStart', 'customStop', 'colorMode', 'showTicker', 'showPulseHash', 'showAvatar', 'showWorstMonth', 'showCurrentWeek', 'showSkillTree']);
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
         const wrapAround = true; 
         const showTrends = s.showTrends !== false;
@@ -88,7 +88,7 @@ function init() {
         
         await injectStats(t, p, data, advanced, order, showTrends);
         await extendLegend(t);
-        await applyDeepRecoloring(data, p, theme, (s.customStart as string), (s.customStop as string), advanced.ytdDailyCounts);
+        await applyDeepRecoloring(data, p, theme, (s.customStart as string), (s.customStop as string), advanced.ytdDailyCounts, s.colorMode as any);
         await applyVisibility();
       }
     } catch (e) {
