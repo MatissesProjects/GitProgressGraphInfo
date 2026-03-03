@@ -453,7 +453,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       // 2. Highlight SIG
       const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
       if (sigChar) sigChar.classList.add('highlighting');
-      
+
       // 3. Highlight Ticker SVG point (if it's in the YTD daily counts)
       const tickerContainer = document.getElementById('gh-ticker-container');
       if (tickerContainer) {
@@ -493,7 +493,11 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         day.style.outline = '';
         day.style.border = '';
         
-        // Highlight Ticker SVG points for these days
+        // 2. Highlight SIG
+        const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
+        if (sigChar) sigChar.classList.add('highlighting');
+
+        // 3. Highlight Ticker SVG points
         const tickerContainer = document.getElementById('gh-ticker-container');
         if (tickerContainer) {
           const ytdIdx = advanced.ytdDailyCounts.findIndex((d: any) => d.date === date);
@@ -517,7 +521,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         }
       }
     });
-    // 2. Highlight SIG characters
+    // Highlight SIG characters by level too
     document.querySelectorAll(`.gh-sig-char[data-level="${level}"]`).forEach((char: any) => {
       char.classList.add('highlighting');
     });
@@ -526,16 +530,20 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     if (sq) sq.classList.add('highlighting');
   };
 
-  const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string) => {
+  const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string, className: string = 'gh-highlight') => {
     document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: any) => {
       const date = day.getAttribute('data-date');
       if (!date || (startDate && date < startDate) || (endDate && date > endDate)) return;
       if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { 
-        day.classList.add('gh-highlight'); 
+        day.classList.add(className); 
         day.style.outline = ''; 
         day.style.border = ''; 
 
-        // Highlight Ticker SVG points
+        // 2. Highlight SIG
+        const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
+        if (sigChar) sigChar.classList.add('highlighting');
+
+        // 3. Highlight Ticker SVG points
         const tickerContainer = document.getElementById('gh-ticker-container');
         if (tickerContainer) {
           const ytdIdx = advanced.ytdDailyCounts.findIndex((d: any) => d.date === date);
@@ -614,9 +622,16 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
     // 1. Highlight Graph Days
     document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: any) => {
+      const date = day.getAttribute('data-date');
       day.classList.add('gh-highlight');
       day.style.outline = '';
       day.style.border = '';
+
+      // 2. Highlight SIG
+      if (date) {
+        const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
+        if (sigChar) sigChar.classList.add('highlighting');
+      }
     });
 
     // 2. Highlight SIG characters that fall into this threshold's commit range
