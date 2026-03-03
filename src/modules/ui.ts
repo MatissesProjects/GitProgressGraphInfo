@@ -129,6 +129,13 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
     `;
   }).join('');
 
+  // Create hover zones for each day
+  const hoverWidth = width / (data.length - 1);
+  const hoverZones = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * width;
+    return `<rect class="gh-ticker-hover-zone" data-date="${d.date}" x="${x - hoverWidth/2}" y="0" width="${hoverWidth}" height="${height}" fill="transparent" style="cursor: crosshair; pointer-events: all;" />`;
+  }).join('');
+
   // Horizontal stops for the line gradient (maps color to each specific day)
   const lineStops = data.map((d, i) => {
     const offset = (i / (Math.max(1, data.length - 1))) * 100;
@@ -441,15 +448,11 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         dayEl.classList.add(className); 
         dayEl.style.outline = ''; 
         dayEl.style.border = ''; 
-        
-        // 2. Highlight Ticker (SIG characters already handled if we use highlightGranularLevel, 
-        // but here we are highlighting specific dates, so we should highlight their SIG char)
-        const gLevel = dayEl.getAttribute('data-granular-level');
-        if (gLevel && gLevel !== '0') {
-          // We can't easily find the EXACT sig char for a date because the hash is reversed 
-          // and only contains levels. But we can highlight all chars of that level.
-        }
       }
+
+      // 2. Highlight SIG
+      const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
+      if (sigChar) sigChar.classList.add('highlighting');
       
       // 3. Highlight Ticker SVG point (if it's in the YTD daily counts)
       const tickerContainer = document.getElementById('gh-ticker-container');
@@ -674,6 +677,19 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-thresh-2', () => highlightThreshold(2));
   addHover('#gh-thresh-3', () => highlightThreshold(3));
   addHover('#gh-thresh-4', () => highlightThreshold(4));
+
+  // Add hover for Ticker Zones
+  statsDiv.querySelectorAll('.gh-ticker-hover-zone').forEach((zone: any) => {
+    zone.addEventListener('mouseenter', () => {
+      const date = zone.getAttribute('data-date');
+      if (date) {
+        highlightDates([date]);
+      }
+    });
+    zone.addEventListener('mouseleave', () => {
+      clearHighlights();
+    });
+  });
 }
 
 export async function extendLegend(thresholds: any) {
