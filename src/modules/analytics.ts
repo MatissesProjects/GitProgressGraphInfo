@@ -386,6 +386,12 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     bestMonthIcon = bestMonthTrend > 0 ? '▲' : (bestMonthTrend < 0 ? '▼' : '');
   }
 
+  let worstMonthTrend = 0, worstMonthIcon = '';
+  if (avgMonthScore > 0) {
+    worstMonthTrend = Math.round(((worstMonthStats.score - avgMonthScore) / avgMonthScore) * 100);
+    worstMonthIcon = worstMonthTrend > 0 ? '▲' : (worstMonthTrend < 0 ? '▼' : '');
+  }
+
   const weekData: Record<string, any> = {};
   pastAndPresentData.forEach(day => {
     const date = new Date(day.date + 'T00:00:00');
@@ -457,5 +463,5 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   const currentWeekStats = { score: currentWeekScore, count: currentW.count, consistency: ((currentW.activeDays / 7) * 100).toFixed(1), streak: currentW.maxStreak };
   const currentWeekDates = currentW.dates;
 
-  return { bestMonthName, bestMonthDates, bestMonthStats, worstMonthName, worstMonthDates, worstMonthStats, bestWeekName, bestWeekDates, bestWeekStats, currentWeekStats, currentWeekDates, dominantWeekday, dominantWeekdayWins: maxWins, bestMonthTrend, bestMonthIcon, bestWeekTrend, bestWeekIcon };
+  return { bestMonthName, bestMonthDates, bestMonthStats, worstMonthName, worstMonthDates, worstMonthStats, bestWeekName, bestWeekDates, bestWeekStats, currentWeekStats, currentWeekDates, dominantWeekday, dominantWeekdayWins: maxWins, bestMonthTrend, bestMonthIcon, worstMonthTrend, worstMonthIcon, bestWeekTrend, bestWeekIcon, avgMonthScore };
 }

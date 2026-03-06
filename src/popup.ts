@@ -499,7 +499,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const bestMonthTrendHtml = adv.bestMonthTrend !== 0 ? ` <span style="color: ${adv.bestMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best month vs average month score">${adv.bestMonthIcon} ${Math.abs(adv.bestMonthTrend)}%</span>` : '';
         document.getElementById('best-month')!.innerHTML = `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})${bestMonthTrendHtml}`;
         
-        document.getElementById('worst-month')!.innerHTML = `${adv.worstMonthName} (Score: ${adv.worstMonthStats.score})`;
+        const worstMonthTrendHtml = adv.worstMonthTrend !== 0 ? ` <span style="color: ${adv.worstMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Worst month vs average month score">${adv.worstMonthIcon} ${Math.abs(adv.worstMonthTrend)}%</span>` : '';
+        const worstMonthEl = document.getElementById('worst-month')!;
+        worstMonthEl.innerHTML = `${adv.worstMonthName} (Score: ${adv.worstMonthStats.score})${worstMonthTrendHtml}`;
+        worstMonthEl.title = `Calculation: Commits × Consistency × Max Streak. This month: ${adv.worstMonthStats.count} commits, ${adv.worstMonthStats.consistency}% consistency, ${adv.worstMonthStats.streak} day streak. Average month score: ${Math.round(adv.avgMonthScore || 0)}.`;
         
         const bestWeekTrendHtml = adv.bestWeekTrend !== 0 ? ` <span style="color: ${adv.bestWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best week vs average week score">${adv.bestWeekIcon} ${Math.abs(adv.bestWeekTrend)}%</span>` : '';
         document.getElementById('best-week')!.innerHTML = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})${bestWeekTrendHtml}`;

@@ -227,9 +227,15 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
           </span>` : ''}
       </div>
     </div>`,
-    'gh-worst-month': `<div class="stat-card highlightable" id="gh-worst-month" data-month-dates="${(advanced.worstMonthDates || []).join(',')}">
+    'gh-worst-month': `<div class="stat-card highlightable" id="gh-worst-month" data-month-dates="${(advanced.worstMonthDates || []).join(',')}" title="Calculation: Commits × Consistency × Max Streak. This month: ${advanced.worstMonthStats.count} commits, ${advanced.worstMonthStats.consistency}% consistency, ${advanced.worstMonthStats.streak} day streak. Average month score: ${Math.round(advanced.avgMonthScore || 0)}.">
       <span class="color-fg-muted d-block text-small">Worst Month (${advanced.worstMonthName})</span>
-      <strong class="f3-light">Score: ${advanced.worstMonthStats.score}</strong>
+      <div class="d-flex flex-items-center gap-1">
+        <strong class="f3-light">Score: ${advanced.worstMonthStats.score}</strong>
+        ${(showTrends !== false && advanced.worstMonthTrend !== 0) ? `
+          <span class="${advanced.worstMonthTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
+            ${advanced.worstMonthIcon} ${Math.abs(advanced.worstMonthTrend)}%
+          </span>` : ''}
+      </div>
     </div>`,
     'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${(advanced.bestWeekDates || []).join(',')}" title="Best week score vs average week score. (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak)">
       <span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span>
