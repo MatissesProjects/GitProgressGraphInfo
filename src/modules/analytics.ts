@@ -459,8 +459,9 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   const currentWeekKey = currentSunday.toISOString().split('T')[0];
   const currentW = weekData[currentWeekKey] || { count: 0, activeDays: 0, maxStreak: 0, dates: [], dayCounts: {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0} };
   
-  const currentWeekScore = Math.round(currentW.count * (currentW.activeDays / 7) * (currentW.maxStreak || 1));
-  const currentWeekStats = { score: currentWeekScore, count: currentW.count, consistency: ((currentW.activeDays / 7) * 100).toFixed(1), streak: currentW.maxStreak };
+  const elapsedDaysInWeek = now.getDay() + 1; // 1 to 7
+  const currentWeekScore = Math.round(currentW.count * (currentW.activeDays / elapsedDaysInWeek) * (currentW.maxStreak || 1));
+  const currentWeekStats = { score: currentWeekScore, count: currentW.count, consistency: ((currentW.activeDays / elapsedDaysInWeek) * 100).toFixed(1), streak: currentW.maxStreak };
   const currentWeekDates = currentW.dates;
 
   return { bestMonthName, bestMonthDates, bestMonthStats, worstMonthName, worstMonthDates, worstMonthStats, bestWeekName, bestWeekDates, bestWeekStats, currentWeekStats, currentWeekDates, dominantWeekday, dominantWeekdayWins: maxWins, bestMonthTrend, bestMonthIcon, worstMonthTrend, worstMonthIcon, bestWeekTrend, bestWeekIcon, avgMonthScore };
