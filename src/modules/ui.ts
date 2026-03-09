@@ -222,8 +222,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong>
         ${(showTrends !== false && advanced.bestMonthTrend !== 0) ? `
-          <span class="${advanced.bestMonthTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
-            ${advanced.bestMonthIcon} ${Math.abs(advanced.bestMonthTrend)}%
+          <span class="${advanced.bestMonthTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} font-weight-bold" style="white-space: nowrap; font-size: 11px;">
+            ${advanced.bestMonthIcon}${Math.abs(advanced.bestMonthTrend)}%
           </span>` : ''}
       </div>
     </div>`,
@@ -232,8 +232,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.worstMonthStats.score}</strong>
         ${(showTrends !== false && advanced.worstMonthTrend !== 0) ? `
-          <span class="${advanced.worstMonthTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
-            ${advanced.worstMonthIcon} ${Math.abs(advanced.worstMonthTrend)}%
+          <span class="${advanced.worstMonthTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} font-weight-bold" style="white-space: nowrap; font-size: 11px;">
+            ${advanced.worstMonthIcon}${Math.abs(advanced.worstMonthTrend)}%
           </span>` : ''}
       </div>
     </div>`,
@@ -242,8 +242,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong>
         ${(showTrends !== false && advanced.bestWeekTrend !== 0) ? `
-          <span class="${advanced.bestWeekTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
-            ${advanced.bestWeekIcon} ${Math.abs(advanced.bestWeekTrend)}%
+          <span class="${advanced.bestWeekTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} font-weight-bold" style="white-space: nowrap; font-size: 11px;">
+            ${advanced.bestWeekIcon}${Math.abs(advanced.bestWeekTrend)}%
           </span>` : ''}
       </div>
     </div>`,
@@ -265,14 +265,20 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${(advanced.biggestIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
     'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${(advanced.biggestSlumpIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
     'gh-above-avg-island': `<div class="stat-card highlightable" id="gh-above-avg-island" data-island="${(advanced.biggestAboveAvgIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Longest Above Avg Island</span><strong class="f3-light">${advanced.biggestAboveAvgIslandSize} days</strong></div>`,
-    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Avg commits per active day (${advanced.statsForTooltips.velocity.count} total / ${advanced.statsForTooltips.velocity.active} active). Trend compares the last 7 days vs the 7 days prior.">
+    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Avg commits per active day. Trend: Last 7 days vs Overall. Acceleration: Last 7 days vs 7 days prior.">
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
-      <div class="d-flex flex-items-center gap-1">
-        <strong class="f3-light">${advanced.velocity} <span style="font-size: 0.7em; opacity: 0.85;">c/d</span></strong>
-        ${(showTrends !== false && advanced.velocityTrend !== 0) ? `
-          <span class="${advanced.velocityTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
-            ${advanced.velocityIcon} ${Math.abs(advanced.velocityTrend)}%
-          </span>` : ''}
+      <div class="d-flex flex-items-center flex-wrap gap-1">
+        <strong class="f3-light">${advanced.velocity} <small style="font-size: 0.6em; opacity: 0.8;">c/d</small></strong>
+        <div class="d-flex flex-items-center" style="gap: 2px;">
+          ${(showTrends !== false && advanced.velocityTrend !== 0) ? `
+            <span class="${advanced.velocityTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} font-weight-bold" style="white-space: nowrap; font-size: 11px;" title="Velocity Trend">
+              ${advanced.velocityIcon}${Math.abs(advanced.velocityTrend)}%
+            </span>` : ''}
+          ${(showTrends !== false && advanced.acceleration !== 0) ? `
+            <span class="${advanced.acceleration > 0 ? 'color-fg-success' : 'color-fg-danger'}" style="white-space: nowrap; font-size: 10px; border-left: 1px solid var(--color-border-muted); padding-left: 2px; margin-left: 2px; font-weight: 600;" title="Acceleration (7d vs Prev 7d)">
+              ${advanced.accelerationIcon}${Math.abs(advanced.acceleration)}%<small style="opacity: 0.7; font-weight: normal;">acc</small>
+            </span>` : ''}
+        </div>
       </div>
     </div>`,
     'gh-velocity-above': `<div class="stat-card highlightable" id="gh-velocity-above"><span class="color-fg-muted d-block text-small">Above Average Days</span><strong class="f3-light">${advanced.aboveVelocityDates.length} days</strong></div>`,
@@ -285,8 +291,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
         ${(showTrends !== false && advanced.bestWeekdayTrend !== 0) ? `
-          <span class="${advanced.bestWeekdayTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
-            ${advanced.bestWeekdayIcon} ${Math.abs(advanced.bestWeekdayTrend)}%
+          <span class="${advanced.bestWeekdayTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} font-weight-bold" style="white-space: nowrap; font-size: 11px;">
+            ${advanced.bestWeekdayIcon}${Math.abs(advanced.bestWeekdayTrend)}%
           </span>` : ''}
       </div>
     </div>`,

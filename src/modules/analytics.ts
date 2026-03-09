@@ -183,12 +183,35 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
 
   const rpg = await calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars, socials, pinned, base.longestStreak);
 
-  // Velocity Trend (Last 7 days vs Overall YTD Velocity)
+  // Velocity & Acceleration
   const sorted = [...pastAndPresentData].sort((a, b) => b.date.localeCompare(a.date));
   let velocityTrend = 0, velocityIcon = '';
+  let acceleration = 0, accelerationIcon = '';
   const overallVel = parseFloat(velocity);
   
-  if (sorted.length >= 7 && overallVel > 0) {
+  if (sorted.length >= 14 && overallVel > 0) {
+    const recent7 = sorted.slice(0, 7);
+    const prev7 = sorted.slice(7, 14);
+    
+    const rAct = recent7.filter(d => d.count > 0);
+    const rVel = rAct.length > 0 ? recent7.reduce((s, d) => s + d.count, 0) / rAct.length : 0;
+    
+    const pAct = prev7.filter(d => d.count > 0);
+    const pVel = pAct.length > 0 ? prev7.reduce((s, d) => s + d.count, 0) / pAct.length : 0;
+    
+    // Velocity Trend (Last 7 days vs Overall YTD Velocity)
+    velocityTrend = Math.round(((rVel - overallVel) / overallVel) * 100);
+    velocityIcon = velocityTrend > 0 ? '▲' : (velocityTrend < 0 ? '▼' : '');
+
+    // Acceleration (Recent 7-day velocity vs Previous 7-day velocity)
+    if (pVel > 0) {
+      acceleration = Math.round(((rVel - pVel) / pVel) * 100);
+      accelerationIcon = acceleration > 0 ? '▲' : (acceleration < 0 ? '▼' : '');
+    } else if (rVel > 0) {
+      acceleration = 100;
+      accelerationIcon = '▲';
+    }
+  } else if (sorted.length >= 7 && overallVel > 0) {
     const cw = sorted.slice(0, 7);
     const cAct = cw.filter(d => d.count > 0);
     const cVel = cAct.length > 0 ? cw.reduce((s, d) => s + d.count, 0) / cAct.length : 0;
@@ -255,6 +278,7 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     aboveVelocityDates, belowVelocityDates,
     statsForTooltips,
     velocityTrend, velocityIcon,
+    acceleration, accelerationIcon,
     currentWeekdayTrend, currentWeekdayIcon,
     bestWeekdayTrend, bestWeekdayIcon,
     isYTD: true, // We now always treat the view as YTD for the chosen year

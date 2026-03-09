@@ -176,6 +176,14 @@ export interface AdvancedStats {
   avgWeekScore: number;
   belowVelocityDates: string[];
   aboveVelocityDates: string[];
+  velocityTrend: number;
+  velocityIcon: string;
+  acceleration: number;
+  accelerationIcon: string;
+  currentWeekdayTrend: number;
+  currentWeekdayIcon: string;
+  bestWeekdayTrend: number;
+  bestWeekdayIcon: string;
   level: number;
   xp: number;
   xpToNext: number;
