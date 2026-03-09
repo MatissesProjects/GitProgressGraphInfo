@@ -102,30 +102,44 @@ export async function calculateRPGStats(
   longestStreak: number,
   customAvatarSettings?: any
 ) {
-  const totalCommits = data.reduce((s, d) => s + d.count, 0);
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const ytdStart = `${currentYear}-01-01`;
   
-  // XP Calculation: Commits (10 XP) + Longest Streak (50 XP/day) + PRs (100 XP) + Issues (50 XP)
-  const totalXP = (totalCommits * 10) + 
-                  (longestStreak * 50) + 
-                  (timeline.pullRequests * 100) + 
-                  (timeline.issuesOpened * 50) + 
-                  (socials.followers * 20);
+  const ytdCommits = data.filter(d => d.date >= ytdStart).reduce((s, d) => s + d.count, 0);
+  
+  // Balanced XP Calculation (YTD focused for commits)
+  // Commits: 15 XP each
+  // Longest Streak: 100 XP per day
+  // PRs: 250 XP each (High value)
+  // Issues: 100 XP each
+  // Followers: 50 XP each
+  const totalXP = (ytdCommits * 15) + 
+                  (longestStreak * 100) + 
+                  (timeline.pullRequests * 250) + 
+                  (timeline.issuesOpened * 100) + 
+                  (socials.followers * 50);
 
-  // Level Logic: Level 1 starts at 0 XP, Level 2 at 100, Level 3 at 400, etc. (Level^2 * 100)
-  const level = Math.floor(Math.sqrt(totalXP / 100)) + 1;
-  const xpForCurrentLevel = Math.pow(level - 1, 2) * 100;
-  const xpForNextLevel = Math.pow(level, 2) * 100;
+  // Balanced Level Logic: 
+  // Level 1: 0 XP
+  // Level 2: 500 XP
+  // Level 3: 1500 XP
+  // Level 4: 3000 XP
+  // Formula: (Level-1)^1.8 * 500
+  const level = Math.floor(Math.pow(totalXP / 500, 1 / 1.8)) + 1;
+  const xpForCurrentLevel = Math.floor(Math.pow(level - 1, 1.8) * 500);
+  const xpForNextLevel = Math.floor(Math.pow(level, 1.8) * 500);
   
   const levelProgressXP = totalXP - xpForCurrentLevel;
   const levelTotalXP = xpForNextLevel - xpForCurrentLevel;
   const progressPercent = Math.min(100, Math.floor((levelProgressXP / levelTotalXP) * 100));
 
-  const levelTitles = ["Novice", "Scripter", "Developer", "Engineer", "Architect", "Grandmaster", "Legend"];
-  const levelTitle = levelTitles[Math.min(levelTitles.length - 1, Math.floor(level / 5))];
+  const levelTitles = ["Novice", "Apprentice", "Scripter", "Coder", "Developer", "Engineer", "Architect", "Senior Architect", "Grandmaster", "Legend", "Mythic"];
+  const levelTitle = levelTitles[Math.min(levelTitles.length - 1, Math.floor(level / 3))];
 
   const todayActions: TodayActions = {
     commits: todayCount,
-    prs: timeline.pullRequests, // Simplified
+    prs: timeline.pullRequests,
     issues: timeline.issuesOpened,
     reviews: timeline.pullRequestReviews,
     stars: socials.followers

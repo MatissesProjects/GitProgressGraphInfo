@@ -1,6 +1,7 @@
-import { GitHeatSettings, AdvancedStats } from './types';
+import { GitHeatSettings, AdvancedStats, CustomAvatarSettings } from './types';
 
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log("GitHeat Popup: Loaded");
   const loading = document.getElementById('loading');
   const error = document.getElementById('error');
   const content = document.getElementById('content');
@@ -12,8 +13,88 @@ document.addEventListener('DOMContentLoaded', async () => {
   const stopColorInput = document.getElementById('color-stop') as HTMLInputElement;
   const sortableList = document.getElementById('sortable-grid-list');
 
+  const gearBases = ['🧙', '🧙‍♂️', '🧙‍♀️', '🧑‍💻', '👩‍💻', '🧔‍♂️', '🧝', '🧝‍♂️', '🧝‍♀️', '🧛', '🧛‍♂️', '🧛‍♀️'];
+  const gearHeads = ['👑', '🎓', '⛑️', '👒', '🧢', '🪖'];
+  const gearWeapons = ['🪄', '🗡️', '🏹', '🪓', '⚔️', '⚒️', '🔫'];
+  const gearShields = ['🛡️', '💠', '🧼', '📁', '📦', '🔋'];
+  const gearCompanions = ['🐱', '🐕', '🦊', '🐼', '🐨', '🤖', '👻', '👾', '🐉'];
+
+  const populateGear = (id: string, items: string[], current: string | undefined) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    
+    const noneDiv = document.createElement('label');
+    noneDiv.style.display = 'flex';
+    noneDiv.style.alignItems = 'center';
+    noneDiv.style.gap = '5px';
+    noneDiv.innerHTML = `<input type="radio" name="${id}" value="" ${!current ? 'checked' : ''}> Auto (Progression)`;
+    el.appendChild(noneDiv);
+
+    items.forEach(item => {
+      const div = document.createElement('label');
+      div.style.display = 'flex';
+      div.style.alignItems = 'center';
+      div.style.gap = '5px';
+      div.innerHTML = `<input type="radio" name="${id}" value="${item}" ${current === item ? 'checked' : ''}> ${item}`;
+      el.appendChild(div);
+    });
+  };
+
+  const toggleKeyMap: Record<string, keyof GitHeatSettings> = {
+    'toggle-grid': 'showGrid',
+    'toggle-persona': 'showPersona',
+    'toggle-active-repos': 'showActiveRepos',
+    'toggle-created-repos': 'showCreatedRepos',
+    'toggle-achievements': 'showAchievements',
+    'toggle-footer': 'showFooter',
+    'toggle-legend-numbers': 'showLegendNumbers',
+    'toggle-trends': 'showTrends',
+    'toggle-avatar': 'showAvatar',
+    'toggle-gear-head': 'showGearHead',
+    'toggle-gear-weapon': 'showGearWeapon',
+    'toggle-gear-shield': 'showGearShield',
+    'toggle-gear-companion': 'showGearCompanion',
+    'toggle-combo': 'showCombo',
+    'toggle-xp-bar': 'showXPBar',
+    'toggle-skill-tree': 'showSkillTree',
+    'toggle-pulse-hash': 'showPulseHash',
+    'toggle-ticker': 'showTicker',
+    'toggle-total': 'showTotal',
+    'toggle-today': 'showTodayCount',
+    'toggle-streak': 'showStreak',
+    'toggle-level': 'showLevel',
+    'toggle-best-month': 'showBestMonth',
+    'toggle-worst-month': 'showWorstMonth',
+    'toggle-best-week': 'showBestWeek',
+    'toggle-worst-week': 'showWorstWeek',
+    'toggle-current-week': 'showCurrentWeek',
+    'toggle-dominant-weekday': 'showDominantWeekday',
+    'toggle-island': 'showIsland',
+    'toggle-slump-island': 'showSlumpIsland',
+    'toggle-above-avg-island': 'showAboveAvgIsland',
+    'toggle-velocity': 'showVelocity',
+    'toggle-velocity-above': 'showVelocityAbove',
+    'toggle-velocity-below': 'showVelocityBelow',
+    'toggle-consistency': 'showConsistency',
+    'toggle-weekend': 'showWeekend',
+    'toggle-slump': 'showSlump',
+    'toggle-best-day': 'showBestDay',
+    'toggle-worst-day': 'showWorstDay',
+    'toggle-current-weekday': 'showCurrentWeekday',
+    'toggle-power-day': 'showPowerDay',
+    'toggle-peak-day': 'showPeakDay',
+    'toggle-most-active-day': 'showMostActiveDay',
+    'toggle-max-commits': 'showMaxCommits',
+    'toggle-stars': 'showStars',
+    'toggle-pr': 'showPR',
+    'toggle-issue-created': 'showIssueCreated',
+    'toggle-langs': 'showLangs',
+    'toggle-network': 'showNetwork'
+  };
+
   const defaultOrder = [
-    'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-worst-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
+    'gh-level', 'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-worst-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
     'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
     'gh-island', 'gh-slump-island', 'gh-above-avg-island', 'gh-slump',
     'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
@@ -21,6 +102,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   ];
 
   const labelMap: Record<string, string> = {
+    'gh-level': 'RPG Level',
     'gh-streak': 'Current / Best Streak',
     'gh-best-month': 'Best Month',
     'gh-worst-month': 'Worst Month',
@@ -54,7 +136,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const renderSortableList = (order: string[]) => {
     if (!sortableList) return;
     sortableList.innerHTML = '';
-    order.forEach(id => {
+    
+    // Ensure all default items are in the order
+    const finalOrder = [...order];
+    defaultOrder.forEach(id => {
+      if (!finalOrder.includes(id)) finalOrder.push(id);
+    });
+
+    finalOrder.forEach(id => {
       const li = document.createElement('div');
       li.className = 'sortable-item';
       li.draggable = true;
@@ -112,80 +201,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const loadSettings = async () => {
-    const s = await chrome.storage.local.get(null) as GitHeatSettings;
+    const s = await chrome.storage.local.get(null);
     if (themeSelect) themeSelect.value = s.theme || 'green';
     if (colorModeSelect) colorModeSelect.value = s.colorMode || 'rgb';
     if (customColors) customColors.style.display = themeSelect.value === 'custom' ? 'block' : 'none';
     if (startColorInput) startColorInput.value = s.customStart || '#ebedf0';
     if (stopColorInput) stopColorInput.value = s.customStop || '#216e39';
 
-    const setChecked = (id: string, val: boolean | undefined) => {
+    Object.entries(toggleKeyMap).forEach(([id, key]) => {
       const el = document.getElementById(id) as HTMLInputElement;
-      if (el) el.checked = val !== false;
-    };
+      if (el) el.checked = s[key] !== false;
+    });
 
-    setChecked('toggle-grid', s.showGrid);
-    setChecked('toggle-active-repos', s.showActiveRepos);
-    setChecked('toggle-created-repos', s.showCreatedRepos);
-    setChecked('toggle-achievements', s.showAchievements);
-    setChecked('toggle-persona', s.showPersona);
-    setChecked('toggle-footer', s.showFooter);
-    setChecked('toggle-legend-numbers', s.showLegendNumbers);
-    setChecked('toggle-trends', s.showTrends);
-    setChecked('toggle-pulse-hash', s.showPulseHash);
-    setChecked('toggle-ticker', s.showTicker);
-    setChecked('toggle-avatar', s.showAvatar);
-    setChecked('toggle-combo', s.showCombo);
-    setChecked('toggle-xp-bar', s.showXPBar);
-    setChecked('toggle-skill-tree', s.showSkillTree);
-    setChecked('toggle-gear-head', s.showGearHead);
-    setChecked('toggle-gear-weapon', s.showGearWeapon);
-    setChecked('toggle-gear-shield', s.showGearShield);
-    setChecked('toggle-gear-companion', s.showGearCompanion);
-
-    setChecked('toggle-total', s.showTotal);
-    setChecked('toggle-today', s.showTodayCount);
-    setChecked('toggle-streak', s.showStreak);
-    setChecked('toggle-velocity', s.showVelocity);
-    setChecked('toggle-consistency', s.showConsistency);
-    setChecked('toggle-weekend', s.showWeekend);
-    setChecked('toggle-slump', s.showSlump);
-    setChecked('toggle-best-day', s.showBestDay);
-    setChecked('toggle-worst-day', s.showWorstDay);
-    setChecked('toggle-most-active-day', s.showMostActiveDay);
-    setChecked('toggle-current-weekday', s.showCurrentWeekday);
-    setChecked('toggle-max-commits', s.showMaxCommits);
-    setChecked('toggle-island', s.showIsland);
-    setChecked('toggle-slump-island', s.showSlumpIsland);
-    setChecked('toggle-above-avg-island', s.showAboveAvgIsland);
-    setChecked('toggle-power-day', s.showPowerDay);
-    setChecked('toggle-peak-day', s.showPeakDay);
-    setChecked('toggle-stars', s.showStars);
-    setChecked('toggle-pr', s.showPR);
-    setChecked('toggle-issue-created', s.showIssueCreated);
-    setChecked('toggle-langs', s.showLangs);
-    setChecked('toggle-network', s.showNetwork);
-    setChecked('toggle-best-month', s.showBestMonth);
-    setChecked('toggle-worst-month', s.showWorstMonth);
-    setChecked('toggle-best-week', s.showBestWeek);
-    setChecked('toggle-worst-week', s.showWorstWeek);
-    setChecked('toggle-current-week', s.showCurrentWeek);
-    setChecked('toggle-dominant-weekday', s.showDominantWeekday);
+    const custom = s.customAvatar || {};
+    populateGear('custom-bases', gearBases, custom.base);
+    populateGear('custom-headgear', gearHeads, custom.headgear);
+    populateGear('custom-weapons', gearWeapons, custom.weapon);
+    populateGear('custom-shields', gearShields, custom.shield);
+    populateGear('custom-companions', gearCompanions, custom.companion);
 
     renderSortableList(s.gridOrder || defaultOrder);
     setupSortable();
   };
 
-  const saveSetting = async (key: string, val: boolean | string | string[]) => {
+  const saveSetting = async (key: string, val: any) => {
+    console.log(`GitHeat Popup: Saving setting ${key} = ${val}`);
     await chrome.storage.local.set({ [key]: val });
   };
 
-  document.querySelectorAll('.visibility-toggles input[type="checkbox"]').forEach(el => {
-    el.addEventListener('change', (e) => {
-      const target = e.target as HTMLInputElement;
-      const key = target.id.replace('toggle-', 'show').split('-').map((word, i) => i === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)).join('');
+  document.addEventListener('change', (e) => {
+    const target = e.target as HTMLInputElement;
+    if (target.type === 'checkbox' && toggleKeyMap[target.id]) {
+      const key = toggleKeyMap[target.id];
       saveSetting(key, target.checked);
-    });
+    }
   });
 
   if (themeSelect) {
@@ -199,6 +248,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (startColorInput) startColorInput.addEventListener('change', () => saveSetting('customStart', startColorInput.value));
   if (stopColorInput) stopColorInput.addEventListener('change', () => saveSetting('customStop', stopColorInput.value));
 
+  const saveAvatarBtn = document.getElementById('save-avatar-custom');
+  if (saveAvatarBtn) {
+    saveAvatarBtn.addEventListener('click', async () => {
+      const getRadio = (name: string) => (document.querySelector(`input[name="${name}"]:checked`) as HTMLInputElement)?.value || '';
+      const customAvatar: CustomAvatarSettings = {
+        base: getRadio('custom-bases'),
+        headgear: getRadio('custom-headgear'),
+        weapon: getRadio('custom-weapons'),
+        shield: getRadio('custom-shields'),
+        companion: getRadio('custom-companions')
+      };
+      await saveSetting('customAvatar', customAvatar);
+      saveAvatarBtn.textContent = 'Saved!';
+      setTimeout(() => { saveAvatarBtn.textContent = 'Save Custom Gear'; }, 1500);
+    });
+  }
+
   const resetBtn = document.getElementById('reset-reorder');
   if (resetBtn) {
     resetBtn.addEventListener('click', async () => {
@@ -206,6 +272,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderSortableList(defaultOrder);
     });
   }
+
+  await loadSettings();
 
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -262,7 +330,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         setHtml('most-active-day', `${adv.mostActiveDay} (${adv.mostActiveDayCount} commits)`);
         setVal('max-commits', adv.mostActiveDayCount);
 
-        // Update Level Ranges
         if (thresholds) {
           for (let l = 1; l <= 4; l++) {
             const t = thresholds[l];
@@ -308,8 +375,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             achievementList.appendChild(span);
           });
         }
-
-        loadSettings();
       } else {
         if (error) {
           error.textContent = response?.error || "Could not find contribution graph. Make sure you are on a GitHub profile page.";

@@ -6,8 +6,8 @@ export async function applyVisibility() {
     const settings = await chrome.storage.local.get([
       'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
       'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
-      'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
+      'showMostActiveDay', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showAboveAvgIsland', 
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
     ]) as GitHeatSettings;
 
     const grid = document.getElementById('gh-grid-stats');
@@ -88,7 +88,8 @@ export async function applyVisibility() {
       'gh-issue-created': settings.showIssueCreated,
       'gh-langs': settings.showLangs,
       'gh-network': settings.showNetwork,
-      'gh-pulse-signature': settings.showPulseHash
+      'gh-pulse-signature': settings.showPulseHash,
+      'gh-level': settings.showLevel
     };
 
     Object.entries(toggleMap).forEach(([id, val]) => {

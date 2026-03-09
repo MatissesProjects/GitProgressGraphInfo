@@ -51,14 +51,28 @@ function init() {
 
   chrome.storage.onChanged.addListener(async (changes) => {
     if (!isContextValid()) return;
-    const visibilityKeys = ['showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers', 'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'];
-    if (visibilityKeys.some(key => (changes as any)[key])) {
+    console.log("GitHeat: Storage changed", Object.keys(changes));
+
+    const visibilityKeys = [
+      'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
+      'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
+      'showMostActiveDay', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showAboveAvgIsland', 
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
+    ];
+
+    if (visibilityKeys.some(key => changes[key])) {
+      console.log("GitHeat: Visibility key changed, applying...");
       await applyVisibility();
-      // Trends change might need a re-injection
       if (changes.showTrends) runAnalysis().catch(() => {});
     }
-    if (changes.gridOrder || changes.islandWrapAround || changes.customAvatarSettings) runAnalysis().catch(() => {});
+
+    if (changes.gridOrder || changes.islandWrapAround || changes.customAvatar) {
+      console.log("GitHeat: Structural setting changed, re-analyzing...");
+      runAnalysis().catch(() => {});
+    }
+
     if (changes.theme || changes.customStart || changes.customStop || changes.colorMode) {
+      console.log("GitHeat: Theme setting changed, recoloring...");
       const data = parseContributionGraph();
       if (data) {
         const p = calculatePercentiles(data);
@@ -80,11 +94,13 @@ function init() {
       const socials = parseSocials();
       if (data) {
         const t = calculateThresholds(data), p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(['theme', 'gridOrder', 'islandWrapAround', 'showTrends', 'customStart', 'customStop', 'colorMode', 'showTicker', 'showPulseHash', 'showAvatar', 'showWorstMonth', 'showCurrentWeek', 'showSkillTree']);
+        const s = await chrome.storage.local.get(null);
         const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
         const wrapAround = true; 
         const showTrends = s.showTrends !== false;
-        const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p);
+        
+        // Pass custom avatar settings to analytics
+        const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p, s.customAvatar);
         
         await injectStats(t, p, data, advanced, order, showTrends);
         await extendLegend(t);
