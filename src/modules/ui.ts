@@ -1,4 +1,4 @@
-import { ContributionDay, AdvancedStats } from '../types';
+import { ContributionDay, AdvancedStats, GitHeatSettings, Skill } from '../types';
 import { getCodingClass } from './rpg';
 
 export async function applyVisibility() {
@@ -8,7 +8,7 @@ export async function applyVisibility() {
       'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
       'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
       'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
-    ]);
+    ]) as GitHeatSettings;
 
     const grid = document.getElementById('gh-grid-stats');
     const detailed = document.getElementById('gh-detailed-stats');
@@ -57,13 +57,15 @@ export async function applyVisibility() {
       if (companion) companion.style.display = (settings.showGearCompanion !== false) ? 'block' : 'none';
     }
 
-    const toggleMap: Record<string, any> = {
+    const toggleMap: Record<string, boolean | undefined> = {
       'gh-total': settings.showTotal,
       'gh-today': settings.showTodayCount,
       'gh-streak': settings.showStreak,
       'gh-best-month': settings.showBestMonth,
       'gh-worst-month': settings.showWorstMonth,
       'gh-best-week': settings.showBestWeek,
+      'gh-worst-week': settings.showWorstWeek,
+      'gh-current-week': settings.showCurrentWeek,
       'gh-dominant-weekday': settings.showDominantWeekday,
       'gh-island': settings.showIsland,
       'gh-slump-island': settings.showSlumpIsland,
@@ -82,7 +84,8 @@ export async function applyVisibility() {
       'gh-most-active-day': settings.showMostActiveDay,
       'gh-max-commits': settings.showMaxCommits,
       'gh-stars': settings.showStars,
-      'gh-pr': settings.showPR,      'gh-issue-created': settings.showIssueCreated,
+      'gh-pr': settings.showPR,
+      'gh-issue-created': settings.showIssueCreated,
       'gh-langs': settings.showLangs,
       'gh-network': settings.showNetwork,
       'gh-pulse-signature': settings.showPulseHash
@@ -107,7 +110,7 @@ export async function applyVisibility() {
   }
 }
 
-function renderTickerGraph(data: { date: string; count: number }[], thresholds: any) {
+function renderTickerGraph(data: { date: string; count: number }[], thresholds: Record<number, {min:number; max:number}>) {
   if (data.length < 2) return '';
   const width = 800;
   const height = 80; // Restored height
@@ -180,6 +183,7 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
         <g id="gh-ticker-quadrants">${quadrantLines}${avgLineHtml}</g>
         <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#ticker-line-gradient)" mask="url(#gh-ticker-area-mask)" style="filter: saturate(1.5) brightness(1.2);" />
         <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="var(--color-fg-default, #1f2328)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));" />
+        ${hoverZones}
       </svg>
     </div>
   `;
@@ -187,7 +191,7 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
 
 
 
-export function injectStats(thresholds: any, percentiles: any, data: ContributionDay[], advanced: any, savedOrder: string[] | null = null, showTrends: boolean = true) {
+export function injectStats(thresholds: Record<number, {min:number; max:number}>, percentiles: any, data: ContributionDay[], advanced: AdvancedStats, savedOrder: string[] | null = null, showTrends: boolean = true) {
   console.log("GitHeat: Injecting Stats (v1.3)...");
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
@@ -196,8 +200,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const ytdData = data.filter(d => d.date >= `${now.getFullYear()}-01-01`);
-  const totalContributions = (advanced.isYTD && ytdData.length > 0) ? ytdData.reduce((sum, day) => sum + day.count, 0) : data.reduce((sum, day) => sum + day.count, 0);
 
   const statsDiv = document.createElement('div');
   statsDiv.id = 'git-heat-stats';
@@ -206,7 +208,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
     const defaultOrder = [
-      'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
+      'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-worst-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
       'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
       'gh-island', 'gh-slump-island', 'gh-above-avg-island', 'gh-slump',
       'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
@@ -252,8 +254,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.worstWeekStats.score}</strong>
         ${(showTrends !== false && advanced.worstWeekTrend !== 0) ? `
-          <span class="${advanced.worstWeekTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
-            ${advanced.worstWeekIcon} ${Math.abs(advanced.worstWeekTrend)}%
+          <span class="${advanced.worstWeekTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} font-weight-bold" style="white-space: nowrap; font-size: 11px;">
+            ${advanced.worstWeekIcon}${Math.abs(advanced.worstWeekTrend)}%
           </span>` : ''}
       </div>
     </div>`,
@@ -302,8 +304,8 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
         ${(showTrends !== false && advanced.currentWeekdayTrend !== 0) ? `
-          <span class="${advanced.currentWeekdayTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
-            ${advanced.currentWeekdayIcon} ${Math.abs(advanced.currentWeekdayTrend)}%
+          <span class="${advanced.currentWeekdayTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} font-weight-bold" style="white-space: nowrap; font-size: 11px;">
+            ${advanced.currentWeekdayIcon}${Math.abs(advanced.currentWeekdayTrend)}%
           </span>` : ''}
       </div>
     </div>`,
@@ -398,13 +400,13 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       
       <div class="mt-2">
         ${['Coding', 'Social', 'Consistency'].map(cat => {
-          const catSkills = (advanced.skills || []).filter((s: any) => s.category === cat);
+          const catSkills = (advanced.skills || []).filter((s: Skill) => s.category === cat);
           if (catSkills.length === 0) return '';
           return `
             <div class="mb-1">
               <div class="text-small color-fg-muted" style="font-size: 8px; text-transform: uppercase; margin-bottom: 2px;">${cat}</div>
               <div class="d-flex flex-wrap gap-1">
-                ${catSkills.map((s: any) => `
+                ${catSkills.map((s: Skill) => `
                   <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
                        title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
                        style="display: flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 10px; font-size: 10px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
@@ -423,11 +425,11 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">
       <div style="flex: 1; min-width: 160px;" id="gh-active-repos">
         <span class="color-fg-muted text-small d-block mb-1">Most Active Repos (Commits)</span>
-        <div class="d-flex flex-column gap-1">${advanced.topRepos.slice(0, 3).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div>
+        <div class="d-flex flex-column gap-1">${advanced.topRepos.slice(0, 3).map((r: {name:string; commits:number}) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div>
       </div>
       <div style="flex: 1; min-width: 160px;" id="gh-created-repos">
         <span class="color-fg-muted text-small d-block mb-1">Created Repositories</span>
-        <div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: any) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
+        <div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: {name:string; date:string}) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
       </div>
       <div style="flex: 1; min-width: 160px;" id="gh-achievements">
         <span class="color-fg-muted text-small d-block mb-1">Recent Achievements</span>
@@ -436,15 +438,18 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     </div>
     <div class="mt-2 pt-2 border-top color-border-muted" id="gh-footer">
       <div id="gh-pulse-signature" class="mb-2" style="min-height: 14px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
-        <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block;">
-          SIG: 0x${advanced.pulseHash.split('').map((char: string, i: number) => {
-            const level = parseInt(char, 16);
-            const dateIdx = advanced.ytdDailyCounts.length - 1 - i;
-            const date = advanced.ytdDailyCounts[dateIdx]?.date || '';
-            const count = advanced.ytdDailyCounts[dateIdx]?.count || 0;
-            return `<span class="gh-sig-char" data-level="${level}" data-date="${date}" title="${date}: ${count} commits">${char}</span>`;
-          }).join('')}
-        </span>
+        <div class="d-flex flex-items-center">
+          <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block; flex: 1;">
+            SIG: 0x${advanced.pulseHash.split('').map((char: string, i: number) => {
+              const level = parseInt(char, 16);
+              const dateIdx = advanced.ytdDailyCounts.length - 1 - i;
+              const date = advanced.ytdDailyCounts[dateIdx]?.date || '';
+              const count = advanced.ytdDailyCounts[dateIdx]?.count || 0;
+              return `<span class="gh-sig-char" data-level="${level}" data-date="${date}" title="${date}: ${count} commits">${char}</span>`;
+            }).join('')}
+          </span>
+          <button id="gh-sig-copy-btn" class="gh-sig-copy" title="Copy Signature to clipboard">Copy</button>
+        </div>
       </div>
       <div class="d-flex flex-items-center flex-wrap mt-1">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
@@ -461,6 +466,25 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       </div>
     </div>`;
   container.prepend(statsDiv);
+
+  // Copy Signature logic
+  const copyBtn = document.getElementById('gh-sig-copy-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(`0x${advanced.pulseHash}`);
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('gh-copy-anim');
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+          copyBtn.classList.remove('gh-copy-anim');
+        }, 1500);
+      } catch (err) {
+        console.error('Failed to copy signature:', err);
+      }
+    });
+  }
 
   const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
     dates.forEach(date => {
@@ -480,7 +504,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       const tickerContainer = document.getElementById('gh-ticker-container');
       if (tickerContainer) {
         // The ticker represents advanced.ytdDailyCounts (Jan 1 to today)
-        const ytdIdx = advanced.ytdDailyCounts.findIndex((d: any) => d.date === date);
+        const ytdIdx = advanced.ytdDailyCounts.findIndex((d: {date:string}) => d.date === date);
         if (ytdIdx !== -1) {
           const path = tickerContainer.querySelector('.gh-ticker-path') as SVGPathElement;
           if (path) {
@@ -488,7 +512,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
             const svg = tickerContainer.querySelector('svg');
             const width = 800;
             const height = 80;
-            const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: any) => d.count), 1);
+            const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: {count:number}) => d.count), 1);
             const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
             const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
             
@@ -508,12 +532,12 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
 
   const highlightGranularLevel = (level: number) => {
     // 1. Highlight Graph Days
-    document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"][data-date]`).forEach((day: any) => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"][data-date]`).forEach((day: Element) => {
       const date = day.getAttribute('data-date');
       if (date && date <= todayStr) {
-        day.classList.add('gh-highlight');
-        day.style.outline = '';
-        day.style.border = '';
+        (day as HTMLElement).classList.add('gh-highlight');
+        (day as HTMLElement).style.outline = '';
+        (day as HTMLElement).style.border = '';
         
         // 2. Highlight SIG
         const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
@@ -522,12 +546,12 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         // 3. Highlight Ticker SVG points
         const tickerContainer = document.getElementById('gh-ticker-container');
         if (tickerContainer) {
-          const ytdIdx = advanced.ytdDailyCounts.findIndex((d: any) => d.date === date);
+          const ytdIdx = advanced.ytdDailyCounts.findIndex((d: {date:string}) => d.date === date);
           if (ytdIdx !== -1) {
              const svg = tickerContainer.querySelector('svg');
              const width = 800;
              const height = 80;
-             const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: any) => d.count), 1);
+             const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: {count:number}) => d.count), 1);
              const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
              const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
              
@@ -544,7 +568,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
       }
     });
     // Highlight SIG characters by level too
-    document.querySelectorAll(`.gh-sig-char[data-level="${level}"]`).forEach((char: any) => {
+    document.querySelectorAll(`.gh-sig-char[data-level="${level}"]`).forEach((char: Element) => {
       char.classList.add('highlighting');
     });
     // 3. Highlight Legend Square
@@ -553,13 +577,13 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   };
 
   const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string, className: string = 'gh-highlight') => {
-    document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: any) => {
+    document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: Element) => {
       const date = day.getAttribute('data-date');
       if (!date || (startDate && date < startDate) || (endDate && date > endDate)) return;
       if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { 
-        day.classList.add(className); 
-        day.style.outline = ''; 
-        day.style.border = ''; 
+        (day as HTMLElement).classList.add(className); 
+        (day as HTMLElement).style.outline = ''; 
+        (day as HTMLElement).style.border = ''; 
 
         // 2. Highlight SIG
         const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
@@ -568,12 +592,12 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         // 3. Highlight Ticker SVG points
         const tickerContainer = document.getElementById('gh-ticker-container');
         if (tickerContainer) {
-          const ytdIdx = advanced.ytdDailyCounts.findIndex((d: any) => d.date === date);
+          const ytdIdx = advanced.ytdDailyCounts.findIndex((d: {date:string}) => d.date === date);
           if (ytdIdx !== -1) {
              const svg = tickerContainer.querySelector('svg');
              const width = 800;
              const height = 80;
-             const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: any) => d.count), 1);
+             const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: {count:number}) => d.count), 1);
              const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
              const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
              
@@ -592,12 +616,12 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   };
 
   const clearHighlights = () => {
-    document.querySelectorAll('.gh-highlight, .gh-highlight-special, .gh-highlight-sad').forEach((el: any) => {
+    document.querySelectorAll('.gh-highlight, .gh-highlight-special, .gh-highlight-sad').forEach((el: Element) => {
       el.classList.remove('gh-highlight', 'gh-highlight-special', 'gh-highlight-sad');
-      el.style.outline = 'none';
-      el.style.border = 'none';
+      (el as HTMLElement).style.outline = 'none';
+      (el as HTMLElement).style.border = 'none';
     });
-    document.querySelectorAll('.square-legend, .gh-sig-char').forEach((el: any) => {
+    document.querySelectorAll('.square-legend, .gh-sig-char').forEach((el: Element) => {
       el.classList.remove('highlighting');
     });
     document.querySelectorAll('.gh-ticker-highlight').forEach(el => el.remove());
@@ -620,7 +644,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   });
 
   // Add hover for SIG characters
-  statsDiv.querySelectorAll('.gh-sig-char').forEach((char: any) => {
+  statsDiv.querySelectorAll('.gh-sig-char').forEach((char: Element) => {
     char.addEventListener('mouseenter', () => {
       const date = char.getAttribute('data-date');
       const level = parseInt(char.getAttribute('data-level') || '0', 10);
@@ -643,11 +667,11 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     if (!range) return;
 
     // 1. Highlight Graph Days
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: any) => {
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: Element) => {
       const date = day.getAttribute('data-date');
-      day.classList.add('gh-highlight');
-      day.style.outline = '';
-      day.style.border = '';
+      (day as HTMLElement).classList.add('gh-highlight');
+      (day as HTMLElement).style.outline = '';
+      (day as HTMLElement).style.border = '';
 
       // 2. Highlight SIG
       if (date) {
@@ -659,13 +683,13 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
     // 2. Highlight SIG characters that fall into this threshold's commit range
     // We do this by finding which granular levels (1-15) map to this standard level (1-4)
     const granularLevelsForThisThreshold = new Set<number>();
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-granular-level]`).forEach((day: any) => {
-      const gLevel = parseInt(day.getAttribute('data-granular-level'), 10);
+    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-granular-level]`).forEach((day: Element) => {
+      const gLevel = parseInt(day.getAttribute('data-granular-level') || '0', 10);
       if (!isNaN(gLevel) && gLevel > 0) granularLevelsForThisThreshold.add(gLevel);
     });
 
     granularLevelsForThisThreshold.forEach(gLevel => {
-      document.querySelectorAll(`.gh-sig-char[data-level="${gLevel}"]`).forEach((char: any) => {
+      document.querySelectorAll(`.gh-sig-char[data-level="${gLevel}"]`).forEach((char: Element) => {
         char.classList.add('highlighting');
       });
     });
@@ -674,7 +698,6 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   const startOfYear = `${advanced.targetYear}-01-01`;
   const endOfTargetPeriod = advanced.targetYear === now.getFullYear() ? todayStr : `${advanced.targetYear}-12-31`;
 
-  addHover('#gh-today', () => highlightDates([todayStr]));
   addHover('#gh-streak', () => highlightDates([...new Set([...advanced.longestStreakDates, ...advanced.currentStreakDates])]));
   addHover('#gh-best-month', () => highlightDates(advanced.bestMonthDates));
   addHover('#gh-worst-month', () => highlightDates(advanced.worstMonthDates));
@@ -696,9 +719,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   
   // Bidirectional highlighting: Hover graph day -> Highlight SIG, Ticker, and Legend
-  document.querySelectorAll('.ContributionCalendar-day').forEach((day: any) => {
-    if (day._githeatListener) return;
-    day._githeatListener = true;
+  document.querySelectorAll('.ContributionCalendar-day').forEach((day: Element) => {
     day.addEventListener('mouseenter', () => {
       const date = day.getAttribute('data-date');
       const level = day.getAttribute('data-granular-level') || day.getAttribute('data-level');
@@ -727,7 +748,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-thresh-4', () => highlightThreshold(4));
 
   // Add hover for Ticker Zones
-  statsDiv.querySelectorAll('.gh-ticker-hover-zone').forEach((zone: any) => {
+  statsDiv.querySelectorAll('.gh-ticker-hover-zone').forEach((zone: Element) => {
     zone.addEventListener('mouseenter', () => {
       const date = zone.getAttribute('data-date');
       if (date) {
@@ -740,11 +761,11 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   });
 }
 
-export async function extendLegend(thresholds: any) {
+export async function extendLegend(thresholds: Record<number, {min:number; max:number}>) {
   const legend = document.querySelector('.ContributionCalendar-footer');
   if (!legend) return;
   
-  const settings = await chrome.storage.local.get(['showLegendNumbers']);
+  const settings = await chrome.storage.local.get(['showLegendNumbers']) as GitHeatSettings;
   const show = settings.showLegendNumbers !== false;
 
   legend.querySelectorAll('.git-heat-legend-label').forEach(el => el.remove());

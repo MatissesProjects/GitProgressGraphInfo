@@ -12,14 +12,14 @@ export interface PinnedProject {
   languageColor: string;
 }
 
-export interface RepoActivity {
-  name: string;
-  commits: number;
-}
-
-export interface CreatedRepo {
-  name: string;
-  language: string;
+export interface TimelineActivity {
+  topRepos: { name: string; commits: number }[];
+  issuesOpened: number;
+  pullRequests: number;
+  mergedPullRequests: number;
+  pullRequestReviews: number;
+  createdRepos: number;
+  createdRepoList: { name: string; date: string }[];
 }
 
 export interface SocialStats {
@@ -27,64 +27,147 @@ export interface SocialStats {
   organizations: number;
 }
 
-export interface TodayActions {
-  commits: number;
-  repos: number;
-  issues: number;
-  prs: number;
-  reviews: number;
+export interface Skill {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  requirement: string;
+  category: 'Coding' | 'Social' | 'Consistency';
+  unlocked: boolean;
 }
 
 export interface AvatarData {
   base: string;
+  headgear: string;
   weapon: string;
   shield: string;
-  headgear: string;
   companion: string;
-  full: string;
   description: string;
 }
 
-export interface TimelineActivity {
-  topRepos: RepoActivity[];
-  createdRepos: number;
-  createdRepoList: CreatedRepo[];
+export interface StatScore {
+  score: number;
+  count: number;
+  consistency: string;
+  streak: number;
+}
+
+export interface TooltipStat {
+  count: number;
+  active: number;
+  total: number;
+}
+
+export interface AdvancedStats {
+  isYTD: boolean;
+  targetYear: number;
+  total: number;
+  streak: number;
+  maxStreak: number;
+  velocity: string;
+  consistency: string;
+  weekendCommits: number;
+  weekendScore: string;
+  slumpStreak: number;
+  bestDay: string;
+  bestDayCount: number;
+  bestDayIndex: number;
+  worstDay: string;
+  worstDayCount: number;
+  worstDayIndex: number;
+  powerDay: string;
+  powerDayAvg: string;
+  powerDayIndex: number;
+  peakWeekday: string;
+  peakWeekdayCount: number;
+  peakWeekdayIndex: number;
+  mostActiveDay: string;
+  mostActiveDayCount: number;
+  mostActiveDayWeekday: number;
+  longestSlump: number;
+  longestSlumpDates: string[];
+  biggestIslandSize: number;
+  biggestIslandDates: string[];
+  biggestSlumpIslandSize: number;
+  biggestSlumpIslandDates: string[];
+  biggestAboveAvgIslandSize: number;
+  biggestAboveAvgIslandDates: string[];
+  currentStreak: number;
+  currentStreakDates: string[];
+  longestStreak: number;
+  longestStreakDates: string[];
+  topRepos: { name: string; commits: number }[];
   issuesOpened: number;
   pullRequests: number;
-  pullRequestReviews: number;
   mergedPullRequests: number;
-  todayActions: TodayActions;
-}
-
-export interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  unlocked: boolean;
-  requirement: string;
-  category: 'Coding' | 'Social' | 'Consistency';
-}
-
-export interface CustomAvatarItem {
-  min: number;
-  val: string;
-  label: string;
-}
-
-export interface CustomAvatarSettings {
-  bases: CustomAvatarItem[];
-  weapons: CustomAvatarItem[];
-  shields: CustomAvatarItem[];
-  headgear: CustomAvatarItem[];
-  companions: CustomAvatarItem[];
+  pullRequestReviews: number;
+  createdRepos: number;
+  createdRepoList: { name: string; date: string }[];
+  totalStars: number;
+  totalForks: number;
+  socials: SocialStats;
+  topLangs: string[];
+  bestMonthName: string;
+  bestMonthDates: string[];
+  bestMonthStats: StatScore;
+  worstMonthName: string;
+  worstMonthDates: string[];
+  worstMonthStats: StatScore;
+  bestWeekName: string;
+  bestWeekDates: string[];
+  bestWeekStats: StatScore;
+  worstWeekName: string;
+  worstWeekDates: string[];
+  worstWeekStats: StatScore;
+  currentWeekStats: StatScore;
+  currentWeekDates: string[];
+  dominantWeekday: string;
+  dominantWeekdayWins: number;
+  bestMonthTrend: number;
+  bestMonthIcon: string;
+  worstMonthTrend: number;
+  worstMonthIcon: string;
+  bestWeekTrend: number;
+  bestWeekIcon: string;
+  worstWeekTrend: number;
+  worstWeekIcon: string;
+  avgMonthScore: number;
+  avgWeekScore: number;
+  velocityTrend: number;
+  velocityIcon: string;
+  acceleration: number;
+  accelerationIcon: string;
+  currentWeekday: string;
+  currentWeekdayCount: number;
+  currentWeekdayIndex: number;
+  currentWeekdayTrend: number;
+  currentWeekdayIcon: string;
+  bestWeekdayTrend: number;
+  bestWeekdayIcon: string;
+  level: number;
+  levelTitle: string;
+  totalXP: number;
+  xpToNext: number;
+  levelProgressXP: number;
+  levelTotalXP: number;
+  progressPercent: number;
+  todayCombo: number;
+  todayComboMath: string;
+  todayComboReason: string;
+  persona: string;
+  skills: Skill[];
+  avatar: AvatarData;
+  pulseHash: string;
+  ytdDailyCounts: { date: string; count: number }[];
+  statsForTooltips: {
+    velocity: TooltipStat;
+    consistency: TooltipStat;
+    weekend: TooltipStat;
+  };
 }
 
 export interface GitHeatSettings {
-  theme?: string;
-  customStart?: string;
-  customStop?: string;
-  colorMode?: 'rgb' | 'hsl' | 'hsl-far';
   showGrid?: boolean;
   showActiveRepos?: boolean;
   showCreatedRepos?: boolean;
@@ -92,7 +175,6 @@ export interface GitHeatSettings {
   showPersona?: boolean;
   showFooter?: boolean;
   showLegendNumbers?: boolean;
-  islandWrapAround?: boolean;
   showTotal?: boolean;
   showTodayCount?: boolean;
   showStreak?: boolean;
@@ -104,14 +186,14 @@ export interface GitHeatSettings {
   showSlump?: boolean;
   showBestDay?: boolean;
   showWorstDay?: boolean;
-  showCurrentWeekday?: boolean;
-  showPowerDay?: boolean;
-  showPeakDay?: boolean;
   showMostActiveDay?: boolean;
+  showCurrentWeekday?: boolean;
   showMaxCommits?: boolean;
   showIsland?: boolean;
   showSlumpIsland?: boolean;
   showAboveAvgIsland?: boolean;
+  showPowerDay?: boolean;
+  showPeakDay?: boolean;
   showStars?: boolean;
   showPR?: boolean;
   showIssueCreated?: boolean;
@@ -124,8 +206,8 @@ export interface GitHeatSettings {
   showCurrentWeek?: boolean;
   showLevel?: boolean;
   showDominantWeekday?: boolean;
-  showPulseHash?: boolean;
   showTrends?: boolean;
+  showPulseHash?: boolean;
   showTicker?: boolean;
   showAvatar?: boolean;
   showGearHead?: boolean;
@@ -135,59 +217,17 @@ export interface GitHeatSettings {
   showCombo?: boolean;
   showXPBar?: boolean;
   showSkillTree?: boolean;
+  theme?: string;
+  customStart?: string;
+  customStop?: string;
+  colorMode?: 'rgb' | 'hsl' | 'lab';
   gridOrder?: string[];
-  customAvatarSettings?: CustomAvatarSettings;
 }
 
-export interface AdvancedStats {
-  total: number;
-  streak: number;
-  maxStreak: number;
-  velocity: number;
-  consistency: number;
-  weekendCommits: number;
-  slumpStreak: number;
-  bestDay: string;
-  bestDayCount: number;
-  worstDay: string;
-  worstDayCount: number;
-  mostActiveDay: string;
-  maxCommits: number;
-  island: { count: number; start: string; end: string } | null;
-  slumpIsland: { count: number; start: string; end: string } | null;
-  biggestAboveAvgIslandSize?: number;
-  biggestAboveAvgIslandDates?: string[];
-  powerDays: number;
-  peakDays: number;
-  starsTotal: number;
-  prTotal: number;
-  issueTotal: number;
-  topLangs: { name: string; count: number }[];
-  networkScore: number;
-  bestMonth: string;
-  bestMonthCount: number;
-  bestWeek: string;
-  bestWeekCount: number;
-  worstWeekName: string;
-  worstWeekStats: { score: number; count: number; consistency: string; streak: number };
-  worstWeekDates: string[];
-  worstWeekTrend: number;
-  worstWeekIcon: string;
-  avgWeekScore: number;
-  belowVelocityDates: string[];
-  aboveVelocityDates: string[];
-  velocityTrend: number;
-  velocityIcon: string;
-  acceleration: number;
-  accelerationIcon: string;
-  currentWeekdayTrend: number;
-  currentWeekdayIcon: string;
-  bestWeekdayTrend: number;
-  bestWeekdayIcon: string;
-  level: number;
-  xp: number;
-  xpToNext: number;
-  combo: { title: string; multiplier: number; points: number; bonusReasons: string[] };
-  persona: string;
-  skills: Skill[];
+export interface CustomAvatarSettings {
+  base?: string;
+  headgear?: string;
+  weapon?: string;
+  shield?: string;
+  companion?: string;
 }
