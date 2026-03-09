@@ -1,4 +1,4 @@
-import { ContributionDay, PinnedProject, TimelineActivity, SocialStats } from '../types';
+import { ContributionDay, PinnedProject, TimelineActivity, SocialStats, AdvancedStats, StatScore, TooltipStat } from '../types';
 import { calculateRPGStats, getPersona } from './rpg';
 
 export function calculateThresholds(data: ContributionDay[]) {
@@ -24,7 +24,6 @@ export function calculatePercentiles(data: ContributionDay[]) {
   const counts = data.filter(d => d.count > 0).map(d => d.count).sort((a, b) => a - b);
   if (counts.length === 0) return {};
 
-  // Expand from 11 levels to 15 levels for a smoother gradient
   const markers = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 98, 99];
   const percentiles: Record<number, number> = {};
   
@@ -74,11 +73,19 @@ export function findIsland(targetData: ContributionDay[], thresholdFn: (d: Contr
   return biggest;
 }
 
-export async function calculateAdvancedStats(data: ContributionDay[], pinned: PinnedProject[] = [], timeline: TimelineActivity, achievements: string[] = [], socials: SocialStats, wrapAround: boolean = true, percentiles?: Record<number, number>) {
+export async function calculateAdvancedStats(
+  data: ContributionDay[], 
+  pinned: PinnedProject[] = [], 
+  timeline: TimelineActivity, 
+  achievements: string[] = [], 
+  socials: SocialStats, 
+  wrapAround: boolean = true, 
+  percentiles?: Record<number, number>,
+  customAvatarSettings?: any
+): Promise<AdvancedStats> {
   const now = new Date();
   const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));
   
-  // Detect year from data
   const lastDayInData = sortedData[sortedData.length - 1];
   const yearFromData = new Date(lastDayInData.date + 'T00:00:00').getFullYear();
   const isCurrentYear = yearFromData === now.getFullYear();
@@ -90,7 +97,6 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
   const pastAndPresentData = sortedData.filter(d => d.date <= periodEndStr);
   const dateMap = new Map(data.map(d => [d.date, d]));
 
-  // Ensure we have percentiles for the signature calculation
   const p = percentiles && Object.keys(percentiles).length > 0 ? percentiles : calculatePercentiles(pastAndPresentData);
   const pMarkers = [10, 20, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 98, 99];
   
@@ -104,20 +110,19 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     return 1;
   };
 
-  // Calculate Pulse Hash (Hex signature from Jan 1st of that year)
   const ytdDays = pastAndPresentData.filter(d => d.date >= ytdStartStr);
   const pulseHash = ytdDays.map(d => getLevel(d.count).toString(16).toUpperCase()).reverse().join('');
 
   const base = calculateBaseStats(pastAndPresentData, ytdStartStr, periodEndStr);
   
   const ytdTotalContributions = base.ytdWeekendContributions + base.ytdWeekdayContributions;
-  let weekendScore = 0, weekendVolumeShare = 0, velocity = "0", consistency = "0";
+  let weekendScore = "0", velocity = "0", consistency = "0", weekendVolumeShare = 0;
   
   if (base.ytdTotalDays > 0) {
-    weekendScore = base.ytdTotalWeekendDays > 0 ? Math.round((base.ytdActiveWeekendDays / base.ytdTotalWeekendDays) * 100) : 0;
-    weekendVolumeShare = ytdTotalContributions > 0 ? (base.ytdWeekendContributions / ytdTotalContributions) : 0;
+    weekendScore = base.ytdTotalWeekendDays > 0 ? Math.round((base.ytdActiveWeekendDays / base.ytdTotalWeekendDays) * 100).toString() : "0";
     velocity = base.ytdActiveDays > 0 ? (ytdTotalContributions / base.ytdActiveDays).toFixed(1) : "0";
     consistency = ((base.ytdActiveDays / base.ytdTotalDays) * 100).toFixed(1);
+    weekendVolumeShare = ytdTotalContributions > 0 ? (base.ytdWeekendContributions / ytdTotalContributions) : 0;
   } else {
     const totalVol = pastAndPresentData.reduce((sum, d) => sum + d.count, 0);
     const activeDaysCount = pastAndPresentData.filter(d => d.count > 0).length;
@@ -126,11 +131,11 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
       return day === 0 || day === 6;
     });
     const activeWeekendDaysCount = weekendDaysData.filter(d => d.count > 0).length;
-    weekendScore = weekendDaysData.length > 0 ? Math.round((activeWeekendDaysCount / weekendDaysData.length) * 100) : 0;
-    const totalWeekendVol = weekendDaysData.reduce((sum, d) => sum + d.count, 0);
-    weekendVolumeShare = totalVol > 0 ? (totalWeekendVol / totalVol) : 0;
+    weekendScore = weekendDaysData.length > 0 ? Math.round((activeWeekendDaysCount / weekendDaysData.length) * 100).toString() : "0";
     velocity = activeDaysCount > 0 ? (totalVol / activeDaysCount).toFixed(1) : "0";
     consistency = ((activeDaysCount / pastAndPresentData.length) * 100).toFixed(1);
+    const totalWeekendVol = weekendDaysData.reduce((sum, d) => sum + d.count, 0);
+    weekendVolumeShare = totalVol > 0 ? (totalWeekendVol / totalVol) : 0;
   }
 
   const totalStars = pinned.reduce((sum, p) => sum + p.stars, 0);
@@ -138,8 +143,6 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
   const langFreq: Record<string, number> = {};
   pinned.forEach(p => { if (p.language !== "Unknown") langFreq[p.language] = (langFreq[p.language] || 0) + 1; });
   const topLangs = Object.entries(langFreq).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]);
-
-  const persona = getPersona(weekendVolumeShare, consistency, velocity, weekendScore, totalStars);
 
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   let bestDayIndex = 0, maxWeekdayCount = -1, worstDayIndex = 0, minWeekdayCount = Infinity;
@@ -181,8 +184,6 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     if (weekdayHighActivityCounts[i] > maxHighFreq) { maxHighFreq = weekdayHighActivityCounts[i]; peakWeekdayIndex = i; }
   }
 
-  const rpg = await calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars, socials, pinned, base.longestStreak);
-
   // Velocity & Acceleration
   const sorted = [...pastAndPresentData].sort((a, b) => b.date.localeCompare(a.date));
   let velocityTrend = 0, velocityIcon = '';
@@ -192,41 +193,30 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
   if (sorted.length >= 14 && overallVel > 0) {
     const recent7 = sorted.slice(0, 7);
     const prev7 = sorted.slice(7, 14);
-    
     const rAct = recent7.filter(d => d.count > 0);
     const rVel = rAct.length > 0 ? recent7.reduce((s, d) => s + d.count, 0) / rAct.length : 0;
-    
     const pAct = prev7.filter(d => d.count > 0);
     const pVel = pAct.length > 0 ? prev7.reduce((s, d) => s + d.count, 0) / pAct.length : 0;
-    
-    // Velocity Trend (Last 7 days vs Overall YTD Velocity)
     velocityTrend = Math.round(((rVel - overallVel) / overallVel) * 100);
     velocityIcon = velocityTrend > 0 ? '▲' : (velocityTrend < 0 ? '▼' : '');
-
-    // Acceleration (Recent 7-day velocity vs Previous 7-day velocity)
     if (pVel > 0) {
       acceleration = Math.round(((rVel - pVel) / pVel) * 100);
       accelerationIcon = acceleration > 0 ? '▲' : (acceleration < 0 ? '▼' : '');
     } else if (rVel > 0) {
-      acceleration = 100;
-      accelerationIcon = '▲';
+      acceleration = 100; accelerationIcon = '▲';
     }
   } else if (sorted.length >= 7 && overallVel > 0) {
     const cw = sorted.slice(0, 7);
     const cAct = cw.filter(d => d.count > 0);
     const cVel = cAct.length > 0 ? cw.reduce((s, d) => s + d.count, 0) / cAct.length : 0;
-    
     velocityTrend = Math.round(((cVel - overallVel) / overallVel) * 100);
     velocityIcon = velocityTrend > 0 ? '▲' : (velocityTrend < 0 ? '▼' : '');
   }
 
   const targetDaysForVelocity = base.ytdTotalDays > 0 ? pastAndPresentData.filter(d => d.date >= ytdStartStr) : pastAndPresentData;
-  
   const aboveVelocityDates = targetDaysForVelocity.filter(d => d.count >= avgVel && d.count > 0).map(d => d.date);
-  const belowVelocityDates = targetDaysForVelocity.filter(d => d.count < avgVel).map(d => d.date);
+  const belowVelocityDates = targetDaysForVelocity.filter(d => d.count > 0 && d.count < avgVel).map(d => d.date);
 
-  // Weekday Trends
-  // Current Weekday Trend (Today's count vs avg for this weekday)
   const currentWeekdayIdx = isCurrentYear ? now.getDay() : -1;
   let currentWeekdayTrend = 0, currentWeekdayIcon = '';
   if (currentWeekdayIdx >= 0) {
@@ -239,8 +229,7 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     }
   }
 
-  // Best Weekday Trend (Best day's total vs average weekday total)
-  const totalCommits = base.weekdayCounts[0] + base.weekdayCounts[1] + base.weekdayCounts[2] + base.weekdayCounts[3] + base.weekdayCounts[4] + base.weekdayCounts[5] + base.weekdayCounts[6];
+  const totalCommits = Object.values(base.weekdayCounts).reduce((a, b) => a + b, 0);
   const overallWeekdayAvg = totalCommits / 7;
   let bestWeekdayTrend = 0, bestWeekdayIcon = '';
   if (overallWeekdayAvg > 0) {
@@ -248,27 +237,22 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     bestWeekdayIcon = bestWeekdayTrend > 0 ? '▲' : (bestWeekdayTrend < 0 ? '▼' : '');
   }
 
-  const statsForTooltips: any = {
-    consistency: { active: (base.ytdTotalDays > 0 ? base.ytdActiveDays : base.activeDays), total: (base.ytdTotalDays > 0 ? base.ytdTotalDays : pastAndPresentData.length) },
-    velocity: { count: (base.ytdTotalDays > 0 ? ytdTotalContributions : pastAndPresentData.reduce((sum, d) => sum + d.count, 0)), active: (base.ytdTotalDays > 0 ? base.ytdActiveDays : base.activeDays) },
-    slumpDates: base.longestSlumpDates
+  const statsForTooltips: { velocity: TooltipStat; consistency: TooltipStat; weekend: TooltipStat } = {
+    consistency: { count: base.ytdActiveDays, active: base.ytdActiveDays, total: (base.ytdTotalDays > 0 ? base.ytdTotalDays : pastAndPresentData.length) },
+    velocity: { count: ytdTotalContributions, active: base.ytdActiveDays, total: (base.ytdTotalDays > 0 ? base.ytdTotalDays : pastAndPresentData.length) },
+    weekend: { count: base.ytdWeekendContributions, active: base.ytdActiveWeekendDays, total: base.ytdTotalWeekendDays }
   };
-  if (base.ytdTotalDays > 0) {
-    statsForTooltips.weekend = { active: base.ytdActiveWeekendDays, total: base.ytdTotalWeekendDays };
-  } else {
-    const weekendDaysData = pastAndPresentData.filter(d => {
-      const day = new Date(d.date + 'T00:00:00').getDay();
-      return day === 0 || day === 6;
-    });
-    statsForTooltips.weekend = { active: weekendDaysData.filter(d => d.count > 0).length, total: weekendDaysData.length };
-  }
 
-  return {
+  const rpg = await calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars, socials, pinned, base.longestStreak, customAvatarSettings);
+  const persona = getPersona(weekendVolumeShare, consistency, velocity, parseInt(weekendScore), totalStars);
+
+  const advanced: AdvancedStats = {
     ...base, ...timeBased, ...rpg,
-    weekendScore, persona, velocity, consistency,
+    isYTD: true, targetYear: yearFromData, total: ytdTotalContributions,
+    weekendScore, velocity, consistency, persona,
     bestDay: daysOfWeek[bestDayIndex], bestDayIndex, bestDayCount: maxWeekdayCount,
     worstDay: daysOfWeek[worstDayIndex], worstDayIndex, worstDayCount: minWeekdayCount,
-    currentWeekday: daysOfWeek[isCurrentYear ? now.getDay() : 0], currentWeekdayIndex: isCurrentYear ? now.getDay() : 0, currentWeekdayCount: base.weekdayCounts[isCurrentYear ? now.getDay() : 0],
+    currentWeekday: daysOfWeek[isCurrentYear ? now.getDay() : 0], currentWeekdayIndex: isCurrentYear ? now.getDay() : 0, currentWeekdayCount: todayCount,
     todayCount, mostActiveDay, mostActiveDayCount, mostActiveDayWeekday,
     powerDay: daysOfWeek[powerDayIndex], powerDayIndex, powerDayAvg: maxAvg.toFixed(1),
     peakWeekday: daysOfWeek[peakWeekdayIndex], peakWeekdayIndex, peakWeekdayCount: maxHighFreq,
@@ -277,19 +261,17 @@ export async function calculateAdvancedStats(data: ContributionDay[], pinned: Pi
     biggestAboveAvgIslandSize: biggestAboveAvgIslandDates.length, biggestAboveAvgIslandDates,
     aboveVelocityDates, belowVelocityDates,
     statsForTooltips,
-    velocityTrend, velocityIcon,
-    acceleration, accelerationIcon,
-    currentWeekdayTrend, currentWeekdayIcon,
-    bestWeekdayTrend, bestWeekdayIcon,
-    isYTD: true, // We now always treat the view as YTD for the chosen year
-    targetYear: yearFromData,
+    velocityTrend, velocityIcon, acceleration, accelerationIcon,
+    currentWeekdayTrend, currentWeekdayIcon, bestWeekdayTrend, bestWeekdayIcon,
     totalStars, totalForks, topLangs,
     topRepos: timeline.topRepos.slice(0, 3), createdRepos: timeline.createdRepos, createdRepoList: timeline.createdRepoList,
     issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,
     achievements: achievements.slice(0, 4), socials,
-    pulseHash,
-    ytdDailyCounts: ytdDays.map(d => ({ date: d.date, count: d.count }))
+    pulseHash, ytdDailyCounts: ytdDays.map(d => ({ date: d.date, count: d.count })),
+    skills: [] // Placeholder for now
   };
+
+  return advanced;
 }
 
 export function calculateBaseStats(pastAndPresentData: ContributionDay[], ytdStartStr: string, periodEndStr: string) {
@@ -348,7 +330,7 @@ export function calculateBaseStats(pastAndPresentData: ContributionDay[], ytdSta
 }
 
 export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
-  const monthData: Record<string, any> = {};
+  const monthData: Record<string, { count: number; activeDays: number; totalDays: number; maxStreak: number; tempStreak: number; dates: string[] }> = {};
   pastAndPresentData.forEach(day => {
     const monthKey = day.date.substring(0, 7);
     if (!monthData[monthKey]) monthData[monthKey] = { count: 0, activeDays: 0, totalDays: 0, maxStreak: 0, tempStreak: 0, dates: [] };
@@ -360,8 +342,8 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     } else m.tempStreak = 0;
   });
 
-  let bestMonthName = "N/A", bestMonthScore = -1, bestMonthDates: string[] = [], bestMonthStats = { score: 0, count: 0, consistency: "0", streak: 0 };
-  let worstMonthName = "N/A", worstMonthScore = Infinity, worstMonthDates: string[] = [], worstMonthStats = { score: 0, count: 0, consistency: "0", streak: 0 };
+  let bestMonthName = "N/A", bestMonthScore = -1, bestMonthDates: string[] = [], bestMonthStats: StatScore = { score: 0, count: 0, consistency: "0", streak: 0 };
+  let worstMonthName = "N/A", worstMonthScore = Infinity, worstMonthDates: string[] = [], worstMonthStats: StatScore = { score: 0, count: 0, consistency: "0", streak: 0 };
   const allMonthScores: number[] = [];
   
   const monthEntries = Object.entries(monthData);
@@ -376,13 +358,9 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
       bestMonthDates = data.dates;
       bestMonthStats = { score, count: data.count, consistency: (consistency * 100).toFixed(1), streak: data.maxStreak };
     }
-    
-    if (score < worstMonthScore && score >= 0) {
-      worstMonthScore = score;
-    }
+    if (score < worstMonthScore && score >= 0) { worstMonthScore = score; }
   });
 
-  // Collect all months that match the worst score
   const worstMonths = monthEntries.filter(([month, data]) => {
     const consistency = data.activeDays / data.totalDays;
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
@@ -409,14 +387,13 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     bestMonthTrend = Math.round(((bestMonthScore - avgMonthScore) / avgMonthScore) * 100);
     bestMonthIcon = bestMonthTrend > 0 ? '▲' : (bestMonthTrend < 0 ? '▼' : '');
   }
-
   let worstMonthTrend = 0, worstMonthIcon = '';
   if (avgMonthScore > 0) {
     worstMonthTrend = Math.round(((worstMonthStats.score - avgMonthScore) / avgMonthScore) * 100);
     worstMonthIcon = worstMonthTrend > 0 ? '▲' : (worstMonthTrend < 0 ? '▼' : '');
   }
 
-  const weekData: Record<string, any> = {};
+  const weekData: Record<string, { count: number; activeDays: number; maxStreak: number; tempStreak: number; dates: string[]; dayCounts: Record<number, number> }> = {};
   pastAndPresentData.forEach(day => {
     const date = new Date(day.date + 'T00:00:00');
     const dayOfWeek = date.getDay();
@@ -434,36 +411,28 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   });
 
   const weeklyWinners: number[] = [];
-  Object.values(weekData).forEach((w: any) => {
+  Object.values(weekData).forEach((w) => {
     let max = -1, winner = -1;
-    for (let i = 0; i < 7; i++) {
-      if (w.dayCounts[i] > max) { max = w.dayCounts[i]; winner = i; }
-    }
+    for (let i = 0; i < 7; i++) { if (w.dayCounts[i] > max) { max = w.dayCounts[i]; winner = i; } }
     if (max > 0) weeklyWinners.push(winner);
   });
 
   const winnerCounts: Record<number, number> = {};
   weeklyWinners.forEach(w => winnerCounts[w] = (winnerCounts[w] || 0) + 1);
-  
   let dominantWeekdayIndex = -1, maxWins = 0;
-  Object.entries(winnerCounts).forEach(([idx, wins]) => {
-    if (wins > maxWins) { maxWins = wins; dominantWeekdayIndex = parseInt(idx); }
-  });
-
+  Object.entries(winnerCounts).forEach(([idx, wins]) => { if (wins > maxWins) { maxWins = wins; dominantWeekdayIndex = parseInt(idx); } });
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const dominantWeekday = dominantWeekdayIndex >= 0 ? daysOfWeek[dominantWeekdayIndex] : "N/A";
 
-  let bestWeekName = "N/A", bestWeekScore = -1, bestWeekDates: string[] = [], bestWeekStats = { score: 0, count: 0, consistency: "0", streak: 0 };
-  let worstWeekName = "N/A", worstWeekScore = Infinity, worstWeekDates: string[] = [], worstWeekStats = { score: 0, count: 0, consistency: "0", streak: 0 };
+  let bestWeekName = "N/A", bestWeekScore = -1, bestWeekDates: string[] = [], bestWeekStats: StatScore = { score: 0, count: 0, consistency: "0", streak: 0 };
+  let worstWeekName = "N/A", worstWeekScore = Infinity, worstWeekDates: string[] = [], worstWeekStats: StatScore = { score: 0, count: 0, consistency: "0", streak: 0 };
   const allWeekScores: number[] = [];
-  
   const weekEntries = Object.entries(weekData);
   weekEntries.forEach(([weekStart, data]) => {
     const elapsed = data.dates.length;
     const consistency = data.activeDays / elapsed;
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
     if (score > 0) allWeekScores.push(score);
-    
     if (score > bestWeekScore) {
       bestWeekScore = score;
       const start = new Date(weekStart + 'T00:00:00'), end = new Date(start);
@@ -472,13 +441,9 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
       bestWeekDates = data.dates;
       bestWeekStats = { score, count: data.count, consistency: (consistency * 100).toFixed(1), streak: data.maxStreak };
     }
-
-    if (score < worstWeekScore && score >= 0) {
-      worstWeekScore = score;
-    }
+    if (score < worstWeekScore && score >= 0) { worstWeekScore = score; }
   });
 
-  // Collect all weeks that match the worst score
   const worstWeeks = weekEntries.filter(([weekStart, data]) => {
     const elapsed = data.dates.length;
     const consistency = data.activeDays / elapsed;
@@ -508,7 +473,6 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
     bestWeekTrend = Math.round(((bestWeekScore - avgWeekScore) / avgWeekScore) * 100);
     bestWeekIcon = bestWeekTrend > 0 ? '▲' : (bestWeekTrend < 0 ? '▼' : '');
   }
-
   let worstWeekTrend = 0, worstWeekIcon = '';
   if (avgWeekScore > 0) {
     worstWeekTrend = Math.round(((worstWeekStats.score - avgWeekScore) / avgWeekScore) * 100);
@@ -516,23 +480,20 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   }
 
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const currentSunday = new Date(today);
-  currentSunday.setDate(today.getDate() - today.getDay());
+  const currentSunday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  currentSunday.setDate(currentSunday.getDate() - currentSunday.getDay());
   const currentWeekKey = currentSunday.toISOString().split('T')[0];
-  const currentW = weekData[currentWeekKey] || { count: 0, activeDays: 0, maxStreak: 0, dates: [], dayCounts: {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0} };
-  
-  const elapsedDaysInWeek = now.getDay() + 1; // 1 to 7
+  const currentW = weekData[currentWeekKey] || { count: 0, activeDays: 0, maxStreak: 0, tempStreak: 0, dates: [], dayCounts: {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0} };
+  const elapsedDaysInWeek = now.getDay() + 1;
   const currentWeekScore = Math.round(currentW.count * (currentW.activeDays / elapsedDaysInWeek) * (currentW.maxStreak || 1));
-  const currentWeekStats = { score: currentWeekScore, count: currentW.count, consistency: ((currentW.activeDays / elapsedDaysInWeek) * 100).toFixed(1), streak: currentW.maxStreak };
-  const currentWeekDates = currentW.dates;
+  const currentWeekStats: StatScore = { score: currentWeekScore, count: currentW.count, consistency: ((currentW.activeDays / elapsedDaysInWeek) * 100).toFixed(1), streak: currentW.maxStreak };
 
   return { 
     bestMonthName, bestMonthDates, bestMonthStats, 
     worstMonthName, worstMonthDates, worstMonthStats, 
     bestWeekName, bestWeekDates, bestWeekStats, 
     worstWeekName, worstWeekDates, worstWeekStats,
-    currentWeekStats, currentWeekDates, 
+    currentWeekStats, currentWeekDates: currentW.dates, 
     dominantWeekday, dominantWeekdayWins: maxWins, 
     bestMonthTrend, bestMonthIcon, 
     worstMonthTrend, worstMonthIcon, 

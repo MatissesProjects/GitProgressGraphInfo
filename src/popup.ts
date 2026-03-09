@@ -1,159 +1,27 @@
-import { GitHeatSettings, CustomAvatarSettings } from './types';
+import { GitHeatSettings, CustomAvatarSettings, AdvancedStats } from './types';
 
 document.addEventListener('DOMContentLoaded', async () => {
   const loading = document.getElementById('loading')!;
   const error = document.getElementById('error')!;
-  const content = document.getElementById('content')!;
-  const totalCount = document.getElementById('total-count')!;
+  const stats = document.getElementById('stats')!;
+  const settingsPanel = document.getElementById('settings-panel')!;
+  const toggleSettingsBtn = document.getElementById('toggle-settings')!;
   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
-  const customColors = document.getElementById('custom-colors') as HTMLDivElement;
-  const colorStart = document.getElementById('color-start') as HTMLInputElement;
-  const colorStop = document.getElementById('color-stop') as HTMLInputElement;
   const colorModeSelect = document.getElementById('color-mode-select') as HTMLSelectElement;
+  const customColors = document.getElementById('custom-colors')!;
+  const startColorInput = document.getElementById('custom-start') as HTMLInputElement;
+  const stopColorInput = document.getElementById('custom-stop') as HTMLInputElement;
+  const sortableList = document.getElementById('sortable-grid-order')!;
 
-  // Visibility Toggles - Sections
-  const toggleGrid = document.getElementById('toggle-grid') as HTMLInputElement;
-  const togglePersona = document.getElementById('toggle-persona') as HTMLInputElement;
-  const toggleActiveRepos = document.getElementById('toggle-active-repos') as HTMLInputElement;
-  const toggleCreatedRepos = document.getElementById('toggle-created-repos') as HTMLInputElement;
-  const toggleAchievements = document.getElementById('toggle-achievements') as HTMLInputElement;
-  const toggleFooter = document.getElementById('toggle-footer') as HTMLInputElement;
-  const toggleLegendNums = document.getElementById('toggle-legend-numbers') as HTMLInputElement;
-  const toggleTrends = document.getElementById('toggle-trends') as HTMLInputElement;
-  const toggleAvatar = document.getElementById('toggle-avatar') as HTMLInputElement;
-  const toggleGearHead = document.getElementById('toggle-gear-head') as HTMLInputElement;
-  const toggleGearWeapon = document.getElementById('toggle-gear-weapon') as HTMLInputElement;
-  const toggleGearShield = document.getElementById('toggle-gear-shield') as HTMLInputElement;
-  const toggleGearCompanion = document.getElementById('toggle-gear-companion') as HTMLInputElement;
-  const toggleCombo = document.getElementById('toggle-combo') as HTMLInputElement;
-  const toggleXPBar = document.getElementById('toggle-xp-bar') as HTMLInputElement;
-  const toggleSkillTree = document.getElementById('toggle-skill-tree') as HTMLInputElement;
-  const togglePulseHash = document.getElementById('toggle-pulse-hash') as HTMLInputElement;
-  const toggleTicker = document.getElementById('toggle-ticker') as HTMLInputElement;
-  const toggleIslandWrap = document.getElementById('toggle-island-wrap') as HTMLInputElement;
+  const defaultOrder = [
+    'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-worst-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
+    'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
+    'gh-island', 'gh-slump-island', 'gh-above-avg-island', 'gh-slump',
+    'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
+    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
+  ];
 
-  const saveAvatarBtn = document.getElementById('save-avatar-custom') as HTMLButtonElement;
-
-  const DEFAULT_AVATAR = {
-    bases: [
-      { min: 20, val: "🧙‍♂️", label: "Archmage" },
-      { min: 15, val: "🦸‍♂️", label: "Superhero" },
-      { min: 10, val: "👨‍💻", label: "Senior Dev" },
-      { min: 5, val: "🐒", label: "Code Monkey" },
-      { min: 0, val: "👶", label: "Newbie" }
-    ],
-    weapons: [
-      { min: 20, val: "⚡", label: "Legendary Lightning" },
-      { min: 12, val: "⚔️", label: "Steel Claymore" },
-      { min: 7, val: "🗡️", label: "Iron Sword" },
-      { min: 4, val: "🔨", label: "Heavy Hammer" },
-      { min: 1, val: "🦴", label: "Primitive Stick" }
-    ],
-    shields: [
-      { min: 3, val: "💠", label: "Energy Shield" },
-      { min: 1, val: "🛡️", label: "Wooden Shield" }
-    ],
-    headgear: [
-      { min: 30, val: "👑", label: "God Crown" },
-      { min: 14, val: "💂", label: "Royal Guard Hat" },
-      { min: 7, val: "🧢", label: "Lucky Cap" }
-    ],
-    companions: [
-      { min: 500, val: "🐉", label: "Ancient Dragon" },
-      { min: 100, val: "🦄", label: "Unicorn" },
-      { min: 20, val: "🐕", label: "Loyal Dog" }
-    ]
-  };
-
-  const renderCustomFields = (id: string, list: any[]) => {
-    const container = document.getElementById(id)!;
-    container.innerHTML = '';
-    list.forEach((item, i) => {
-      const row = document.createElement('div');
-      row.style.display = 'flex';
-      row.style.gap = '2px';
-      row.innerHTML = `
-        <span style="width: 25px;">${item.min}:</span>
-        <input type="text" class="custom-val" value="${item.val}" style="flex: 1; font-size: 9px;" title="Emoji or Image URL">
-        <input type="text" class="custom-label" value="${item.label}" style="flex: 1; font-size: 9px;" title="Label">
-      `;
-      container.appendChild(row);
-    });
-  };
-
-  const loadAvatarCustomization = async () => {
-    const s: GitHeatSettings = await chrome.storage.local.get(['customAvatarSettings']);
-    const avatar = s.customAvatarSettings || DEFAULT_AVATAR;
-    
-    renderCustomFields('custom-bases', avatar.bases || DEFAULT_AVATAR.bases);
-    renderCustomFields('custom-weapons', avatar.weapons || DEFAULT_AVATAR.weapons);
-    renderCustomFields('custom-shields', avatar.shields || DEFAULT_AVATAR.shields);
-    renderCustomFields('custom-headgear', avatar.headgear || DEFAULT_AVATAR.headgear);
-    renderCustomFields('custom-companions', avatar.companions || DEFAULT_AVATAR.companions);
-  };
-
-  const getCustomValues = (id: string, defaultList: any[]) => {
-    const container = document.getElementById(id)!;
-    const rows = container.querySelectorAll('div');
-    return Array.from(rows).map((row, i) => ({
-      min: defaultList[i].min,
-      val: (row.querySelector('.custom-val') as HTMLInputElement).value,
-      label: (row.querySelector('.custom-label') as HTMLInputElement).value
-    }));
-  };
-
-  saveAvatarBtn.addEventListener('click', async () => {
-    const custom = {
-      bases: getCustomValues('custom-bases', DEFAULT_AVATAR.bases),
-      weapons: getCustomValues('custom-weapons', DEFAULT_AVATAR.weapons),
-      shields: getCustomValues('custom-shields', DEFAULT_AVATAR.shields),
-      headgear: getCustomValues('custom-headgear', DEFAULT_AVATAR.headgear),
-      companions: getCustomValues('custom-companions', DEFAULT_AVATAR.companions)
-    };
-    await chrome.storage.local.set({ customAvatarSettings: custom });
-    saveAvatarBtn.textContent = 'Saved!';
-    setTimeout(() => { saveAvatarBtn.textContent = 'Save Custom Gear'; }, 1500);
-  });
-
-  await loadAvatarCustomization();
-
-  // Visibility Toggles - Grid Items
-  const toggleTotal = document.getElementById('toggle-total') as HTMLInputElement;
-  const toggleToday = document.getElementById('toggle-today') as HTMLInputElement;
-  const toggleStreak = document.getElementById('toggle-streak') as HTMLInputElement;
-  const toggleLevel = document.getElementById('toggle-level') as HTMLInputElement;
-  const toggleBestMonth = document.getElementById('toggle-best-month') as HTMLInputElement;
-  const toggleWorstMonth = document.getElementById('toggle-worst-month') as HTMLInputElement;
-  const toggleBestWeek = document.getElementById('toggle-best-week') as HTMLInputElement;
-  const toggleCurrentWeek = document.getElementById('toggle-current-week') as HTMLInputElement;
-  const toggleDominantWeekday = document.getElementById('toggle-dominant-weekday') as HTMLInputElement;
-  const toggleIsland = document.getElementById('toggle-island') as HTMLInputElement;
-  const toggleSlumpIsland = document.getElementById('toggle-slump-island') as HTMLInputElement;
-  const toggleAboveAvgIsland = document.getElementById('toggle-above-avg-island') as HTMLInputElement;
-  const toggleVelocity = document.getElementById('toggle-velocity') as HTMLInputElement;
-  const toggleVelocityAbove = document.getElementById('toggle-velocity-above') as HTMLInputElement;
-  const toggleVelocityBelow = document.getElementById('toggle-velocity-below') as HTMLInputElement;
-  const toggleConsistency = document.getElementById('toggle-consistency') as HTMLInputElement;
-  const toggleWeekend = document.getElementById('toggle-weekend') as HTMLInputElement;
-  const toggleSlump = document.getElementById('toggle-slump') as HTMLInputElement;
-  const toggleBestDay = document.getElementById('toggle-best-day') as HTMLInputElement;
-  const toggleWorstDay = document.getElementById('toggle-worst-day') as HTMLInputElement;
-  const toggleCurrentWeekday = document.getElementById('toggle-current-weekday') as HTMLInputElement;
-  const togglePowerDay = document.getElementById('toggle-power-day') as HTMLInputElement;
-  const togglePeakDay = document.getElementById('toggle-peak-day') as HTMLInputElement;
-  const toggleMostActiveDay = document.getElementById('toggle-most-active-day') as HTMLInputElement;
-  const toggleMaxCommits = document.getElementById('toggle-max-commits') as HTMLInputElement;
-  const toggleStars = document.getElementById('toggle-stars') as HTMLInputElement;
-  const togglePR = document.getElementById('toggle-pr') as HTMLInputElement;
-  const toggleIssueCreated = document.getElementById('toggle-issue-created') as HTMLInputElement;
-  const toggleLangs = document.getElementById('toggle-langs') as HTMLInputElement;
-  const toggleNetwork = document.getElementById('toggle-network') as HTMLInputElement;
-
-  const sortableList = document.getElementById('sortable-grid-list')!;
-  const undoBtn = document.getElementById('undo-reorder') as HTMLButtonElement;
-  const resetBtn = document.getElementById('reset-reorder') as HTMLButtonElement;
-
-  const ITEM_LABELS: Record<string, string> = {
+  const labelMap: Record<string, string> = {
     'gh-streak': 'Current / Best Streak',
     'gh-best-month': 'Best Month',
     'gh-worst-month': 'Worst Month',
@@ -161,428 +29,242 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-worst-week': 'Worst Week',
     'gh-current-week': 'Current Week',
     'gh-dominant-weekday': 'Dominant Weekday',
-    'gh-island': 'Biggest Island (L2+)',
-    'gh-slump-island': 'Worst Island (0-1)',
-    'gh-above-avg-island': 'Longest Above Avg Island',
+    'gh-most-active-day': 'Most Active Day',
+    'gh-max-commits': 'Max Daily Commits',
     'gh-velocity': 'Average Velocity',
     'gh-velocity-above': 'Above Average Days',
     'gh-velocity-below': 'Below Average Days',
     'gh-consistency': 'Consistency %',
-    'gh-weekend': 'Weekend Score',
+    'gh-weekend': 'Weekend Score %',
+    'gh-island': 'Biggest Island (L2+)',
+    'gh-slump-island': 'Worst Island (0-1)',
+    'gh-above-avg-island': 'Longest Above Avg Island',
     'gh-slump': 'Longest Slump',
     'gh-best-day': 'Best Weekday',
     'gh-worst-day': 'Worst Weekday',
-    'gh-current-weekday': 'Current Weekday',
     'gh-power-day': 'Most Productive (Avg)',
     'gh-peak-day': 'Peak Frequency (L2+)',
-    'gh-most-active-day': 'Most Active Day',
-    'gh-max-commits': 'Max Daily Commits',
+    'gh-current-weekday': 'Current Weekday',
     'gh-stars': 'Pinned Stars / Forks',
-    'gh-pr': 'PR Activity',
+    'gh-pr': 'PR Activity (O/M/R)',
     'gh-issue-created': 'Issues / Created Repos',
     'gh-langs': 'Top Languages',
-    'gh-network': 'Network Stats'
+    'gh-network': 'Network'
   };
 
-  const defaultOrder = Object.keys(ITEM_LABELS);
-
-  // Load saved theme and colors
-  const settings = await chrome.storage.local.get([
-    'theme', 'customStart', 'customStop', 'colorMode',
-    'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements',
-    'showPersona', 'showFooter', 'showLegendNumbers', 'islandWrapAround',
-    'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 'showCurrentWeekday', 'showPowerDay', 'showPeakDay', 'showMostActiveDay', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showAboveAvgIsland', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showPulseHash', 'showTrends', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar',
-    'gridOrder'
-  ]);
-
-  let currentOrder: string[] = (settings.gridOrder as string[]) || defaultOrder;
-  let orderHistory: string[][] = [];
-
-  // Ensure all current items are present
-  defaultOrder.forEach(id => {
-    if (!currentOrder.includes(id)) currentOrder.push(id);
-  });
-
-  const renderSortableList = () => {
+  const renderSortableList = (order: string[]) => {
     sortableList.innerHTML = '';
-    currentOrder.forEach((id: string) => {
-      const label = ITEM_LABELS[id];
-      if (!label) return;
-
-      const item = document.createElement('div');
-      item.className = 'sortable-item';
-      item.draggable = true;
-      item.dataset.id = id;
-      item.style.cssText = `
-        padding: 4px 8px;
-        background: #ffffff;
-        border: 1px solid #d0d7de;
-        border-radius: 4px;
-        font-size: 10px;
-        cursor: grab;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    order.forEach(id => {
+      const li = document.createElement('div');
+      li.className = 'sortable-item';
+      li.draggable = true;
+      li.dataset.id = id;
+      li.innerHTML = `
+        <span class="drag-handle">⋮⋮</span>
+        <span class="sortable-label">${labelMap[id] || id}</span>
       `;
-      item.innerHTML = `
-        <span style="color: #57606a;">⋮⋮</span>
-        <span>${label}</span>
-      `;
-
-      item.addEventListener('dragstart', () => {
-        item.classList.add('dragging');
-        item.style.opacity = '0.5';
-      });
-
-      item.addEventListener('dragend', () => {
-        item.classList.remove('dragging');
-        item.style.opacity = '1';
-        saveOrder();
-      });
-
-      sortableList.appendChild(item);
+      sortableList.appendChild(li);
     });
   };
 
-  sortableList.addEventListener('dragover', (e: any) => {
-    e.preventDefault();
-    const draggingItem = sortableList.querySelector('.dragging')!;
-    const siblings = [...sortableList.querySelectorAll('.sortable-item:not(.dragging)')];
-    
-    const nextSibling = siblings.find(sibling => {
-      const box = (sibling as HTMLElement).getBoundingClientRect();
-      const offset = e.clientY - box.top - box.height / 2;
-      return offset < 0;
-    });
+  const setupSortable = () => {
+    let dragSrcEl: HTMLElement | null = null;
 
-    sortableList.insertBefore(draggingItem, nextSibling || null);
-  });
-
-  const saveOrder = (isUserDrag = true) => {
-    const items = [...sortableList.querySelectorAll('.sortable-item')];
-    const newOrder = items.map(item => (item as HTMLElement).dataset.id!);
-    
-    if (isUserDrag) {
-      orderHistory.push([...currentOrder]);
-      if (orderHistory.length > 10) orderHistory.shift();
-    }
-    
-    currentOrder = newOrder;
-    chrome.storage.local.set({ gridOrder: currentOrder });
-  };
-
-  undoBtn.addEventListener('click', () => {
-    const prev = orderHistory.pop();
-    if (prev) {
-      currentOrder = prev;
-      chrome.storage.local.set({ gridOrder: currentOrder });
-      renderSortableList();
-    }
-  });
-
-  resetBtn.addEventListener('click', () => {
-    if (confirm('Reset grid to default order?')) {
-      orderHistory.push([...currentOrder]);
-      currentOrder = [...defaultOrder];
-      chrome.storage.local.set({ gridOrder: currentOrder });
-      renderSortableList();
-    }
-  });
-
-  renderSortableList();
-
-  if (settings.theme) {
-    themeSelect.value = settings.theme as string;
-    if (themeSelect.value === 'custom') {
-      customColors.style.display = 'block';
-    }
-  }
-  if (settings.customStart) colorStart.value = settings.customStart as string;
-  if (settings.customStop) colorStop.value = settings.customStop as string;
-  if (settings.colorMode) colorModeSelect.value = settings.colorMode as string;
-
-  // Set toggle states
-  const setChecked = (el: HTMLInputElement, val: any) => {
-    if (el) el.checked = val !== false;
-  };
-  
-  setChecked(toggleGrid, settings.showGrid);
-  setChecked(togglePersona, settings.showPersona);
-  setChecked(toggleActiveRepos, settings.showActiveRepos);
-  setChecked(toggleCreatedRepos, settings.showCreatedRepos);
-  setChecked(toggleAchievements, settings.showAchievements);
-  setChecked(toggleFooter, settings.showFooter);
-  setChecked(toggleLegendNums, settings.showLegendNumbers);
-  setChecked(toggleTrends, settings.showTrends);
-  setChecked(togglePulseHash, settings.showPulseHash);
-  setChecked(toggleTicker, settings.showTicker);
-  setChecked(toggleAvatar, settings.showAvatar);
-  setChecked(toggleGearHead, settings.showGearHead);
-  setChecked(toggleGearWeapon, settings.showGearWeapon);
-  setChecked(toggleGearShield, settings.showGearShield);
-  setChecked(toggleGearCompanion, settings.showGearCompanion);
-  setChecked(toggleCombo, settings.showCombo);
-  setChecked(toggleXPBar, settings.showXPBar);
-  setChecked(toggleSkillTree, settings.showSkillTree);
-  setChecked(toggleIslandWrap, settings.islandWrapAround);
-
-  setChecked(toggleTotal, settings.showTotal);
-  setChecked(toggleToday, settings.showTodayCount);
-  setChecked(toggleStreak, settings.showStreak);
-  setChecked(toggleLevel, settings.showLevel);
-  setChecked(toggleBestMonth, settings.showBestMonth);
-  setChecked(toggleWorstMonth, settings.showWorstMonth);
-  setChecked(toggleBestWeek, settings.showBestWeek);
-  setChecked(toggleCurrentWeek, settings.showCurrentWeek);
-  setChecked(toggleDominantWeekday, settings.showDominantWeekday);
-  setChecked(toggleIsland, settings.showIsland);
-  setChecked(toggleSlumpIsland, settings.showSlumpIsland);
-  setChecked(toggleAboveAvgIsland, settings.showAboveAvgIsland);
-  setChecked(toggleVelocity, settings.showVelocity);
-  setChecked(toggleVelocityAbove, settings.showVelocityAbove);
-  setChecked(toggleVelocityBelow, settings.showVelocityBelow);
-  setChecked(toggleConsistency, settings.showConsistency);
-  setChecked(toggleWeekend, settings.showWeekend);
-  setChecked(toggleSlump, settings.showSlump);
-  setChecked(toggleBestDay, settings.showBestDay);
-  setChecked(toggleWorstDay, settings.showWorstDay);
-  setChecked(toggleCurrentWeekday, settings.showCurrentWeekday);
-  setChecked(togglePowerDay, settings.showPowerDay);
-  setChecked(togglePeakDay, settings.showPeakDay);
-  setChecked(toggleMostActiveDay, settings.showMostActiveDay);
-  setChecked(toggleMaxCommits, settings.showMaxCommits);
-  setChecked(toggleStars, settings.showStars);
-  setChecked(togglePR, settings.showPR);
-  setChecked(toggleIssueCreated, settings.showIssueCreated);
-  setChecked(toggleLangs, settings.showLangs);
-  setChecked(toggleNetwork, settings.showNetwork);
-
-  themeSelect.addEventListener('change', async () => {
-    await chrome.storage.local.set({ theme: themeSelect.value });
-    customColors.style.display = themeSelect.value === 'custom' ? 'block' : 'none';
-  });
-
-  const saveColors = async () => {
-    await chrome.storage.local.set({ 
-      customStart: colorStart.value,
-      customStop: colorStop.value,
-      colorMode: colorModeSelect.value
-    });
-  };
-
-  colorStart.addEventListener('input', saveColors);
-  colorStop.addEventListener('input', saveColors);
-  colorModeSelect.addEventListener('change', saveColors);
-
-  // Toggle Event Listeners
-  const addToggleListener = (el: HTMLInputElement, key: string) => {
-    if (el) el.addEventListener('change', () => chrome.storage.local.set({ [key]: el.checked }));
-  };
-
-  addToggleListener(toggleGrid, 'showGrid');
-  addToggleListener(togglePersona, 'showPersona');
-  addToggleListener(toggleActiveRepos, 'showActiveRepos');
-  addToggleListener(toggleCreatedRepos, 'showCreatedRepos');
-  addToggleListener(toggleAchievements, 'showAchievements');
-  addToggleListener(toggleFooter, 'showFooter');
-  addToggleListener(toggleLegendNums, 'showLegendNumbers');
-  addToggleListener(toggleTrends, 'showTrends');
-  addToggleListener(toggleAvatar, 'showAvatar');
-  addToggleListener(toggleGearHead, 'showGearHead');
-  addToggleListener(toggleGearWeapon, 'showGearWeapon');
-  addToggleListener(toggleGearShield, 'showGearShield');
-  addToggleListener(toggleGearCompanion, 'showGearCompanion');
-  addToggleListener(toggleCombo, 'showCombo');
-  addToggleListener(toggleXPBar, 'showXPBar');
-  addToggleListener(toggleSkillTree, 'showSkillTree');
-  addToggleListener(togglePulseHash, 'showPulseHash');
-  addToggleListener(toggleTicker, 'showTicker');
-  addToggleListener(toggleIslandWrap, 'islandWrapAround');
-
-  addToggleListener(toggleTotal, 'showTotal');
-  addToggleListener(toggleToday, 'showTodayCount');
-  addToggleListener(toggleStreak, 'showStreak');
-  addToggleListener(toggleLevel, 'showLevel');
-  addToggleListener(toggleBestMonth, 'showBestMonth');
-  addToggleListener(toggleWorstMonth, 'showWorstMonth');
-  addToggleListener(toggleBestWeek, 'showBestWeek');
-  addToggleListener(toggleCurrentWeek, 'showCurrentWeek');
-  addToggleListener(toggleDominantWeekday, 'showDominantWeekday');
-  addToggleListener(toggleIsland, 'showIsland');
-  addToggleListener(toggleSlumpIsland, 'showSlumpIsland');
-  addToggleListener(toggleAboveAvgIsland, 'showAboveAvgIsland');
-  addToggleListener(toggleVelocity, 'showVelocity');
-  addToggleListener(toggleVelocityAbove, 'showVelocityAbove');
-  addToggleListener(toggleVelocityBelow, 'showVelocityBelow');
-  addToggleListener(toggleConsistency, 'showConsistency');
-  addToggleListener(toggleWeekend, 'showWeekend');
-  addToggleListener(toggleSlump, 'showSlump');
-  addToggleListener(toggleBestDay, 'showBestDay');
-  addToggleListener(toggleWorstDay, 'showWorstDay');
-  addToggleListener(toggleCurrentWeekday, 'showCurrentWeekday');
-  addToggleListener(togglePowerDay, 'showPowerDay');
-  addToggleListener(togglePeakDay, 'showPeakDay');
-  addToggleListener(toggleMostActiveDay, 'showMostActiveDay');
-  addToggleListener(toggleMaxCommits, 'showMaxCommits');
-  addToggleListener(toggleStars, 'showStars');
-  addToggleListener(togglePR, 'showPR');
-  addToggleListener(toggleIssueCreated, 'showIssueCreated');
-  addToggleListener(toggleLangs, 'showLangs');
-  addToggleListener(toggleNetwork, 'showNetwork');
-
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-    if (!tab?.id || !tab.url?.includes('github.com')) {
-      throw new Error("Not a GitHub page");
-    }
-
-    chrome.tabs.sendMessage(tab.id, { action: "getStats" }, (response) => {
-      if (chrome.runtime.lastError) {
-        loading.style.display = 'none';
-        error.textContent = "Please refresh the page to activate GitHeat.";
-        error.style.display = 'block';
-        return;
+    sortableList.addEventListener('dragstart', (e: DragEvent) => {
+      dragSrcEl = e.target as HTMLElement;
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', dragSrcEl.innerHTML);
       }
+      dragSrcEl.classList.add('dragging');
+    });
 
-      if (response && response.success) {
-        loading.style.display = 'none';
-        content.style.display = 'block';
+    sortableList.addEventListener('dragover', (e: DragEvent) => {
+      if (e.preventDefault) e.preventDefault();
+      return false;
+    });
+
+    sortableList.addEventListener('drop', async (e: DragEvent) => {
+      if (e.stopPropagation) e.stopPropagation();
+      const target = (e.target as HTMLElement).closest('.sortable-item') as HTMLElement;
+      if (dragSrcEl && target && dragSrcEl !== target) {
+        const allItems = Array.from(sortableList.querySelectorAll('.sortable-item'));
+        const fromIdx = allItems.indexOf(dragSrcEl);
+        const toIdx = allItems.indexOf(target);
         
-        const adv = response.advanced;
-        const titleSuffix = adv.isYTD ? '(YTD)' : '(Year)';
-        
-        // Update Total label
-        const totalLabel = totalCount.previousElementSibling;
-        if (totalLabel) {
-          totalLabel.textContent = `Total ${titleSuffix}:`;
+        if (fromIdx < toIdx) {
+          target.after(dragSrcEl);
+        } else {
+          target.before(dragSrcEl);
         }
         
-        totalCount.textContent = response.total.toLocaleString();
-        document.getElementById('today-count')!.textContent = adv.todayCount.toLocaleString();
-        
-        const t = response.thresholds;
-        document.getElementById('l1-range')!.textContent = `${t[1]?.min ?? '?'}-${t[1]?.max ?? '?'}`;
-        document.getElementById('l2-range')!.textContent = `${t[2]?.min ?? '?'}-${t[2]?.max ?? '?'}`;
-        document.getElementById('l3-range')!.textContent = `${t[3]?.min ?? '?'}-${t[3]?.max ?? '?'}`;
-        document.getElementById('l4-range')!.textContent = `${t[4]?.min ?? '?'}+`;
+        const newOrder = Array.from(sortableList.querySelectorAll('.sortable-item')).map(el => (el as HTMLElement).dataset.id!);
+        await chrome.storage.local.set({ gridOrder: newOrder });
+      }
+      return false;
+    });
 
-        // Render Percentiles
-        const raritySection = document.getElementById('rarity-section')!;
-        const p = response.percentiles;
-        const markers = [99, 95, 90, 75, 50];
-        
-        const existingRows = raritySection.querySelectorAll('.rarity-row');
-        existingRows.forEach(r => r.remove());
+    sortableList.addEventListener('dragend', () => {
+      if (dragSrcEl) dragSrcEl.classList.remove('dragging');
+    });
+  };
 
-        markers.forEach(m => {
-          if (p[m] !== undefined) {
-            const row = document.createElement('div');
-            row.className = 'rarity-row';
-            row.innerHTML = `
-              <span class="rarity-label">Top ${100-m}%:</span>
-              <div class="rarity-bar">
-                <div class="rarity-fill" style="width: ${m}%"></div>
-              </div>
-              <span class="rarity-value">${p[m]}+</span>
-            `;
-            raritySection.appendChild(row);
-          }
-        });
+  const loadSettings = async () => {
+    const s = await chrome.storage.local.get(null) as GitHeatSettings;
+    themeSelect.value = s.theme || 'green';
+    colorModeSelect.value = s.colorMode || 'rgb';
+    customColors.style.display = themeSelect.value === 'custom' ? 'flex' : 'none';
+    startColorInput.value = s.customStart || '#4a207e';
+    stopColorInput.value = s.customStop || '#04ff00';
 
-        // Render Advanced Stats
-        document.getElementById('persona-badge')!.textContent = adv.persona;
-        document.getElementById('rpg-level')!.textContent = `Lvl ${adv.level}: ${adv.levelTitle} (${adv.levelProgressXP} / ${adv.levelTotalXP} XP)`;
-        document.getElementById('current-streak')!.textContent = `${adv.currentStreak} days`;
-        document.getElementById('longest-streak')!.textContent = `${adv.longestStreak} days`;
-        document.getElementById('longest-slump')!.textContent = `${adv.longestSlump} days`;
-        
-        const bestMonthTrendHtml = adv.bestMonthTrend !== 0 ? ` <span style="color: ${adv.bestMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best month vs average month score">${adv.bestMonthIcon} ${Math.abs(adv.bestMonthTrend)}%</span>` : '';
-        document.getElementById('best-month')!.innerHTML = `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})${bestMonthTrendHtml}`;
-        
-        const worstMonthTrendHtml = adv.worstMonthTrend !== 0 ? ` <span style="color: ${adv.worstMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Worst month vs average month score">${adv.worstMonthIcon} ${Math.abs(adv.worstMonthTrend)}%</span>` : '';
-        const worstMonthEl = document.getElementById('worst-month')!;
-        worstMonthEl.innerHTML = `${adv.worstMonthName} (Score: ${adv.worstMonthStats.score})${worstMonthTrendHtml}`;
-        worstMonthEl.title = `Calculation: Commits × Consistency × Max Streak. This month: ${adv.worstMonthStats.count} commits, ${adv.worstMonthStats.consistency}% consistency, ${adv.worstMonthStats.streak} day streak. Average month score: ${Math.round(adv.avgMonthScore || 0)}.`;
-        
-        const bestWeekTrendHtml = adv.bestWeekTrend !== 0 ? ` <span style="color: ${adv.bestWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best week vs average week score">${adv.bestWeekIcon} ${Math.abs(adv.bestWeekTrend)}%</span>` : '';
-        document.getElementById('best-week')!.innerHTML = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})${bestWeekTrendHtml}`;
-        
-        const worstWeekTrendHtml = adv.worstWeekTrend !== 0 ? ` <span style="color: ${adv.worstWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Worst week vs average week score">${adv.worstWeekIcon} ${Math.abs(adv.worstWeekTrend)}%</span>` : '';
-        const worstWeekEl = document.getElementById('worst-week')!;
-        worstWeekEl.innerHTML = `${adv.worstWeekName} (Score: ${adv.worstWeekStats.score})${worstWeekTrendHtml}`;
-        worstWeekEl.title = `Calculation: Commits × Consistency × Max Streak. This week: ${adv.worstWeekStats.count} commits, ${adv.worstWeekStats.consistency}% consistency, ${adv.worstWeekStats.streak} day streak. Average week score: ${Math.round(adv.avgWeekScore || 0)}.`;
+    const setChecked = (id: string, val: boolean | undefined) => {
+      const el = document.getElementById(id) as HTMLInputElement;
+      if (el) el.checked = val !== false;
+    };
 
-        document.getElementById('current-week')!.innerHTML = `Score: ${adv.currentWeekStats.score}`;
+    setChecked('toggle-grid', s.showGrid);
+    setChecked('toggle-active-repos', s.showActiveRepos);
+    setChecked('toggle-created-repos', s.showCreatedRepos);
+    setChecked('toggle-achievements', s.showAchievements);
+    setChecked('toggle-persona', s.showPersona);
+    setChecked('toggle-footer', s.showFooter);
+    setChecked('toggle-legend-numbers', s.showLegendNumbers);
+    setChecked('toggle-trends', s.showTrends);
+    setChecked('toggle-pulse-hash', s.showPulseHash);
+    setChecked('toggle-ticker', s.showTicker);
+    setChecked('toggle-avatar', s.showAvatar);
+    setChecked('toggle-combo', s.showCombo);
+    setChecked('toggle-xp-bar', s.showXPBar);
+    setChecked('toggle-skill-tree', s.showSkillTree);
 
-        document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;
-        document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
+    setChecked('toggle-total', s.showTotal);
+    setChecked('toggle-streak', s.showStreak);
+    setChecked('toggle-velocity', s.showVelocity);
+    setChecked('toggle-consistency', s.showConsistency);
+    setChecked('toggle-weekend', s.showWeekend);
+    setChecked('toggle-slump', s.showSlump);
+    setChecked('toggle-best-day', s.showBestDay);
+    setChecked('toggle-worst-day', s.showWorstDay);
+    setChecked('toggle-most-active-day', s.showMostActiveDay);
+    setChecked('toggle-current-weekday', s.showCurrentWeekday);
+    setChecked('toggle-max-commits', s.showMaxCommits);
+    setChecked('toggle-island', s.showIsland);
+    setChecked('toggle-slump-island', s.showSlumpIsland);
+    setChecked('toggle-above-avg-island', s.showAboveAvgIsland);
+    setChecked('toggle-power-day', s.showPowerDay);
+    setChecked('toggle-peak-day', s.showPeakDay);
+    setChecked('toggle-stars', s.showStars);
+    setChecked('toggle-pr', s.showPR);
+    setChecked('toggle-issue-created', s.showIssueCreated);
+    setChecked('toggle-langs', s.showLangs);
+    setChecked('toggle-network', s.showNetwork);
+    setChecked('toggle-best-month', s.showBestMonth);
+    setChecked('toggle-worst-month', s.showWorstMonth);
+    setChecked('toggle-best-week', s.showBestWeek);
+    setChecked('toggle-worst-week', s.showWorstWeek);
+    setChecked('toggle-current-week', s.showCurrentWeek);
+    setChecked('toggle-dominant-weekday', s.showDominantWeekday);
+
+    renderSortableList(s.gridOrder || defaultOrder);
+    setupSortable();
+  };
+
+  const saveSetting = async (key: string, val: boolean | string | string[]) => {
+    await chrome.storage.local.set({ [key]: val });
+  };
+
+  document.querySelectorAll('.settings-section input[type="checkbox"]').forEach(el => {
+    el.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      const key = target.id.replace('toggle-', 'show').split('-').map((word, i) => i === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)).join('');
+      saveSetting(key, target.checked);
+    });
+  });
+
+  themeSelect.addEventListener('change', () => {
+    customColors.style.display = themeSelect.value === 'custom' ? 'flex' : 'none';
+    saveSetting('theme', themeSelect.value);
+  });
+
+  colorModeSelect.addEventListener('change', () => saveSetting('colorMode', colorModeSelect.value));
+  startColorInput.addEventListener('change', () => saveSetting('customStart', startColorInput.value));
+  stopColorInput.addEventListener('change', () => saveSetting('customStop', stopColorInput.value));
+
+  toggleSettingsBtn.addEventListener('click', () => {
+    const isVisible = settingsPanel.style.display === 'block';
+    settingsPanel.style.display = isVisible ? 'none' : 'block';
+    toggleSettingsBtn.textContent = isVisible ? '⚙️ Settings' : '✖ Close Settings';
+  });
+
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tabs[0]?.id) return;
+
+    chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_STATS' }, (response) => {
+      loading.style.display = 'none';
+      if (response?.success) {
+        const adv: AdvancedStats = response.advanced;
+        stats.style.display = 'block';
         
-        const velTrendHtml = adv.velocityTrend !== 0 ? ` <span style="color: ${adv.velocityTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Change vs previous 7-day period">${adv.velocityIcon} ${Math.abs(adv.velocityTrend)}%</span>` : '';
-        document.getElementById('velocity')!.innerHTML = `${adv.velocity} <span style="font-size: 0.8em; opacity: 0.8;">c/d</span>${velTrendHtml}`;
+        document.getElementById('total-commits')!.textContent = adv.total.toString();
+        document.getElementById('current-streak')!.textContent = `${adv.streak} / ${adv.maxStreak} days`;
+        
+        const velTrendHtml = adv.velocityTrend !== 0 ? ` <span style="color: ${adv.velocityTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Velocity Trend (Recent vs YTD)">${adv.velocityIcon}${Math.abs(adv.velocityTrend)}%</span>` : '';
+        const accelHtml = adv.acceleration !== 0 ? ` <span style="color: ${adv.acceleration > 0 ? '#1a7f37' : '#cf222e'}; font-size: 0.9em; opacity: 0.9;" title="Acceleration (Recent vs Prev Week)">${adv.accelerationIcon}${Math.abs(adv.acceleration)}% acc</span>` : '';
+        document.getElementById('velocity')!.innerHTML = `${adv.velocity} <span style="font-size: 0.8em; opacity: 0.8;">c/d</span>${velTrendHtml}${accelHtml}`;
         
         document.getElementById('pr-stats')!.textContent = `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`;
-        document.getElementById('issue-repo-stats')!.textContent = `${adv.issuesOpened} / ${adv.createdRepos}`;
+        document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
         document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
-        const bestDayTrendHtml = adv.bestWeekdayTrend !== 0 ? ` <span style="color: ${adv.bestWeekdayTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Avg for this day vs overall avg across all weekdays">${adv.bestWeekdayIcon} ${Math.abs(adv.bestWeekdayTrend)}%</span>` : '';
-        document.getElementById('best-day')!.innerHTML = `${adv.bestDay} (${adv.bestDayCount})${bestDayTrendHtml}`;
         
-        document.getElementById('worst-day')!.textContent = `${adv.worstDay} (${adv.worstDayCount})`;
+        const bestMonthTrendHtml = adv.bestMonthTrend !== 0 ? ` <span style="color: ${adv.bestMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best month vs average month score">${adv.bestMonthIcon}${Math.abs(adv.bestMonthTrend)}%</span>` : '';
+        document.getElementById('best-month')!.innerHTML = `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})${bestMonthTrendHtml}`;
         
-        const currentWeekdayTrendHtml = adv.currentWeekdayTrend !== 0 ? ` <span style="color: ${adv.currentWeekdayTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Today's count vs avg for this weekday">${adv.currentWeekdayIcon} ${Math.abs(adv.currentWeekdayTrend)}%</span>` : '';
-        document.getElementById('current-weekday')!.innerHTML = `${adv.currentWeekday} (${adv.currentWeekdayCount})${currentWeekdayTrendHtml}`;
-        document.getElementById('power-day')!.textContent = `${adv.powerDay} (${adv.powerDayAvg})`;
-        document.getElementById('peak-day')!.textContent = `${adv.peakWeekday} (${adv.peakWeekdayCount})`;
-        document.getElementById('biggest-island')!.textContent = `${adv.biggestIslandSize} days`;
-        document.getElementById('slump-island')!.textContent = `${adv.biggestSlumpIslandSize} days`;
-        document.getElementById('biggest-above-avg-island')!.textContent = `${adv.biggestAboveAvgIslandSize} days`;
-        document.getElementById('most-active-day')!.textContent = `${adv.mostActiveDay}`;
-        document.getElementById('max-commits')!.textContent = `${adv.mostActiveDayCount}`;
-        document.getElementById('pinned-stats')!.textContent = `${adv.totalStars} / ${adv.totalForks}`;
-        document.getElementById('top-langs')!.textContent = (adv.topLangs || []).join(', ') || 'N/A';
-        document.getElementById('socials')!.textContent = `${adv.socials.followers} Follow / ${adv.socials.organizations} Orgs`;
+        const worstMonthTrendHtml = adv.worstMonthTrend !== 0 ? ` <span style="color: ${adv.worstMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Worst month vs average month score">${adv.worstMonthIcon}${Math.abs(adv.worstMonthTrend)}%</span>` : '';
+        const worstMonthEl = document.getElementById('worst-month')!;
+        worstMonthEl.innerHTML = `${adv.worstMonthName} (Score: ${adv.worstMonthStats.score})${worstMonthTrendHtml}`;
+        worstMonthEl.title = `Calculation: Commits × Consistency × Max Streak. Avg Score: ${Math.round(adv.avgMonthScore || 0)}`;
 
-        // Render Top Repos
-        const repoList = document.getElementById('repo-list')!;
+        const bestWeekTrendHtml = adv.bestWeekTrend !== 0 ? ` <span style="color: ${adv.bestWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best week vs average week score">${adv.bestWeekIcon}${Math.abs(adv.bestWeekTrend)}%</span>` : '';
+        document.getElementById('best-week')!.innerHTML = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})${bestWeekTrendHtml}`;
+        
+        const worstWeekTrendHtml = adv.worstWeekTrend !== 0 ? ` <span style="color: ${adv.worstWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Worst week vs average week score">${adv.worstWeekIcon}${Math.abs(adv.worstWeekTrend)}%</span>` : '';
+        const worstWeekEl = document.getElementById('worst-week')!;
+        worstWeekEl.innerHTML = `${adv.worstWeekName} (Score: ${adv.worstWeekStats.score})${worstWeekTrendHtml}`;
+        worstWeekEl.title = `Calculation: Commits × Consistency × Max Streak. Avg Score: ${Math.round(adv.avgWeekScore || 0)}`;
+
+        document.getElementById('current-week')!.innerHTML = `Score: ${adv.currentWeekStats.score}`;
+        document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;
+
+        const repoList = document.getElementById('top-repos')!;
         repoList.innerHTML = '';
-        adv.topRepos.forEach((r: any) => {
+        adv.topRepos.forEach((r: {name:string; commits:number}) => {
           const div = document.createElement('div');
-          div.className = 'stat-row';
-          div.style.fontSize = '12px';
-          div.innerHTML = `<span>${r.name}</span>`;
+          div.className = 'repo-item';
+          div.innerHTML = `<span>${r.name}</span><strong>${r.commits}</strong>`;
           repoList.appendChild(div);
         });
 
-        // Render Created Repos
-        const createdRepoList = document.getElementById('created-repo-list')!;
-        createdRepoList.innerHTML = '';
-        if (adv.createdRepoList && adv.createdRepoList.length > 0) {
-          adv.createdRepoList.slice(0, 5).forEach((r: any) => {
-            const div = document.createElement('div');
-            div.className = 'stat-row';
-            div.style.fontSize = '12px';
-            div.innerHTML = `<span>${r.name}</span>`;
-            createdRepoList.appendChild(div);
-          });
-        } else {
-          createdRepoList.innerHTML = '<span style="font-size: 11px; color: #57606a;">No repos created</span>';
-        }
+        const createdList = document.getElementById('created-repos')!;
+        createdList.innerHTML = '';
+        adv.createdRepoList.slice(0, 5).forEach((r: {name:string; date:string}) => {
+          const div = document.createElement('div');
+          div.className = 'repo-item';
+          div.innerHTML = `<span>${r.name}</span><small>${r.date}</small>`;
+          createdList.appendChild(div);
+        });
 
-        // Render Achievements
-        const achList = document.getElementById('achievement-list')!;
-        achList.innerHTML = '';
+        const achievementList = document.getElementById('achievement-list')!;
+        achievementList.innerHTML = '';
         adv.achievements.forEach((a: string) => {
           const span = document.createElement('span');
-          span.style.fontSize = '10px';
-          span.style.padding = '2px 4px';
-          span.style.background = '#f6f8fa';
-          span.style.border = '1px solid #d0d7de';
-          span.style.borderRadius = '4px';
+          span.className = 'achievement-badge';
           span.textContent = a;
-          achList.appendChild(span);
+          achievementList.appendChild(span);
         });
+
+        loadSettings();
       } else {
-        loading.style.display = 'none';
         error.textContent = response?.error || "Could not find contribution graph.";
         error.style.display = 'block';
       }

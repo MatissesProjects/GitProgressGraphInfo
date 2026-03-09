@@ -97,8 +97,8 @@ export async function applyVisibility() {
     });
 
     const legendLabels = document.querySelectorAll('.git-heat-legend-label');
-    legendLabels.forEach((el: any) => {
-      el.style.display = (settings.showLegendNumbers !== false) ? 'inline' : 'none';
+    legendLabels.forEach((el: Element) => {
+      (el as HTMLElement).style.display = (settings.showLegendNumbers !== false) ? 'inline' : 'none';
     });
 
     if (detailed) {
@@ -718,6 +718,15 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   
+  // Today Above Average "Dance"
+  if (advanced.todayCount >= parseFloat(advanced.velocity) && advanced.todayCount > 0) {
+    const todayEl = document.querySelector(`.ContributionCalendar-day[data-date="${todayStr}"]`);
+    if (todayEl) {
+      todayEl.classList.add('gh-today-dance');
+      (todayEl as HTMLElement).title += " (Above Average! 💃)";
+    }
+  }
+
   // Bidirectional highlighting: Hover graph day -> Highlight SIG, Ticker, and Legend
   document.querySelectorAll('.ContributionCalendar-day').forEach((day: Element) => {
     day.addEventListener('mouseenter', () => {

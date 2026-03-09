@@ -76,3 +76,75 @@ export function getCombo(todayScore: number, actions: TodayActions) {
     bonusReasons
   };
 }
+
+export function getPersona(weekendVolumeShare: number, consistency: string, velocity: string, weekendScore: number, totalStars: number): string {
+  const c = parseFloat(consistency);
+  const v = parseFloat(velocity);
+  
+  if (v > 15 && c > 90) return "High-Volume Architect";
+  if (weekendVolumeShare > 0.4) return "Weekend Warrior";
+  if (c > 98) return "Consistency Master";
+  if (totalStars > 100) return "Open Source Star";
+  if (v < 2) return "Casual Committer";
+  
+  return "Steady Developer";
+}
+
+export async function calculateRPGStats(
+  data: any[], 
+  timeline: any, 
+  todayCount: number, 
+  currentStreak: number, 
+  velocity: string, 
+  totalStars: number, 
+  socials: any, 
+  pinned: any[], 
+  longestStreak: number,
+  customAvatarSettings?: any
+) {
+  const totalCommits = data.reduce((s, d) => s + d.count, 0);
+  
+  // XP Calculation: Commits (10 XP) + Longest Streak (50 XP/day) + PRs (100 XP) + Issues (50 XP)
+  const totalXP = (totalCommits * 10) + 
+                  (longestStreak * 50) + 
+                  (timeline.pullRequests * 100) + 
+                  (timeline.issuesOpened * 50) + 
+                  (socials.followers * 20);
+
+  // Level Logic: Level 1 starts at 0 XP, Level 2 at 100, Level 3 at 400, etc. (Level^2 * 100)
+  const level = Math.floor(Math.sqrt(totalXP / 100)) + 1;
+  const xpForCurrentLevel = Math.pow(level - 1, 2) * 100;
+  const xpForNextLevel = Math.pow(level, 2) * 100;
+  
+  const levelProgressXP = totalXP - xpForCurrentLevel;
+  const levelTotalXP = xpForNextLevel - xpForCurrentLevel;
+  const progressPercent = Math.min(100, Math.floor((levelProgressXP / levelTotalXP) * 100));
+
+  const levelTitles = ["Novice", "Scripter", "Developer", "Engineer", "Architect", "Grandmaster", "Legend"];
+  const levelTitle = levelTitles[Math.min(levelTitles.length - 1, Math.floor(level / 5))];
+
+  const todayActions: TodayActions = {
+    commits: todayCount,
+    prs: timeline.pullRequests, // Simplified
+    issues: timeline.issuesOpened,
+    reviews: timeline.pullRequestReviews,
+    stars: socials.followers
+  };
+
+  const combo = getCombo(todayCount, todayActions);
+  const avatar = getAvatar(level, currentStreak, totalStars, todayActions, todayCount, customAvatarSettings);
+
+  return {
+    level,
+    levelTitle,
+    totalXP,
+    xpToNext: xpForNextLevel - totalXP,
+    levelProgressXP,
+    levelTotalXP,
+    progressPercent,
+    todayCombo: combo.multiplier,
+    todayComboMath: combo.title,
+    todayComboReason: combo.bonusReasons.join(', '),
+    avatar
+  };
+}
