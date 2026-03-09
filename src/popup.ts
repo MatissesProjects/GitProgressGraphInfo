@@ -1,17 +1,16 @@
-import { GitHeatSettings, CustomAvatarSettings, AdvancedStats } from './types';
+import { GitHeatSettings, AdvancedStats } from './types';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const loading = document.getElementById('loading')!;
-  const error = document.getElementById('error')!;
-  const stats = document.getElementById('stats')!;
-  const settingsPanel = document.getElementById('settings-panel')!;
-  const toggleSettingsBtn = document.getElementById('toggle-settings')!;
+  const loading = document.getElementById('loading');
+  const error = document.getElementById('error');
+  const content = document.getElementById('content');
+  
   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
   const colorModeSelect = document.getElementById('color-mode-select') as HTMLSelectElement;
-  const customColors = document.getElementById('custom-colors')!;
-  const startColorInput = document.getElementById('custom-start') as HTMLInputElement;
-  const stopColorInput = document.getElementById('custom-stop') as HTMLInputElement;
-  const sortableList = document.getElementById('sortable-grid-order')!;
+  const customColors = document.getElementById('custom-colors');
+  const startColorInput = document.getElementById('color-start') as HTMLInputElement;
+  const stopColorInput = document.getElementById('color-stop') as HTMLInputElement;
+  const sortableList = document.getElementById('sortable-grid-list');
 
   const defaultOrder = [
     'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-worst-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
@@ -53,14 +52,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const renderSortableList = (order: string[]) => {
+    if (!sortableList) return;
     sortableList.innerHTML = '';
     order.forEach(id => {
       const li = document.createElement('div');
       li.className = 'sortable-item';
       li.draggable = true;
       li.dataset.id = id;
+      li.style.cssText = "display: flex; align-items: center; gap: 8px; padding: 4px 8px; background: #fff; border: 1px solid #d0d7de; border-radius: 4px; margin-bottom: 2px; cursor: move; font-size: 11px;";
       li.innerHTML = `
-        <span class="drag-handle">⋮⋮</span>
+        <span class="drag-handle" style="color: #8c959f;">⋮⋮</span>
         <span class="sortable-label">${labelMap[id] || id}</span>
       `;
       sortableList.appendChild(li);
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const setupSortable = () => {
+    if (!sortableList) return;
     let dragSrcEl: HTMLElement | null = null;
 
     sortableList.addEventListener('dragstart', (e: DragEvent) => {
@@ -111,11 +113,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const loadSettings = async () => {
     const s = await chrome.storage.local.get(null) as GitHeatSettings;
-    themeSelect.value = s.theme || 'green';
-    colorModeSelect.value = s.colorMode || 'rgb';
-    customColors.style.display = themeSelect.value === 'custom' ? 'flex' : 'none';
-    startColorInput.value = s.customStart || '#4a207e';
-    stopColorInput.value = s.customStop || '#04ff00';
+    if (themeSelect) themeSelect.value = s.theme || 'green';
+    if (colorModeSelect) colorModeSelect.value = s.colorMode || 'rgb';
+    if (customColors) customColors.style.display = themeSelect.value === 'custom' ? 'block' : 'none';
+    if (startColorInput) startColorInput.value = s.customStart || '#ebedf0';
+    if (stopColorInput) stopColorInput.value = s.customStop || '#216e39';
 
     const setChecked = (id: string, val: boolean | undefined) => {
       const el = document.getElementById(id) as HTMLInputElement;
@@ -136,8 +138,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     setChecked('toggle-combo', s.showCombo);
     setChecked('toggle-xp-bar', s.showXPBar);
     setChecked('toggle-skill-tree', s.showSkillTree);
+    setChecked('toggle-gear-head', s.showGearHead);
+    setChecked('toggle-gear-weapon', s.showGearWeapon);
+    setChecked('toggle-gear-shield', s.showGearShield);
+    setChecked('toggle-gear-companion', s.showGearCompanion);
 
     setChecked('toggle-total', s.showTotal);
+    setChecked('toggle-today', s.showTodayCount);
     setChecked('toggle-streak', s.showStreak);
     setChecked('toggle-velocity', s.showVelocity);
     setChecked('toggle-consistency', s.showConsistency);
@@ -173,7 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await chrome.storage.local.set({ [key]: val });
   };
 
-  document.querySelectorAll('.settings-section input[type="checkbox"]').forEach(el => {
+  document.querySelectorAll('.visibility-toggles input[type="checkbox"]').forEach(el => {
     el.addEventListener('change', (e) => {
       const target = e.target as HTMLInputElement;
       const key = target.id.replace('toggle-', 'show').split('-').map((word, i) => i === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)).join('');
@@ -181,97 +188,141 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  themeSelect.addEventListener('change', () => {
-    customColors.style.display = themeSelect.value === 'custom' ? 'flex' : 'none';
-    saveSetting('theme', themeSelect.value);
-  });
+  if (themeSelect) {
+    themeSelect.addEventListener('change', () => {
+      if (customColors) customColors.style.display = themeSelect.value === 'custom' ? 'block' : 'none';
+      saveSetting('theme', themeSelect.value);
+    });
+  }
 
-  colorModeSelect.addEventListener('change', () => saveSetting('colorMode', colorModeSelect.value));
-  startColorInput.addEventListener('change', () => saveSetting('customStart', startColorInput.value));
-  stopColorInput.addEventListener('change', () => saveSetting('customStop', stopColorInput.value));
+  if (colorModeSelect) colorModeSelect.addEventListener('change', () => saveSetting('colorMode', colorModeSelect.value));
+  if (startColorInput) startColorInput.addEventListener('change', () => saveSetting('customStart', startColorInput.value));
+  if (stopColorInput) stopColorInput.addEventListener('change', () => saveSetting('customStop', stopColorInput.value));
 
-  toggleSettingsBtn.addEventListener('click', () => {
-    const isVisible = settingsPanel.style.display === 'block';
-    settingsPanel.style.display = isVisible ? 'none' : 'block';
-    toggleSettingsBtn.textContent = isVisible ? '⚙️ Settings' : '✖ Close Settings';
-  });
+  const resetBtn = document.getElementById('reset-reorder');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', async () => {
+      await chrome.storage.local.set({ gridOrder: defaultOrder });
+      renderSortableList(defaultOrder);
+    });
+  }
 
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tabs[0]?.id) return;
 
-    chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_STATS' }, (response) => {
-      loading.style.display = 'none';
+    chrome.tabs.sendMessage(tabs[0].id, { action: 'getStats' }, (response) => {
+      if (loading) loading.style.display = 'none';
       if (response?.success) {
         const adv: AdvancedStats = response.advanced;
-        stats.style.display = 'block';
+        const thresholds = response.thresholds;
         
-        document.getElementById('total-commits')!.textContent = adv.total.toString();
-        document.getElementById('current-streak')!.textContent = `${adv.streak} / ${adv.maxStreak} days`;
+        if (content) content.style.display = 'block';
         
-        const velTrendHtml = adv.velocityTrend !== 0 ? ` <span style="color: ${adv.velocityTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Velocity Trend (Recent vs YTD)">${adv.velocityIcon}${Math.abs(adv.velocityTrend)}%</span>` : '';
-        const accelHtml = adv.acceleration !== 0 ? ` <span style="color: ${adv.acceleration > 0 ? '#1a7f37' : '#cf222e'}; font-size: 0.9em; opacity: 0.9;" title="Acceleration (Recent vs Prev Week)">${adv.accelerationIcon}${Math.abs(adv.acceleration)}% acc</span>` : '';
-        document.getElementById('velocity')!.innerHTML = `${adv.velocity} <span style="font-size: 0.8em; opacity: 0.8;">c/d</span>${velTrendHtml}${accelHtml}`;
-        
-        document.getElementById('pr-stats')!.textContent = `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`;
-        document.getElementById('consistency')!.textContent = `${adv.consistency}%`;
-        document.getElementById('weekend-score')!.textContent = `${adv.weekendScore}%`;
-        
-        const bestMonthTrendHtml = adv.bestMonthTrend !== 0 ? ` <span style="color: ${adv.bestMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best month vs average month score">${adv.bestMonthIcon}${Math.abs(adv.bestMonthTrend)}%</span>` : '';
-        document.getElementById('best-month')!.innerHTML = `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})${bestMonthTrendHtml}`;
-        
-        const worstMonthTrendHtml = adv.worstMonthTrend !== 0 ? ` <span style="color: ${adv.worstMonthTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Worst month vs average month score">${adv.worstMonthIcon}${Math.abs(adv.worstMonthTrend)}%</span>` : '';
-        const worstMonthEl = document.getElementById('worst-month')!;
-        worstMonthEl.innerHTML = `${adv.worstMonthName} (Score: ${adv.worstMonthStats.score})${worstMonthTrendHtml}`;
-        worstMonthEl.title = `Calculation: Commits × Consistency × Max Streak. Avg Score: ${Math.round(adv.avgMonthScore || 0)}`;
+        const setVal = (id: string, val: string | number) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = val.toString();
+        };
 
-        const bestWeekTrendHtml = adv.bestWeekTrend !== 0 ? ` <span style="color: ${adv.bestWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best week vs average week score">${adv.bestWeekIcon}${Math.abs(adv.bestWeekTrend)}%</span>` : '';
-        document.getElementById('best-week')!.innerHTML = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})${bestWeekTrendHtml}`;
+        const setHtml = (id: string, html: string) => {
+          const el = document.getElementById(id);
+          if (el) el.innerHTML = html;
+        };
+
+        setVal('total-count', adv.total);
+        setVal('today-count', adv.todayCount);
+        setVal('rpg-level', `${adv.level} (${adv.levelTitle})`);
+        setVal('current-streak', `${adv.streak} / ${adv.maxStreak} days`);
+        setVal('longest-streak', `${adv.maxStreak} days`);
+        setVal('longest-slump', `${adv.longestSlump} days`);
+        setVal('consistency', `${adv.consistency}%`);
+        setVal('weekend-score', `${adv.weekendScore}%`);
+        setVal('dominant-weekday', `${adv.dominantWeekday} (${adv.dominantWeekdayWins} wins)`);
+        setVal('pr-stats', `${adv.pullRequests} / ${adv.mergedPullRequests} / ${adv.pullRequestReviews}`);
+        setVal('issue-repo-stats', `${adv.issuesOpened} / ${adv.createdRepos}`);
+        setVal('socials', `${adv.socials.followers} followers / ${adv.socials.organizations} orgs`);
+        setVal('top-langs', adv.topLangs.join(', ') || 'N/A');
+        setVal('pinned-stats', `${adv.totalStars} stars / ${adv.totalForks} forks`);
         
-        const worstWeekTrendHtml = adv.worstWeekTrend !== 0 ? ` <span style="color: ${adv.worstWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Worst week vs average week score">${adv.worstWeekIcon}${Math.abs(adv.worstWeekTrend)}%</span>` : '';
-        const worstWeekEl = document.getElementById('worst-week')!;
-        worstWeekEl.innerHTML = `${adv.worstWeekName} (Score: ${adv.worstWeekStats.score})${worstWeekTrendHtml}`;
-        worstWeekEl.title = `Calculation: Commits × Consistency × Max Streak. Avg Score: ${Math.round(adv.avgWeekScore || 0)}`;
+        setHtml('persona-badge', adv.persona);
+        setHtml('velocity', `${adv.velocity} <small>c/d</small> ${adv.velocityIcon}${Math.abs(adv.velocityTrend)}%`);
+        setHtml('best-month', `${adv.bestMonthName} (Score: ${adv.bestMonthStats.score})`);
+        setHtml('worst-month', `${adv.worstMonthName} (Score: ${adv.worstMonthStats.score})`);
+        setHtml('best-week', `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})`);
+        setHtml('worst-week', `${adv.worstWeekName} (Score: ${adv.worstWeekStats.score})`);
+        setHtml('current-week', `Score: ${adv.currentWeekStats.score}`);
+        setHtml('best-day', `${adv.bestDay} (${adv.bestDayCount})`);
+        setHtml('worst-day', `${adv.worstDay} (${adv.worstDayCount})`);
+        setHtml('current-weekday', `${adv.currentWeekday} (${adv.currentWeekdayCount})`);
+        setHtml('power-day', `${adv.powerDay} (${adv.powerDayAvg})`);
+        setHtml('peak-day', `${adv.peakWeekday} (${adv.peakWeekdayCount})`);
+        setHtml('biggest-island', `${adv.biggestIslandSize} days`);
+        setHtml('slump-island', `${adv.biggestSlumpIslandSize} days`);
+        setHtml('biggest-above-avg-island', `${adv.biggestAboveAvgIslandSize} days`);
+        setHtml('most-active-day', `${adv.mostActiveDay} (${adv.mostActiveDayCount} commits)`);
+        setVal('max-commits', adv.mostActiveDayCount);
 
-        document.getElementById('current-week')!.innerHTML = `Score: ${adv.currentWeekStats.score}`;
-        document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;
+        // Update Level Ranges
+        if (thresholds) {
+          for (let l = 1; l <= 4; l++) {
+            const t = thresholds[l];
+            if (t) {
+              const range = l === 4 ? `${t.min}+` : (t.min === t.max ? `${t.min}` : `${t.min}-${t.max}`);
+              setVal(`l${l}-range`, range);
+            }
+          }
+        }
 
-        const repoList = document.getElementById('top-repos')!;
-        repoList.innerHTML = '';
-        adv.topRepos.forEach((r: {name:string; commits:number}) => {
-          const div = document.createElement('div');
-          div.className = 'repo-item';
-          div.innerHTML = `<span>${r.name}</span><strong>${r.commits}</strong>`;
-          repoList.appendChild(div);
-        });
+        const repoList = document.getElementById('repo-list');
+        if (repoList) {
+          repoList.innerHTML = '';
+          adv.topRepos.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'stat-row';
+            div.style.fontSize = '12px';
+            div.innerHTML = `<span>${r.name}</span><strong>${r.commits}</strong>`;
+            repoList.appendChild(div);
+          });
+        }
 
-        const createdList = document.getElementById('created-repos')!;
-        createdList.innerHTML = '';
-        adv.createdRepoList.slice(0, 5).forEach((r: {name:string; date:string}) => {
-          const div = document.createElement('div');
-          div.className = 'repo-item';
-          div.innerHTML = `<span>${r.name}</span><small>${r.date}</small>`;
-          createdList.appendChild(div);
-        });
+        const createdList = document.getElementById('created-repo-list');
+        if (createdList) {
+          createdList.innerHTML = '';
+          adv.createdRepoList.slice(0, 5).forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'stat-row';
+            div.style.fontSize = '12px';
+            div.innerHTML = `<span>${r.name}</span><small style="color: #57606a;">${r.date || ''}</small>`;
+            createdList.appendChild(div);
+          });
+        }
 
-        const achievementList = document.getElementById('achievement-list')!;
-        achievementList.innerHTML = '';
-        adv.achievements.forEach((a: string) => {
-          const span = document.createElement('span');
-          span.className = 'achievement-badge';
-          span.textContent = a;
-          achievementList.appendChild(span);
-        });
+        const achievementList = document.getElementById('achievement-list');
+        if (achievementList) {
+          achievementList.innerHTML = '';
+          adv.achievements.forEach(a => {
+            const span = document.createElement('span');
+            span.className = 'Label Label--secondary';
+            span.style.cssText = "padding: 2px 8px; font-size: 10px; border-radius: 10px; background: #f6f8fa; border: 1px solid #d0d7de;";
+            span.textContent = a;
+            achievementList.appendChild(span);
+          });
+        }
 
         loadSettings();
       } else {
-        error.textContent = response?.error || "Could not find contribution graph.";
-        error.style.display = 'block';
+        if (error) {
+          error.textContent = response?.error || "Could not find contribution graph. Make sure you are on a GitHub profile page.";
+          error.style.display = 'block';
+        }
+        if (loading) loading.style.display = 'none';
       }
     });
   } catch (err: any) {
-    loading.style.display = 'none';
-    error.textContent = err.message;
-    error.style.display = 'block';
+    if (loading) loading.style.display = 'none';
+    if (error) {
+      error.textContent = err.message;
+      error.style.display = 'block';
+    }
   }
 });

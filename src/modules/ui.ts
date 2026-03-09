@@ -718,11 +718,10 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   
-  // Today Above Average "Dance"
+  // Today Above Average Tooltip Update
   if (advanced.todayCount >= parseFloat(advanced.velocity) && advanced.todayCount > 0) {
     const todayEl = document.querySelector(`.ContributionCalendar-day[data-date="${todayStr}"]`);
     if (todayEl) {
-      todayEl.classList.add('gh-today-dance');
       (todayEl as HTMLElement).title += " (Above Average! 💃)";
     }
   }

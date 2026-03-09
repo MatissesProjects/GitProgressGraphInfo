@@ -145,9 +145,9 @@ export interface AdvancedStats {
   currentWeekdayIcon: string;
   bestWeekdayTrend: number;
   bestWeekdayIcon: string;
+  todayCount: number;
   level: number;
-  levelTitle: string;
-  totalXP: number;
+  levelTitle: string;  totalXP: number;
   xpToNext: number;
   levelProgressXP: number;
   levelTotalXP: number;
