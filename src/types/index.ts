@@ -120,6 +120,7 @@ export interface GitHeatSettings {
   showBestMonth?: boolean;
   showWorstMonth?: boolean;
   showBestWeek?: boolean;
+  showWorstWeek?: boolean;
   showCurrentWeek?: boolean;
   showLevel?: boolean;
   showDominantWeekday?: boolean;
@@ -167,6 +168,12 @@ export interface AdvancedStats {
   bestMonthCount: number;
   bestWeek: string;
   bestWeekCount: number;
+  worstWeekName: string;
+  worstWeekStats: { score: number; count: number; consistency: string; streak: number };
+  worstWeekDates: string[];
+  worstWeekTrend: number;
+  worstWeekIcon: string;
+  avgWeekScore: number;
   belowVelocityDates: string[];
   aboveVelocityDates: string[];
   level: number;

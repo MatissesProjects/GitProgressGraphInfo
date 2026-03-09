@@ -158,6 +158,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'gh-best-month': 'Best Month',
     'gh-worst-month': 'Worst Month',
     'gh-best-week': 'Best Week',
+    'gh-worst-week': 'Worst Week',
     'gh-current-week': 'Current Week',
     'gh-dominant-weekday': 'Dominant Weekday',
     'gh-island': 'Biggest Island (L2+)',
@@ -507,6 +508,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const bestWeekTrendHtml = adv.bestWeekTrend !== 0 ? ` <span style="color: ${adv.bestWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Best week vs average week score">${adv.bestWeekIcon} ${Math.abs(adv.bestWeekTrend)}%</span>` : '';
         document.getElementById('best-week')!.innerHTML = `${adv.bestWeekName} (Score: ${adv.bestWeekStats.score})${bestWeekTrendHtml}`;
         
+        const worstWeekTrendHtml = adv.worstWeekTrend !== 0 ? ` <span style="color: ${adv.worstWeekTrend > 0 ? '#1a7f37' : '#cf222e'}; font-weight: bold;" title="Worst week vs average week score">${adv.worstWeekIcon} ${Math.abs(adv.worstWeekTrend)}%</span>` : '';
+        const worstWeekEl = document.getElementById('worst-week')!;
+        worstWeekEl.innerHTML = `${adv.worstWeekName} (Score: ${adv.worstWeekStats.score})${worstWeekTrendHtml}`;
+        worstWeekEl.title = `Calculation: Commits × Consistency × Max Streak. This week: ${adv.worstWeekStats.count} commits, ${adv.worstWeekStats.consistency}% consistency, ${adv.worstWeekStats.streak} day streak. Average week score: ${Math.round(adv.avgWeekScore || 0)}.`;
+
         document.getElementById('current-week')!.innerHTML = `Score: ${adv.currentWeekStats.score}`;
 
         document.getElementById('dominant-weekday')!.textContent = `${adv.dominantWeekday} (${adv.dominantWeekdayWins} weeks)`;

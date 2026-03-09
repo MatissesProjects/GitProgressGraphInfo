@@ -430,11 +430,16 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   const dominantWeekday = dominantWeekdayIndex >= 0 ? daysOfWeek[dominantWeekdayIndex] : "N/A";
 
   let bestWeekName = "N/A", bestWeekScore = -1, bestWeekDates: string[] = [], bestWeekStats = { score: 0, count: 0, consistency: "0", streak: 0 };
+  let worstWeekName = "N/A", worstWeekScore = Infinity, worstWeekDates: string[] = [], worstWeekStats = { score: 0, count: 0, consistency: "0", streak: 0 };
   const allWeekScores: number[] = [];
-  Object.entries(weekData).forEach(([weekStart, data]) => {
-    const consistency = data.activeDays / 7;
+  
+  const weekEntries = Object.entries(weekData);
+  weekEntries.forEach(([weekStart, data]) => {
+    const elapsed = data.dates.length;
+    const consistency = data.activeDays / elapsed;
     const score = Math.round(data.count * consistency * (data.maxStreak || 1));
     if (score > 0) allWeekScores.push(score);
+    
     if (score > bestWeekScore) {
       bestWeekScore = score;
       const start = new Date(weekStart + 'T00:00:00'), end = new Date(start);
@@ -443,13 +448,47 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
       bestWeekDates = data.dates;
       bestWeekStats = { score, count: data.count, consistency: (consistency * 100).toFixed(1), streak: data.maxStreak };
     }
+
+    if (score < worstWeekScore && score >= 0) {
+      worstWeekScore = score;
+    }
   });
+
+  // Collect all weeks that match the worst score
+  const worstWeeks = weekEntries.filter(([weekStart, data]) => {
+    const elapsed = data.dates.length;
+    const consistency = data.activeDays / elapsed;
+    const score = Math.round(data.count * consistency * (data.maxStreak || 1));
+    return score === worstWeekScore;
+  });
+
+  if (worstWeeks.length > 0) {
+    if (worstWeeks.length === 1) {
+      const [weekStart, data] = worstWeeks[0];
+      const start = new Date(weekStart + 'T00:00:00'), end = new Date(start);
+      end.setDate(start.getDate() + 6);
+      worstWeekName = `${start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+      worstWeekDates = data.dates;
+      const elapsed = data.dates.length;
+      worstWeekStats = { score: worstWeekScore, count: data.count, consistency: ((data.activeDays / elapsed) * 100).toFixed(1), streak: data.maxStreak };
+    } else {
+      worstWeekName = `${worstWeeks.length} Weeks`;
+      worstWeekDates = worstWeeks.flatMap(([_, data]) => data.dates);
+      worstWeekStats = { score: worstWeekScore, count: 0, consistency: "0", streak: 0 };
+    }
+  }
 
   const avgWeekScore = allWeekScores.length > 0 ? allWeekScores.reduce((a, b) => a + b, 0) / allWeekScores.length : 0;
   let bestWeekTrend = 0, bestWeekIcon = '';
   if (avgWeekScore > 0) {
     bestWeekTrend = Math.round(((bestWeekScore - avgWeekScore) / avgWeekScore) * 100);
     bestWeekIcon = bestWeekTrend > 0 ? '▲' : (bestWeekTrend < 0 ? '▼' : '');
+  }
+
+  let worstWeekTrend = 0, worstWeekIcon = '';
+  if (avgWeekScore > 0) {
+    worstWeekTrend = Math.round(((worstWeekStats.score - avgWeekScore) / avgWeekScore) * 100);
+    worstWeekIcon = worstWeekTrend > 0 ? '▲' : (worstWeekTrend < 0 ? '▼' : '');
   }
 
   const now = new Date();
@@ -464,5 +503,17 @@ export function calculateTimeBasedStats(pastAndPresentData: ContributionDay[]) {
   const currentWeekStats = { score: currentWeekScore, count: currentW.count, consistency: ((currentW.activeDays / elapsedDaysInWeek) * 100).toFixed(1), streak: currentW.maxStreak };
   const currentWeekDates = currentW.dates;
 
-  return { bestMonthName, bestMonthDates, bestMonthStats, worstMonthName, worstMonthDates, worstMonthStats, bestWeekName, bestWeekDates, bestWeekStats, currentWeekStats, currentWeekDates, dominantWeekday, dominantWeekdayWins: maxWins, bestMonthTrend, bestMonthIcon, worstMonthTrend, worstMonthIcon, bestWeekTrend, bestWeekIcon, avgMonthScore };
+  return { 
+    bestMonthName, bestMonthDates, bestMonthStats, 
+    worstMonthName, worstMonthDates, worstMonthStats, 
+    bestWeekName, bestWeekDates, bestWeekStats, 
+    worstWeekName, worstWeekDates, worstWeekStats,
+    currentWeekStats, currentWeekDates, 
+    dominantWeekday, dominantWeekdayWins: maxWins, 
+    bestMonthTrend, bestMonthIcon, 
+    worstMonthTrend, worstMonthIcon, 
+    bestWeekTrend, bestWeekIcon,
+    worstWeekTrend, worstWeekIcon,
+    avgMonthScore, avgWeekScore
+  };
 }

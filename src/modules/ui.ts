@@ -7,7 +7,7 @@ export async function applyVisibility() {
       'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
       'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
       'showMostActiveDay', 'showTodayCount', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
+      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
     ]);
 
     const grid = document.getElementById('gh-grid-stats');
@@ -244,6 +244,16 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
         ${(showTrends !== false && advanced.bestWeekTrend !== 0) ? `
           <span class="${advanced.bestWeekTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
             ${advanced.bestWeekIcon} ${Math.abs(advanced.bestWeekTrend)}%
+          </span>` : ''}
+      </div>
+    </div>`,
+    'gh-worst-week': `<div class="stat-card highlightable" id="gh-worst-week" data-week-dates="${(advanced.worstWeekDates || []).join(',')}" title="Calculation: Commits × Consistency × Max Streak. This week: ${advanced.worstWeekStats.count} commits, ${advanced.worstWeekStats.consistency}% consistency, ${advanced.worstWeekStats.streak} day streak. Average week score: ${Math.round(advanced.avgWeekScore || 0)}.">
+      <span class="color-fg-muted d-block text-small">Worst Week (${advanced.worstWeekName})</span>
+      <div class="d-flex flex-items-center gap-1">
+        <strong class="f3-light">Score: ${advanced.worstWeekStats.score}</strong>
+        ${(showTrends !== false && advanced.worstWeekTrend !== 0) ? `
+          <span class="${advanced.worstWeekTrend > 0 ? 'color-fg-success' : 'color-fg-danger'} text-small font-weight-bold" style="white-space: nowrap;">
+            ${advanced.worstWeekIcon} ${Math.abs(advanced.worstWeekTrend)}%
           </span>` : ''}
       </div>
     </div>`,
@@ -663,6 +673,7 @@ export function injectStats(thresholds: any, percentiles: any, data: Contributio
   addHover('#gh-best-month', () => highlightDates(advanced.bestMonthDates));
   addHover('#gh-worst-month', () => highlightDates(advanced.worstMonthDates));
   addHover('#gh-best-week', () => highlightDates(advanced.bestWeekDates));
+  addHover('#gh-worst-week', () => highlightDates(advanced.worstWeekDates));
   addHover('#gh-current-week', () => highlightDates(advanced.currentWeekDates));
   addHover('#gh-island', () => highlightDates(advanced.biggestIslandDates, 'gh-highlight-special'));
   addHover('#gh-slump-island', () => highlightDates(advanced.biggestSlumpIslandDates, 'gh-highlight-sad'));
