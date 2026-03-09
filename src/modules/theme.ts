@@ -137,6 +137,31 @@ export function generateCustomScale(start: string, stop: string, steps: number =
   return scale;
 }
 
+function applyColorAnimation(speed: number = 8) {
+  const styleId = 'git-heat-animation-style';
+  let styleEl = document.getElementById(styleId) as HTMLStyleElement;
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = styleId;
+    document.head.appendChild(styleEl);
+  }
+
+  styleEl.textContent = `
+    @keyframes gh-hue-shift {
+      0% { filter: hue-rotate(0deg) brightness(1) saturate(1); }
+      50% { filter: hue-rotate(180deg) brightness(1.2) saturate(1.5); }
+      100% { filter: hue-rotate(360deg) brightness(1) saturate(1); }
+    }
+    .ContributionCalendar-day.gh-animate, 
+    .gh-ticker-area.gh-animate, 
+    .gh-ticker-path.gh-animate {
+      animation: gh-hue-shift ${speed}s linear infinite !important;
+      will-change: filter;
+      transition: none !important;
+    }
+  `;
+}
+
 export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string, tickerData?: { date: string; count: number }[], colorMode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb') {
   console.log("GitHeat: Applying Deep Recoloring (v1.3 - High Resolution Gradient)...");
   const days = document.querySelectorAll('.ContributionCalendar-day');
@@ -155,6 +180,10 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     }
     return 1;
   };
+
+  const settings = await chrome.storage.local.get(['showColorAnimation', 'animationSpeed']);
+  const doAnimate = settings.showColorAnimation === true;
+  const speed = settings.animationSpeed || 8;
 
   let colors: string[] = [];
   if (themeName !== 'none') {
@@ -192,19 +221,49 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     }
   }
 
+  if (doAnimate && themeName !== 'none') {
+    applyColorAnimation(speed);
+  } else {
+    const styleEl = document.getElementById('git-heat-animation-style');
+    if (styleEl) styleEl.textContent = '';
+  }
+
   // ALWAYS set the data-granular-level attribute so highlighting works
-  days.forEach((day: any) => {
+  days.forEach((day: any, i: number) => {
     const date = day.getAttribute('data-date');
     const dayData = data.find(d => d.date === date);
     const level = getGranularLevel(dayData ? dayData.count : 0);
     day.setAttribute('data-granular-level', level.toString());
     
+    if (doAnimate && level > 0 && themeName !== 'none') {
+      day.classList.add('gh-animate');
+      day.style.animationDelay = `${(i % 100) * 0.05}s`;
+    } else {
+      day.classList.remove('gh-animate');
+      day.style.animationDelay = '';
+    }
+
     if (themeName !== 'none' && dayData && dayData.count > 0) {
       const color = colors[level] || colors[colors.length - 1];
       day.style.setProperty('background-color', color, 'important');
       day.style.setProperty('fill', color, 'important');
     }
   });
+
+  // Ticker Animation
+  const tickerContainer = document.getElementById('gh-ticker-container');
+  if (tickerContainer) {
+    const area = tickerContainer.querySelector('.gh-ticker-area');
+    const path = tickerContainer.querySelector('.gh-ticker-path');
+    if (area) {
+      if (doAnimate && themeName !== 'none') area.classList.add('gh-animate');
+      else area.classList.remove('gh-animate');
+    }
+    if (path) {
+      if (doAnimate && themeName !== 'none') path.classList.add('gh-animate');
+      else path.classList.remove('gh-animate');
+    }
+  }
 
   if (themeName === 'none') return;
 

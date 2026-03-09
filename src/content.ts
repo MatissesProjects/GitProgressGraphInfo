@@ -71,12 +71,12 @@ function init() {
       runAnalysis().catch(() => {});
     }
 
-    if (changes.theme || changes.customStart || changes.customStop || changes.colorMode) {
-      console.log("GitHeat: Theme setting changed, recoloring...");
+    if (changes.theme || changes.customStart || changes.customStop || changes.colorMode || changes.showColorAnimation || changes.animationSpeed) {
+      console.log("GitHeat: Theme or Animation setting changed, recoloring...");
       const data = parseContributionGraph();
       if (data) {
         const p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(['theme', 'customStart', 'customStop', 'colorMode']);
+        const s = await chrome.storage.local.get(['theme', 'customStart', 'customStop', 'colorMode', 'showColorAnimation', 'animationSpeed']);
         await applyDeepRecoloring(data, p, (s.theme as string) || 'green', (s.customStart as string), (s.customStop as string), undefined, s.colorMode as any);
       }
     }

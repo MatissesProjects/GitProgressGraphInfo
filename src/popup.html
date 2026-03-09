@@ -123,6 +123,17 @@
           <option value="hsl-far">HSL (Far)</option>
         </select>
       </div>
+      <div class="stat-row" style="margin-top: 8px; margin-bottom: 0;">
+        <label style="font-size: 11px; font-weight: 600;">ANIMATE</label>
+        <input type="checkbox" id="toggle-color-animation" style="cursor: pointer;">
+      </div>
+      <div class="stat-row" style="margin-top: 8px; margin-bottom: 0;">
+        <label style="font-size: 11px; font-weight: 600;">SPEED</label>
+        <div style="display: flex; align-items: center; gap: 5px; flex: 1; justify-content: flex-end;">
+          <input type="range" id="animation-speed" min="1" max="20" value="8" style="width: 80px; height: 4px; cursor: pointer;">
+          <span id="speed-val" style="font-size: 10px; min-width: 20px;">8s</span>
+        </div>
+      </div>
     </div>
 
     <div class="visibility-toggles" style="display: none; margin-top: 10px; padding: 8px; background: #f6f8fa; border-radius: 6px; border: 1px solid #d0d7de;">

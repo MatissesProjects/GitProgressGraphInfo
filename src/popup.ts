@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const customColors = document.getElementById('custom-colors');
   const startColorInput = document.getElementById('color-start') as HTMLInputElement;
   const stopColorInput = document.getElementById('color-stop') as HTMLInputElement;
+  const speedSlider = document.getElementById('animation-speed') as HTMLInputElement;
+  const speedVal = document.getElementById('speed-val');
   const sortableList = document.getElementById('sortable-grid-list');
 
   const gearBases = ['🧙', '🧙‍♂️', '🧙‍♀️', '🧑‍💻', '👩‍💻', '🧔‍♂️', '🧝', '🧝‍♂️', '🧝‍♀️', '🧛', '🧛‍♂️', '🧛‍♀️'];
@@ -58,6 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'toggle-combo': 'showCombo',
     'toggle-xp-bar': 'showXPBar',
     'toggle-skill-tree': 'showSkillTree',
+    'toggle-color-animation': 'showColorAnimation',
     'toggle-pulse-hash': 'showPulseHash',
     'toggle-ticker': 'showTicker',
     'toggle-total': 'showTotal',
@@ -213,6 +216,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (el) el.checked = s[key] !== false;
     });
 
+    if (speedSlider) {
+      speedSlider.value = (s.animationSpeed || 8).toString();
+      if (speedVal) speedVal.textContent = `${speedSlider.value}s`;
+    }
+
     const custom = s.customAvatar || {};
     populateGear('custom-bases', gearBases, custom.base);
     populateGear('custom-headgear', gearHeads, custom.headgear);
@@ -247,6 +255,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (colorModeSelect) colorModeSelect.addEventListener('change', () => saveSetting('colorMode', colorModeSelect.value));
   if (startColorInput) startColorInput.addEventListener('change', () => saveSetting('customStart', startColorInput.value));
   if (stopColorInput) stopColorInput.addEventListener('change', () => saveSetting('customStop', stopColorInput.value));
+
+  if (speedSlider) {
+    speedSlider.addEventListener('input', () => {
+      if (speedVal) speedVal.textContent = `${speedSlider.value}s`;
+    });
+    speedSlider.addEventListener('change', () => {
+      saveSetting('animationSpeed', parseInt(speedSlider.value, 10));
+    });
+  }
 
   const saveAvatarBtn = document.getElementById('save-avatar-custom');
   if (saveAvatarBtn) {

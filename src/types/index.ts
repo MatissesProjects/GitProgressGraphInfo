@@ -217,6 +217,8 @@ export interface GitHeatSettings {
   showCombo?: boolean;
   showXPBar?: boolean;
   showSkillTree?: boolean;
+  showColorAnimation?: boolean;
+  animationSpeed?: number;
   theme?: string;
   customStart?: string;
   customStop?: string;
