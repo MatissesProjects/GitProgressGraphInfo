@@ -35,15 +35,14 @@ async function run() {
   console.log(`Launching Puppeteer for user: ${username}...`);
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
   });
 
   try {
     const page = await browser.newPage();
-    // Use high deviceScaleFactor for crisp text
-    await page.setViewport({ width: 1200, height: 2000, deviceScaleFactor: 2 });
+    // Use smaller viewport and 1x scale for much faster capture
+    await page.setViewport({ width: 850, height: 1200, deviceScaleFactor: 1 });
     
-    // Set Timezone if provided, otherwise default to UTC
     const timezone = process.env.TIMEZONE || 'UTC';
     try {
       await page.emulateTimezone(timezone);
@@ -52,17 +51,12 @@ async function run() {
       console.error(`Failed to set timezone ${timezone}, falling back to UTC`);
     }
     
-    // Force Dark Mode
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
-    
-    // Set a realistic User-Agent
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36');
 
-    // Pipe browser console to Node console
     page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     page.on('pageerror', (err: Error) => console.error('PAGE ERROR:', err.message));
 
-    // Inject configuration into the page context
     const startColor = process.env.CUSTOM_START_COLOR || '#4a207e';
     const stopColor = process.env.CUSTOM_STOP_COLOR || '#04ff00';
     const animationSpeed = parseInt(process.env.ANIMATION_SPEED || '8', 10);
@@ -85,10 +79,8 @@ async function run() {
     const day = String(now.getDate()).padStart(2, '0');
     const ytdUrl = `https://github.com/${username}?tab=overview&from=${year}-${month}-01&to=${year}-${month}-${day}`;
     
-    console.log(`Using YTD URL: ${ytdUrl}`);
     await page.goto(ytdUrl, { waitUntil: 'networkidle2', timeout: 60000 });
 
-    // Force GitHub to render in Dark Mode
     await page.evaluate(() => {
       document.documentElement.setAttribute('data-color-mode', 'dark');
       document.documentElement.setAttribute('data-dark-theme', 'dark');
@@ -96,105 +88,69 @@ async function run() {
 
     console.log('Injecting styles and script...');
     await page.addStyleTag({ content: styles });
-    
-    // Bypass CSP by executing the script content directly via Puppeteer's evaluate
     await page.evaluate(standaloneScript);
 
     console.log('Waiting for GitHeat to be ready...');
-    // Wait for either success or failure flag
     await page.waitForSelector('body.githeat-ready, body.githeat-failed', { timeout: 60000 });
     
     const isFailed = await page.evaluate(() => document.body.classList.contains('githeat-failed'));
     if (isFailed) {
-      throw new Error('GitHeat analysis failed on the page. Check PAGE LOG for details.');
+      throw new Error('GitHeat analysis failed on the page.');
     }
 
-    // Give a small buffer for the UI to actually render after the flag is set
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 1000));
 
-    console.log('Isolating stats and graph for clean capture...');
+    console.log('Isolating stats and graph...');
     const isolationSuccess = await page.evaluate(() => {
       const stats = document.getElementById('git-heat-stats');
       const graphContainer = document.querySelector('.js-yearly-contributions') as HTMLElement | null;
-      
       if (!stats || !graphContainer) return false;
 
-      // 1. Create a truly isolated wrapper at the top of the body
       const wrapper = document.createElement('div');
       wrapper.id = 'githeat-screenshot-wrapper';
-      
-      // Style wrapper with fixed positioning and high z-index to ignore page layout
       Object.assign(wrapper.style, {
         backgroundColor: '#0d1117',
-        padding: '24px',
+        padding: '20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '20px',
+        gap: '15px',
         width: '820px', 
-        borderRadius: '12px',
-        border: '1px solid #30363d',
-        boxSizing: 'border-box',
         position: 'fixed',
         top: '0',
         left: '0',
-        zIndex: '2147483647',
-        boxShadow: 'none'
+        zIndex: '2147483647'
       });
 
-      // 2. Aggressively hide the year list and other UI elements
-      const killList = [
-        '.js-profile-timeline-year-list',
-        '.profile-timeline-year-list',
-        '#user-activity-overview',
-        '.activity-listing',
-        '.js-yearly-contributions .float-right',
-        'ul.filter-list', // Common for year lists
-        '.contrib-footer-link',
-        'details' // Hide contribution settings dropdown
-      ];
-      
+      const killList = ['.js-profile-timeline-year-list', '.profile-timeline-year-list', '#user-activity-overview', '.activity-listing', '.js-yearly-contributions .float-right', 'ul.filter-list', '.contrib-footer-link', 'details'];
       killList.forEach(selector => {
-        document.querySelectorAll(selector).forEach(el => {
-          (el as HTMLElement).style.setProperty('display', 'none', 'important');
-        });
+        document.querySelectorAll(selector).forEach(el => (el as HTMLElement).style.setProperty('display', 'none', 'important'));
       });
 
-      // 3. Clean up the moved elements
       stats.style.margin = '0';
-      stats.style.width = '100%';
       graphContainer.style.margin = '0';
-      graphContainer.style.width = '100%';
-      graphContainer.style.border = 'none';
-
-      // 4. Move them into our isolated wrapper
       wrapper.appendChild(stats);
       wrapper.appendChild(graphContainer);
       document.body.appendChild(wrapper);
       return true;
     });
 
-    if (!isolationSuccess) {
-      throw new Error('Failed to isolate stats or graph container. Elements may not have been injected correctly.');
-    }
+    if (!isolationSuccess) throw new Error('Failed to isolate elements.');
 
     const wrapper = await page.$('#githeat-screenshot-wrapper');
-    if (!wrapper) {
-      throw new Error('Could not find isolated screenshot wrapper');
-    }
+    if (!wrapper) throw new Error('Could not find wrapper');
 
-    console.log('Taking frames for animation...');
+    console.log('Taking frames for animation (Optimized)...');
     const framesDir = path.join(process.cwd(), 'frames');
     if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);
 
-    const fps = 30;
-    const duration = 8; // 8 seconds of animation
+    const fps = 15;
+    const duration = 4; 
     const totalFrames = fps * duration;
     
     const startCapture = Date.now();
     for (let i = 0; i < totalFrames; i++) {
-      const framePath = path.join(framesDir, `frame-${String(i).padStart(3, '0')}.png`);
-      // Use faster screenshot options if possible, though 'wrapper.screenshot' is already quite targeted
-      await wrapper.screenshot({ path: framePath, optimizeForSpeed: true } as any);
+      const framePath = path.join(framesDir, `frame-${String(i).padStart(3, '0')}.jpg`);
+      await wrapper.screenshot({ path: framePath, type: 'jpeg', quality: 80 });
     }
     const endCapture = Date.now();
     const actualDuration = (endCapture - startCapture) / 1000;
@@ -203,8 +159,7 @@ async function run() {
     console.log(`Captured ${totalFrames} frames in ${actualDuration.toFixed(2)}s (Actual FPS: ${actualFps.toFixed(2)})`);
     console.log('Generating GIF using ffmpeg...');
     const gifPath = path.join(process.cwd(), '../githeat.gif');
-    // Use the actual measured framerate for playback so speed matches reality
-    execSync(`ffmpeg -y -framerate ${actualFps} -i frames/frame-%03d.png -vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ${gifPath}`);
+    execSync(`ffmpeg -y -framerate ${actualFps} -i frames/frame-%03d.jpg -vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ${gifPath}`);
 
     console.log(`Success! Animation saved to: ${gifPath}`);
   } catch (error) {
