@@ -189,19 +189,21 @@ async function run() {
     const fps = 10;
     const duration = 8; // 8 seconds of animation
     const totalFrames = fps * duration;
-
+    
+    const startCapture = Date.now();
     for (let i = 0; i < totalFrames; i++) {
       const framePath = path.join(framesDir, `frame-${String(i).padStart(3, '0')}.png`);
       await wrapper.screenshot({ path: framePath });
-      // Since screenshotting takes time, we might not need an explicit wait, 
-      // but let's add a small one to try to match the CSS animation pacing better.
-      await new Promise(r => setTimeout(r, 100)); 
     }
+    const endCapture = Date.now();
+    const actualDuration = (endCapture - startCapture) / 1000;
+    const actualFps = totalFrames / actualDuration;
 
+    console.log(`Captured ${totalFrames} frames in ${actualDuration.toFixed(2)}s (Actual FPS: ${actualFps.toFixed(2)})`);
     console.log('Generating GIF using ffmpeg...');
     const gifPath = path.join(process.cwd(), '../githeat.gif');
-    // Using a complex filtergraph to generate a high quality palette and GIF
-    execSync(`ffmpeg -y -framerate ${fps} -i frames/frame-%03d.png -vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ${gifPath}`);
+    // Use the actual measured framerate for playback so speed matches reality
+    execSync(`ffmpeg -y -framerate ${actualFps} -i frames/frame-%03d.png -vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ${gifPath}`);
 
     console.log(`Success! Animation saved to: ${gifPath}`);
   } catch (error) {
