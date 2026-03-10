@@ -186,14 +186,15 @@ async function run() {
     const framesDir = path.join(process.cwd(), 'frames');
     if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);
 
-    const fps = 10;
+    const fps = 30;
     const duration = 8; // 8 seconds of animation
     const totalFrames = fps * duration;
     
     const startCapture = Date.now();
     for (let i = 0; i < totalFrames; i++) {
       const framePath = path.join(framesDir, `frame-${String(i).padStart(3, '0')}.png`);
-      await wrapper.screenshot({ path: framePath });
+      // Use faster screenshot options if possible, though 'wrapper.screenshot' is already quite targeted
+      await wrapper.screenshot({ path: framePath, optimizeForSpeed: true } as any);
     }
     const endCapture = Date.now();
     const actualDuration = (endCapture - startCapture) / 1000;
