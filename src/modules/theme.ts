@@ -154,7 +154,9 @@ function applyColorAnimation(speed: number = 8) {
     }
     .ContributionCalendar-day.gh-animate, 
     .gh-ticker-area.gh-animate, 
-    .gh-ticker-path.gh-animate {
+    .gh-ticker-path.gh-animate,
+    .square-legend.gh-animate,
+    .badge.gh-animate {
       animation: gh-hue-shift ${speed}s linear infinite !important;
       will-change: filter;
       transition: none !important;
@@ -211,7 +213,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
       const gradientColors = baseColors.slice(1);
       const steps = totalLevels;
       for (let i = 0; i < steps; i++) {
-        const factor = i / (steps - 1);
+        const factor = i / (steps - i);
         const colorIdx = factor * (gradientColors.length - 1);
         const low = Math.floor(colorIdx);
         const high = Math.ceil(colorIdx);
@@ -308,6 +310,9 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
       if (color) sq.style.setProperty('background-color', color, 'important');
       const range = legendRanges[i];
       if (range) sq.setAttribute('title', range);
+      
+      if (doAnimate) sq.classList.add('gh-animate');
+      else sq.classList.remove('gh-animate');
     });
 
     const badges = statsPanel.querySelectorAll('.badge');
@@ -315,6 +320,9 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     badges.forEach((badge: any, i) => {
       const color = colors[badgeLevels[i]];
       if (color) badge.style.setProperty('background-color', color, 'important');
+      
+      if (doAnimate) badge.classList.add('gh-animate');
+      else badge.classList.remove('gh-animate');
     });
   }
 
