@@ -137,7 +137,7 @@ export function generateCustomScale(start: string, stop: string, steps: number =
   return scale;
 }
 
-function applyColorAnimation(speed: number = 8) {
+function applyColorAnimation(speed: number = 8, style: string = 'hue') {
   const styleId = 'git-heat-animation-style';
   let styleEl = document.getElementById(styleId) as HTMLStyleElement;
   if (!styleEl) {
@@ -146,22 +146,66 @@ function applyColorAnimation(speed: number = 8) {
     document.head.appendChild(styleEl);
   }
 
-  styleEl.textContent = `
-    @keyframes gh-hue-shift {
-      0% { filter: hue-rotate(0deg) brightness(1) saturate(1); }
-      50% { filter: hue-rotate(180deg) brightness(1.2) saturate(1.5); }
-      100% { filter: hue-rotate(360deg) brightness(1) saturate(1); }
-    }
-    .ContributionCalendar-day.gh-animate, 
-    .gh-ticker-area.gh-animate, 
-    .gh-ticker-path.gh-animate,
-    .square-legend.gh-animate,
-    .badge.gh-animate {
-      animation: gh-hue-shift ${speed}s linear infinite !important;
-      will-change: filter;
-      transition: none !important;
-    }
-  `;
+  let animationCss = '';
+  
+  if (style === 'hue') {
+    animationCss = `
+      @keyframes gh-anim-hue {
+        0% { filter: hue-rotate(0deg) brightness(1) saturate(1); }
+        50% { filter: hue-rotate(180deg) brightness(1.2) saturate(1.5); }
+        100% { filter: hue-rotate(360deg) brightness(1) saturate(1); }
+      }
+      .ContributionCalendar-day.gh-animate, 
+      .gh-ticker-area.gh-animate, 
+      .gh-ticker-path.gh-animate,
+      .square-legend.gh-animate,
+      .badge.gh-animate {
+        animation: gh-anim-hue ${speed}s linear infinite !important;
+        will-change: filter;
+        transition: none !important;
+      }
+    `;
+  } else if (style === 'breathe') {
+    animationCss = `
+      @keyframes gh-anim-breathe {
+        0% { filter: brightness(1) saturate(1) drop-shadow(0 0 0px transparent); transform: scale(1); z-index: 1; position: relative; }
+        50% { filter: brightness(1.4) saturate(1.2) drop-shadow(0 0 3px currentColor); transform: scale(1.1); z-index: 2; position: relative; }
+        100% { filter: brightness(1) saturate(1) drop-shadow(0 0 0px transparent); transform: scale(1); z-index: 1; position: relative; }
+      }
+      .ContributionCalendar-day.gh-animate, 
+      .square-legend.gh-animate,
+      .badge.gh-animate {
+        animation: gh-anim-breathe ${speed}s ease-in-out infinite !important;
+        will-change: filter, transform;
+        transition: none !important;
+        color: inherit;
+      }
+      .gh-ticker-area.gh-animate, 
+      .gh-ticker-path.gh-animate {
+        animation: gh-anim-breathe ${speed}s ease-in-out infinite !important;
+        will-change: filter;
+      }
+    `;
+  } else if (style === 'sparkle') {
+    animationCss = `
+      @keyframes gh-anim-sparkle {
+        0%, 100% { filter: brightness(1) saturate(1); }
+        5%, 15% { filter: brightness(1.8) saturate(2) drop-shadow(0 0 4px #fff); }
+        10% { filter: brightness(1) saturate(1); }
+      }
+      .ContributionCalendar-day.gh-animate, 
+      .gh-ticker-area.gh-animate, 
+      .gh-ticker-path.gh-animate,
+      .square-legend.gh-animate,
+      .badge.gh-animate {
+        animation: gh-anim-sparkle ${speed}s ease-in-out infinite !important;
+        will-change: filter;
+        transition: none !important;
+      }
+    `;
+  }
+
+  styleEl.textContent = animationCss;
 }
 
 export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string, tickerData?: { date: string; count: number }[], colorMode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb') {
@@ -183,9 +227,10 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     return 1;
   };
 
-  const settings = await chrome.storage.local.get(['showColorAnimation', 'animationSpeed']);
+  const settings = await chrome.storage.local.get(['showColorAnimation', 'animationSpeed', 'animationStyle']);
   const doAnimate = settings.showColorAnimation === true;
   const speed = settings.animationSpeed || 8;
+  const animStyle = settings.animationStyle || 'hue';
 
   let colors: string[] = [];
   if (themeName !== 'none') {
@@ -207,13 +252,12 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
       }
       colors = generateCustomScale(start, stop, totalLevels, colorMode);
     } else {
-      // Interpolate predefined themes to match our 15-level scale
       const baseColors = THEMES[themeName] || THEMES.green;
-      colors = [baseColors[0]]; // Index 0 is always the background
+      colors = [baseColors[0]]; 
       const gradientColors = baseColors.slice(1);
       const steps = totalLevels;
       for (let i = 0; i < steps; i++) {
-        const factor = i / (steps - i);
+        const factor = i / (steps - 1);
         const colorIdx = factor * (gradientColors.length - 1);
         const low = Math.floor(colorIdx);
         const high = Math.ceil(colorIdx);
@@ -224,13 +268,12 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   }
 
   if (doAnimate && themeName !== 'none') {
-    applyColorAnimation(speed);
+    applyColorAnimation(speed, animStyle);
   } else {
     const styleEl = document.getElementById('git-heat-animation-style');
     if (styleEl) styleEl.textContent = '';
   }
 
-  // ALWAYS set the data-granular-level attribute so highlighting works
   days.forEach((day: any, i: number) => {
     const date = day.getAttribute('data-date');
     const dayData = data.find(d => d.date === date);
@@ -239,7 +282,11 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     
     if (doAnimate && level > 0 && themeName !== 'none') {
       day.classList.add('gh-animate');
-      day.style.animationDelay = `${(i % 100) * 0.05}s`;
+      if (animStyle === 'sparkle') {
+        day.style.animationDelay = `${Math.random() * speed}s`;
+      } else {
+        day.style.animationDelay = `${(i % 100) * (speed / 100)}s`;
+      }
     } else {
       day.classList.remove('gh-animate');
       day.style.animationDelay = '';
@@ -249,10 +296,10 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
       const color = colors[level] || colors[colors.length - 1];
       day.style.setProperty('background-color', color, 'important');
       day.style.setProperty('fill', color, 'important');
+      day.style.setProperty('color', color, 'important'); // For shadow inheritance
     }
   });
 
-  // Ticker Animation
   const tickerContainer = document.getElementById('gh-ticker-container');
   if (tickerContainer) {
     const area = tickerContainer.querySelector('.gh-ticker-area');
@@ -326,7 +373,6 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     });
   }
 
-  // Recolor Activity Ticker Area (Horizontal Commit Intensity Gradient)
   const tickerLineGradient = document.getElementById('ticker-line-gradient');
   let targetTickerData = tickerData;
   
@@ -346,11 +392,8 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   
   if (tickerLineGradient && targetTickerData && targetTickerData.length > 0) {
     const sortedTicker = [...targetTickerData].sort((a, b) => a.date.localeCompare(b.date));
-    
-    // Clear existing stops
     tickerLineGradient.innerHTML = '';
     
-    // Create a stop for every day to map color to commit intensity
     sortedTicker.forEach((day, i) => {
       const level = getGranularLevel(day.count);
       const color = colors[level] || colors[0];
@@ -359,7 +402,6 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
       const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
       stop.setAttribute('offset', `${offset}%`);
       stop.setAttribute('stop-color', color);
-      // Ensure visibility: level 0 is faint, levels 1+ are solid (mask handles vertical fade)
       stop.setAttribute('stop-opacity', level === 0 ? '0.2' : '1');
       tickerLineGradient.appendChild(stop);
     });

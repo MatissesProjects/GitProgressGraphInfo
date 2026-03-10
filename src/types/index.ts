@@ -219,6 +219,7 @@ export interface GitHeatSettings {
   showSkillTree?: boolean;
   showColorAnimation?: boolean;
   animationSpeed?: number;
+  animationStyle?: 'hue' | 'breathe' | 'sparkle';
   theme?: string;
   customStart?: string;
   customStop?: string;

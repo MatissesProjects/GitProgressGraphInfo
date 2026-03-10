@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const stopColorInput = document.getElementById('color-stop') as HTMLInputElement;
   const speedSlider = document.getElementById('animation-speed') as HTMLInputElement;
   const speedVal = document.getElementById('speed-val');
+  const animationStyleSelect = document.getElementById('animation-style') as HTMLSelectElement;
   const sortableList = document.getElementById('sortable-grid-list');
 
   const gearBases = ['🧙', '🧙‍♂️', '🧙‍♀️', '🧑‍💻', '👩‍💻', '🧔‍♂️', '🧝', '🧝‍♂️', '🧝‍♀️', '🧛', '🧛‍♂️', '🧛‍♀️'];
@@ -221,6 +222,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (speedVal) speedVal.textContent = `${speedSlider.value}s`;
     }
 
+    if (animationStyleSelect) {
+      animationStyleSelect.value = s.animationStyle || 'hue';
+    }
+
     const custom = s.customAvatar || {};
     populateGear('custom-bases', gearBases, custom.base);
     populateGear('custom-headgear', gearHeads, custom.headgear);
@@ -255,6 +260,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (colorModeSelect) colorModeSelect.addEventListener('change', () => saveSetting('colorMode', colorModeSelect.value));
   if (startColorInput) startColorInput.addEventListener('change', () => saveSetting('customStart', startColorInput.value));
   if (stopColorInput) stopColorInput.addEventListener('change', () => saveSetting('customStop', stopColorInput.value));
+
+  if (animationStyleSelect) {
+    animationStyleSelect.addEventListener('change', () => {
+      saveSetting('animationStyle', animationStyleSelect.value);
+    });
+  }
 
   if (speedSlider) {
     speedSlider.addEventListener('input', () => {
