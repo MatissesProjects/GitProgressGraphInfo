@@ -218,8 +218,9 @@ export interface GitHeatSettings {
   showXPBar?: boolean;
   showSkillTree?: boolean;
   showColorAnimation?: boolean;
+  syncAnimations?: boolean;
   animationSpeed?: number;
-  animationStyle?: 'hue' | 'breathe' | 'sparkle';
+  animationStyle?: ('hue' | 'breathe' | 'sparkle' | 'rainbow' | 'ghost' | 'fire' | 'glitch' | 'chaos' | 'plasma')[];
   theme?: string;
   customStart?: string;
   customStop?: string;

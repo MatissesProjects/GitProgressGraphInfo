@@ -187,7 +187,7 @@ async function run() {
     if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);
 
     const fps = 10;
-    const duration = 4; // 4 seconds of animation
+    const duration = 8; // 8 seconds of animation
     const totalFrames = fps * duration;
 
     for (let i = 0; i < totalFrames; i++) {

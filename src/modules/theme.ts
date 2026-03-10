@@ -137,7 +137,7 @@ export function generateCustomScale(start: string, stop: string, steps: number =
   return scale;
 }
 
-function applyColorAnimation(speed: number = 8, style: string = 'hue') {
+function applyColorAnimation(speed: number = 8, styles: string[] = ['hue']) {
   const styleId = 'git-heat-animation-style';
   let styleEl = document.getElementById(styleId) as HTMLStyleElement;
   if (!styleEl) {
@@ -146,66 +146,115 @@ function applyColorAnimation(speed: number = 8, style: string = 'hue') {
     document.head.appendChild(styleEl);
   }
 
-  let animationCss = '';
-  
-  if (style === 'hue') {
-    animationCss = `
-      @keyframes gh-anim-hue {
-        0% { filter: hue-rotate(0deg) brightness(1) saturate(1); }
-        50% { filter: hue-rotate(180deg) brightness(1.2) saturate(1.5); }
-        100% { filter: hue-rotate(360deg) brightness(1) saturate(1); }
-      }
-      .ContributionCalendar-day.gh-animate, 
-      .gh-ticker-area.gh-animate, 
-      .gh-ticker-path.gh-animate,
-      .square-legend.gh-animate,
-      .badge.gh-animate {
-        animation: gh-anim-hue ${speed}s linear infinite !important;
-        will-change: filter;
-        transition: none !important;
-      }
-    `;
-  } else if (style === 'breathe') {
-    animationCss = `
-      @keyframes gh-anim-breathe {
-        0% { filter: brightness(1) saturate(1) drop-shadow(0 0 0px transparent); transform: scale(1); z-index: 1; position: relative; }
-        50% { filter: brightness(1.4) saturate(1.2) drop-shadow(0 0 3px currentColor); transform: scale(1.1); z-index: 2; position: relative; }
-        100% { filter: brightness(1) saturate(1) drop-shadow(0 0 0px transparent); transform: scale(1); z-index: 1; position: relative; }
-      }
-      .ContributionCalendar-day.gh-animate, 
-      .square-legend.gh-animate,
-      .badge.gh-animate {
-        animation: gh-anim-breathe ${speed}s ease-in-out infinite !important;
-        will-change: filter, transform;
-        transition: none !important;
-        color: inherit;
-      }
-      .gh-ticker-area.gh-animate, 
-      .gh-ticker-path.gh-animate {
-        animation: gh-anim-breathe ${speed}s ease-in-out infinite !important;
-        will-change: filter;
-      }
-    `;
-  } else if (style === 'sparkle') {
-    animationCss = `
-      @keyframes gh-anim-sparkle {
-        0%, 100% { filter: brightness(1) saturate(1); }
-        5%, 15% { filter: brightness(1.8) saturate(2) drop-shadow(0 0 4px #fff); }
-        10% { filter: brightness(1) saturate(1); }
-      }
-      .ContributionCalendar-day.gh-animate, 
-      .gh-ticker-area.gh-animate, 
-      .gh-ticker-path.gh-animate,
-      .square-legend.gh-animate,
-      .badge.gh-animate {
-        animation: gh-anim-sparkle ${speed}s ease-in-out infinite !important;
-        will-change: filter;
-        transition: none !important;
-      }
-    `;
+  if (styles.length === 0) {
+    styleEl.textContent = '';
+    return;
   }
 
-  styleEl.textContent = animationCss;
+  // Define keyframe steps for the master loop
+  const steps = [0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 70, 75, 80, 85, 90, 95, 100];
+  let keyframesCss = '@keyframes gh-master-loop {\n';
+
+  steps.forEach(p => {
+    const factor = p / 100;
+    const sinFactor = Math.sin(factor * Math.PI); // Smooth 0 -> 1 -> 0 transition
+    
+    // Default property values
+    let h = 0;          // hue-rotate
+    let b = 1;          // brightness
+    let s = 1;          // saturate
+    let c = 1;          // contrast
+    let i = 0;          // invert
+    let bl = 0;         // blur
+    let sc = 1;         // scale
+    let r = 0;          // rotate
+    let tx = 0, ty = 0; // translate
+    let opacity = 1;
+
+    // 1. Hue & Rainbow (Additive color cycling)
+    if (styles.includes('hue')) h += factor * 360;
+    if (styles.includes('rainbow')) h += factor * 720; // Double speed
+
+    // 2. Breathe (Smooth scaling and brightness pulse)
+    if (styles.includes('breathe')) {
+      sc *= (1 + sinFactor * 0.12);
+      b *= (1 + sinFactor * 0.4);
+    }
+
+    // 3. Sparkle (Sharp, periodic flashes)
+    if (styles.includes('sparkle')) {
+      // Create sharp peaks at 10, 30, 50, 70, 90
+      const sparkleTrigger = (p + 10) % 20 === 0;
+      if (sparkleTrigger) {
+        b *= 2.5;
+        s *= 2;
+      }
+    }
+
+    // 4. Ghost (Opacity and blur oscillation)
+    if (styles.includes('ghost')) {
+      opacity = 1 - (sinFactor * 0.75);
+      bl += sinFactor * 2.5;
+    }
+
+    // 5. Fire (Flickering heat)
+    if (styles.includes('fire')) {
+      const flicker = 0.95 + Math.random() * 0.1;
+      b *= (1.2 + sinFactor * 0.6) * flicker;
+      s *= 2.5;
+      h += (sinFactor * 15 - 7.5); // Subtle red/yellow wobble
+      if (p % 10 === 0) sc *= (1 + Math.random() * 0.04);
+    }
+
+    // 6. Glitch (Sharp displacement and color inversion)
+    if (styles.includes('glitch')) {
+      if (p === 15 || p === 75) {
+        tx = -3; ty = 2;
+        s *= 4;
+        h += 90;
+      } else if (p === 20 || p === 80) {
+        tx = 3; ty = -1;
+        i = 0.4;
+      }
+    }
+
+    // 7. Chaos (Wild rotation and scale inversion)
+    if (styles.includes('chaos')) {
+      r += factor * 360 * 2;
+      sc *= (0.4 + sinFactor * 1.2);
+      i += sinFactor * 0.8;
+      h += factor * 1080;
+    }
+
+    // 8. Plasma (High contrast color warping)
+    if (styles.includes('plasma')) {
+      c *= (1 + sinFactor * 3);
+      b *= (1 + sinFactor * 1.5);
+      s *= (1 + sinFactor * 2);
+    }
+
+    // Compose final property strings
+    const filter = `hue-rotate(${h}deg) brightness(${b}) saturate(${s}) contrast(${c}) invert(${i}) blur(${bl}px)`;
+    const transform = `scale(${sc}) rotate(${r}deg) translate(${tx}px, ${ty}px)`;
+
+    keyframesCss += `  ${p}% { 
+      filter: ${filter}; 
+      transform: ${transform}; 
+      opacity: ${opacity}; 
+    }\n`;
+  });
+
+  keyframesCss += '}\n';
+
+  styleEl.textContent = `
+    ${keyframesCss}
+    .gh-animate {
+      animation: gh-master-loop ${speed}s linear infinite !important;
+      will-change: filter, transform, opacity;
+      transform-origin: center;
+      transition: none !important;
+    }
+  `;
 }
 
 export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string, tickerData?: { date: string; count: number }[], colorMode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb') {
@@ -230,7 +279,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   const settings = await chrome.storage.local.get(['showColorAnimation', 'animationSpeed', 'animationStyle']);
   const doAnimate = settings.showColorAnimation === true;
   const speed = settings.animationSpeed || 8;
-  const animStyle = settings.animationStyle || 'hue';
+  const animStyles = settings.animationStyle || ['hue'];
 
   let colors: string[] = [];
   if (themeName !== 'none') {
@@ -268,7 +317,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
   }
 
   if (doAnimate && themeName !== 'none') {
-    applyColorAnimation(speed, animStyle);
+    applyColorAnimation(speed, animStyles);
   } else {
     const styleEl = document.getElementById('git-heat-animation-style');
     if (styleEl) styleEl.textContent = '';
@@ -282,7 +331,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     
     if (doAnimate && level > 0 && themeName !== 'none') {
       day.classList.add('gh-animate');
-      if (animStyle === 'sparkle') {
+      if (animStyles.includes('sparkle')) {
         day.style.animationDelay = `${Math.random() * speed}s`;
       } else {
         day.style.animationDelay = `${(i % 100) * (speed / 100)}s`;

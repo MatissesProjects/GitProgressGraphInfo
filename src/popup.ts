@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const stopColorInput = document.getElementById('color-stop') as HTMLInputElement;
   const speedSlider = document.getElementById('animation-speed') as HTMLInputElement;
   const speedVal = document.getElementById('speed-val');
-  const animationStyleSelect = document.getElementById('animation-style') as HTMLSelectElement;
+  const animationStyleList = document.getElementById('animation-styles-list');
   const sortableList = document.getElementById('sortable-grid-list');
 
   const gearBases = ['🧙', '🧙‍♂️', '🧙‍♀️', '🧑‍💻', '👩‍💻', '🧔‍♂️', '🧝', '🧝‍♂️', '🧝‍♀️', '🧛', '🧛‍♂️', '🧛‍♀️'];
@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     'toggle-xp-bar': 'showXPBar',
     'toggle-skill-tree': 'showSkillTree',
     'toggle-color-animation': 'showColorAnimation',
+    'toggle-sync-animations': 'syncAnimations',
     'toggle-pulse-hash': 'showPulseHash',
     'toggle-ticker': 'showTicker',
     'toggle-total': 'showTotal',
@@ -205,7 +206,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const loadSettings = async () => {
-    const s = await chrome.storage.local.get(null);
+    const s = await chrome.storage.local.get(null) as GitHeatSettings;
     if (themeSelect) themeSelect.value = s.theme || 'green';
     if (colorModeSelect) colorModeSelect.value = s.colorMode || 'rgb';
     if (customColors) customColors.style.display = themeSelect.value === 'custom' ? 'block' : 'none';
@@ -222,8 +223,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (speedVal) speedVal.textContent = `${speedSlider.value}s`;
     }
 
-    if (animationStyleSelect) {
-      animationStyleSelect.value = s.animationStyle || 'hue';
+    if (animationStyleList) {
+      const currentStyles = s.animationStyle || ['hue'];
+      animationStyleList.querySelectorAll('input[type="checkbox"]').forEach((cb: any) => {
+        cb.checked = currentStyles.includes(cb.value);
+      });
     }
 
     const custom = s.customAvatar || {};
@@ -242,11 +246,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     await chrome.storage.local.set({ [key]: val });
   };
 
-  document.addEventListener('change', (e) => {
+  document.addEventListener('change', async (e) => {
     const target = e.target as HTMLInputElement;
     if (target.type === 'checkbox' && toggleKeyMap[target.id]) {
       const key = toggleKeyMap[target.id];
       saveSetting(key, target.checked);
+    }
+
+    if (animationStyleList && animationStyleList.contains(target) && target.type === 'checkbox') {
+      const selectedStyles = Array.from(animationStyleList.querySelectorAll('input[type="checkbox"]:checked'))
+        .map((cb: any) => cb.value);
+      await saveSetting('animationStyle', selectedStyles);
     }
   });
 
@@ -261,18 +271,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (startColorInput) startColorInput.addEventListener('change', () => saveSetting('customStart', startColorInput.value));
   if (stopColorInput) stopColorInput.addEventListener('change', () => saveSetting('customStop', stopColorInput.value));
 
-  if (animationStyleSelect) {
-    animationStyleSelect.addEventListener('change', () => {
-      saveSetting('animationStyle', animationStyleSelect.value);
-    });
-  }
-
   if (speedSlider) {
     speedSlider.addEventListener('input', () => {
       if (speedVal) speedVal.textContent = `${speedSlider.value}s`;
     });
     speedSlider.addEventListener('change', () => {
-      saveSetting('animationSpeed', parseInt(speedSlider.value, 10));
+      saveSetting('animationSpeed', parseFloat(speedSlider.value));
     });
   }
 

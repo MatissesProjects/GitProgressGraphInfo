@@ -39,7 +39,7 @@ async function runStandalone() {
             showTrends: true,
             showColorAnimation: true,
             animationSpeed: animationSpeed || 8,
-            animationStyle: animationStyle || 'hue',
+            animationStyle: Array.isArray(animationStyle) ? animationStyle : [animationStyle || 'hue'],
             
             // Main Grid Items (Checked)
             showTotal: true,
