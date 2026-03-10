@@ -65,9 +65,17 @@ async function run() {
     // Inject configuration into the page context
     const startColor = process.env.CUSTOM_START_COLOR || '#4a207e';
     const stopColor = process.env.CUSTOM_STOP_COLOR || '#04ff00';
-    await page.evaluateOnNewDocument((start, stop) => {
-      (window as any).githeatConfig = { startColor: start, stopColor: stop };
-    }, startColor, stopColor);
+    const animationSpeed = parseInt(process.env.ANIMATION_SPEED || '8', 10);
+    const animationStyle = process.env.ANIMATION_STYLE || 'hue';
+
+    await page.evaluateOnNewDocument((start, stop, speed, style) => {
+      (window as any).githeatConfig = { 
+        startColor: start, 
+        stopColor: stop,
+        animationSpeed: speed,
+        animationStyle: style
+      };
+    }, startColor, stopColor, animationSpeed, animationStyle);
 
     console.log(`Navigating to https://github.com/${username}...`);
     
@@ -174,11 +182,28 @@ async function run() {
       throw new Error('Could not find isolated screenshot wrapper');
     }
 
-    console.log('Taking screenshot...');
-    const screenshotPath = path.join(process.cwd(), '../githeat.png');
-    await wrapper.screenshot({ path: screenshotPath });
+    console.log('Taking frames for animation...');
+    const framesDir = path.join(process.cwd(), 'frames');
+    if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);
 
-    console.log(`Success! Image saved to: ${screenshotPath}`);
+    const fps = 10;
+    const duration = 4; // 4 seconds of animation
+    const totalFrames = fps * duration;
+
+    for (let i = 0; i < totalFrames; i++) {
+      const framePath = path.join(framesDir, `frame-${String(i).padStart(3, '0')}.png`);
+      await wrapper.screenshot({ path: framePath });
+      // Since screenshotting takes time, we might not need an explicit wait, 
+      // but let's add a small one to try to match the CSS animation pacing better.
+      await new Promise(r => setTimeout(r, 100)); 
+    }
+
+    console.log('Generating GIF using ffmpeg...');
+    const gifPath = path.join(process.cwd(), '../githeat.gif');
+    // Using a complex filtergraph to generate a high quality palette and GIF
+    execSync(`ffmpeg -y -framerate ${fps} -i frames/frame-%03d.png -vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ${gifPath}`);
+
+    console.log(`Success! Animation saved to: ${gifPath}`);
   } catch (error) {
     console.error('An error occurred:', error);
     process.exit(1);

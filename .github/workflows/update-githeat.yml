@@ -20,6 +20,14 @@ on:
         description: 'Stop color for custom range (HEX, e.g. #04ff00)'
         required: false
         default: '#04ff00'
+      animation_speed:
+        description: 'Animation speed in seconds (e.g. 8)'
+        required: false
+        default: '8'
+      animation_style:
+        description: 'Animation style (hue, breathe, sparkle)'
+        required: false
+        default: 'hue'
 
 jobs:
   update-profile:
@@ -45,9 +53,9 @@ jobs:
           npm install
           # Install Chrome for Puppeteer
           npx puppeteer browsers install chrome
-          # Puppeteer requires some system dependencies on Linux
+          # Puppeteer requires some system dependencies on Linux, plus ffmpeg for GIF generation
           sudo apt-get update
-          sudo apt-get install -y libgbm-dev libnss3 libatk-bridge2.0-0 libgtk-3-0 libxss1 libasound2t64 libpango-1.0-0 libpangocairo-1.0-0
+          sudo apt-get install -y libgbm-dev libnss3 libatk-bridge2.0-0 libgtk-3-0 libxss1 libasound2t64 libpango-1.0-0 libpangocairo-1.0-0 ffmpeg
 
       - name: Run Profile Updater
         working-directory: profile-updater
@@ -56,22 +64,24 @@ jobs:
           TIMEZONE: ${{ github.event.inputs.timezone || 'America/Los_Angeles' }}
           CUSTOM_START_COLOR: ${{ github.event.inputs.custom_start_color || '#4a207e' }}
           CUSTOM_STOP_COLOR: ${{ github.event.inputs.custom_stop_color || '#04ff00' }}
+          ANIMATION_SPEED: ${{ github.event.inputs.animation_speed || '8' }}
+          ANIMATION_STYLE: ${{ github.event.inputs.animation_style || 'hue' }}
         run: npm start
 
-      - name: Check for generated image
+      - name: Check for generated animation
         run: |
-          if [ -f "githeat.png" ]; then
-            echo "githeat.png found!"
-            ls -l githeat.png
+          if [ -f "githeat.gif" ]; then
+            echo "githeat.gif found!"
+            ls -l githeat.gif
           else
-            echo "githeat.png NOT found!"
-            find . -name "*.png"
+            echo "githeat.gif NOT found!"
+            find . -name "*.gif"
             exit 1
           fi
 
-      - name: Commit and Push Image
+      - name: Commit and Push Animation
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add githeat.png
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update GitHeat Profile Analytics Image" && git push)
+          git add githeat.gif
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update GitHeat Profile Analytics Animation" && git push)

@@ -17,9 +17,9 @@ async function runStandalone() {
   console.log("GitHeat Standalone: Initializing (v1.2 - Quantile Scale) on " + window.location.href + "...");
   
   // Read configuration injected by Puppeteer
-  const config = (window as any).githeatConfig || { startColor: '#4a207e', stopColor: '#04ff00' };
-  const { startColor, stopColor } = config;
-  console.log(`Using custom colors: ${startColor} to ${stopColor}`);
+  const config = (window as any).githeatConfig || { startColor: '#4a207e', stopColor: '#04ff00', animationSpeed: 8, animationStyle: 'hue' };
+  const { startColor, stopColor, animationSpeed, animationStyle } = config;
+  console.log(`Using custom colors: ${startColor} to ${stopColor}, Animation: ${animationStyle} at ${animationSpeed}s`);
 
   // Mock chrome API
   (window as any).chrome = {
@@ -37,6 +37,9 @@ async function runStandalone() {
             showLegendNumbers: true,
             showDominantWeekday: true,
             showTrends: true,
+            showColorAnimation: true,
+            animationSpeed: animationSpeed || 8,
+            animationStyle: animationStyle || 'hue',
             
             // Main Grid Items (Checked)
             showTotal: true,

@@ -2,7 +2,7 @@
 
 A Chrome extension that turns your GitHub contribution graph into a deep-dive analytical dashboard and a fully gamified RPG experience.
 
-![Graph And Data](githeat.png)
+![Graph And Data](githeat.gif)
 
 ## Core Features
 
@@ -63,13 +63,13 @@ You can automatically update a GitHeat analytics image for your GitHub profile R
 1. Fork or clone this repository to your own GitHub account.
 2. The GitHub Action is located in `.github/workflows/update-githeat.yml`.
 3. It runs automatically every day at midnight UTC, but you can also trigger it manually from the **Actions** tab.
-4. The action will generate a `githeat.png` file in the root of your repository.
+4. The action will generate a `githeat.gif` file in the root of your repository.
 
 ### Usage in Profile README
 To display your GitHeat analytics in your GitHub profile README, add the following Markdown:
 
 ```markdown
-[![GitHeat Analytics](https://raw.githubusercontent.com/YOUR_USERNAME/GitProgressGraphInfo/main/githeat.png)](https://github.com/YOUR_USERNAME/GitProgressGraphInfo)
+[![GitHeat Analytics](https://raw.githubusercontent.com/YOUR_USERNAME/GitProgressGraphInfo/main/githeat.gif)](https://github.com/YOUR_USERNAME/GitProgressGraphInfo)
 ```
 
 Replace `YOUR_USERNAME` with your GitHub username.
