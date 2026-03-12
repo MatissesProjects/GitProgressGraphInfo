@@ -40,8 +40,8 @@ async function run() {
 
   try {
     const page = await browser.newPage();
-    // Use smaller viewport and 1x scale for much faster capture
-    await page.setViewport({ width: 850, height: 1200, deviceScaleFactor: 1 });
+    // Use deviceScaleFactor: 2 for high quality frames
+    await page.setViewport({ width: 850, height: 1200, deviceScaleFactor: 2 });
     
     const timezone = process.env.TIMEZONE || 'UTC';
     try {
@@ -67,7 +67,8 @@ async function run() {
         startColor: start, 
         stopColor: stop,
         animationSpeed: speed,
-        animationStyle: style
+        animationStyle: style,
+        showColorAnimation: true
       };
     }, startColor, stopColor, animationSpeed, animationStyle);
 
@@ -98,7 +99,7 @@ async function run() {
       throw new Error('GitHeat analysis failed on the page.');
     }
 
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 2000));
 
     console.log('Isolating stats and graph...');
     const isolationSuccess = await page.evaluate(() => {
@@ -110,15 +111,17 @@ async function run() {
       wrapper.id = 'githeat-screenshot-wrapper';
       Object.assign(wrapper.style, {
         backgroundColor: '#0d1117',
-        padding: '20px',
+        padding: '24px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '15px',
+        gap: '20px',
         width: '820px', 
         position: 'fixed',
         top: '0',
         left: '0',
-        zIndex: '2147483647'
+        zIndex: '2147483647',
+        borderRadius: '12px',
+        border: '1px solid #30363d'
       });
 
       const killList = ['.js-profile-timeline-year-list', '.profile-timeline-year-list', '#user-activity-overview', '.activity-listing', '.js-yearly-contributions .float-right', 'ul.filter-list', '.contrib-footer-link', 'details'];
@@ -139,7 +142,7 @@ async function run() {
     const wrapper = await page.$('#githeat-screenshot-wrapper');
     if (!wrapper) throw new Error('Could not find wrapper');
 
-    console.log('Taking frames for animation (Optimized)...');
+    console.log('Taking high-quality PNG frames for animation...');
     const framesDir = path.join(process.cwd(), 'frames');
     if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);
 
@@ -149,17 +152,19 @@ async function run() {
     
     const startCapture = Date.now();
     for (let i = 0; i < totalFrames; i++) {
-      const framePath = path.join(framesDir, `frame-${String(i).padStart(3, '0')}.jpg`);
-      await wrapper.screenshot({ path: framePath, type: 'jpeg', quality: 80 });
+      const framePath = path.join(framesDir, `frame-${String(i).padStart(3, '0')}.png`);
+      // Capturing PNGs for high quality, using deviceScaleFactor: 2 from viewport
+      await wrapper.screenshot({ path: framePath });
     }
     const endCapture = Date.now();
     const actualDuration = (endCapture - startCapture) / 1000;
     const actualFps = totalFrames / actualDuration;
 
     console.log(`Captured ${totalFrames} frames in ${actualDuration.toFixed(2)}s (Actual FPS: ${actualFps.toFixed(2)})`);
-    console.log('Generating GIF using ffmpeg...');
+    console.log('Generating high-quality GIF using ffmpeg...');
     const gifPath = path.join(process.cwd(), '../githeat.gif');
-    execSync(`ffmpeg -y -framerate ${actualFps} -i frames/frame-%03d.jpg -vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ${gifPath}`);
+    // High quality palette generation from PNGs
+    execSync(`ffmpeg -y -framerate ${actualFps} -i frames/frame-%03d.png -vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ${gifPath}`);
 
     console.log(`Success! Animation saved to: ${gifPath}`);
   } catch (error) {

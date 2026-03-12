@@ -166,8 +166,9 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
   ` : '';
 
   return `
-    <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px;">
+    <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px; position: relative;">
       <span class="color-fg-muted text-small d-block mb-1">Activity Intensity Ticker (Vertical Heat Zones)</span>
+      <div id="gh-ticker-tooltip" style="position: absolute; display: none; background: var(--color-neutral-emphasis-plus); color: var(--color-fg-on-emphasis); padding: 4px 8px; border-radius: 6px; font-size: 11px; pointer-events: none; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.3); white-space: nowrap; transform: translate(-50%, -120%); transition: opacity 0.1s;"></div>
       <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible; background: var(--color-canvas-default); border-radius: 4px; border: 1px solid var(--color-border-muted);">
         <defs>
           <linearGradient id="ticker-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
