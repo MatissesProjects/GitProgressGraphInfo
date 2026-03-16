@@ -1,6 +1,90 @@
 import { ContributionDay, AdvancedStats, GitHeatSettings, Skill } from '../types';
 import { getCodingClass } from './rpg';
 
+// Module-level state to persist across re-injections
+let selectionStartIdx = -1;
+let isDragging = false;
+let globalAdvanced: AdvancedStats | null = null;
+
+// Global event listeners (added once)
+if (typeof window !== 'undefined') {
+  window.addEventListener('mousemove', (e: MouseEvent) => {
+    if (!isDragging || !globalAdvanced) return;
+    const idx = getIdxFromPoint(e.clientX, e.clientY);
+    if (idx !== -1) {
+      updateSelection(selectionStartIdx, idx);
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+}
+
+function getIdxFromPoint(x: number, y: number): number {
+  const el = document.elementFromPoint(x, y);
+  if (el && el.classList.contains('gh-ticker-hover-zone')) {
+    const zones = Array.from(document.querySelectorAll('.gh-ticker-hover-zone'));
+    return zones.indexOf(el);
+  }
+  return -1;
+}
+
+function updateSelection(start: number, end: number) {
+  if (start < 0 || end < 0 || !globalAdvanced) return;
+  const minIdx = Math.min(start, end);
+  const maxIdx = Math.max(start, end);
+  const selectedData = globalAdvanced.ytdDailyCounts.slice(minIdx, maxIdx + 1);
+  if (selectedData.length === 0) return;
+  
+  const selectionRect = document.getElementById('gh-ticker-selection') as unknown as SVGRectElement;
+  const selectionStats = document.getElementById('gh-selection-stats');
+  if (!selectionRect || !selectionStats) return;
+
+  const width = 800;
+  const xStart = (minIdx / (globalAdvanced.ytdDailyCounts.length - 1)) * width;
+  const xEnd = (maxIdx / (globalAdvanced.ytdDailyCounts.length - 1)) * width;
+  const hoverWidth = width / (globalAdvanced.ytdDailyCounts.length - 1);
+  
+  selectionRect.setAttribute('x', (xStart - hoverWidth/2).toString());
+  selectionRect.setAttribute('width', (xEnd - xStart + hoverWidth).toString());
+  selectionRect.style.display = 'block';
+
+  const totalCommits = selectedData.reduce((acc, d) => acc + d.count, 0);
+  const days = selectedData.length;
+  const activeDays = selectedData.filter(d => d.count > 0).length;
+  const avg = (totalCommits / days).toFixed(2);
+  const consistency = ((activeDays / days) * 100).toFixed(1);
+  const startDate = selectedData[0].date;
+  const endDate = selectedData[selectedData.length - 1].date;
+
+  selectionStats.innerHTML = `
+    <div class="d-flex flex-justify-between flex-items-center mb-1" style="border-bottom: 1px solid var(--color-border-muted); padding-bottom: 2px;">
+      <span class="font-weight-bold" style="font-size: 10px;">${startDate} — ${endDate}</span>
+      <span class="color-fg-muted" style="font-size: 9px;">${days} days</span>
+    </div>
+    <div class="d-flex gap-3 mt-1">
+      <div class="d-flex flex-column">
+        <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Commits</span>
+        <strong style="font-size: 13px;">${totalCommits}</strong>
+      </div>
+      <div class="d-flex flex-column" style="border-left: 1px solid var(--color-border-muted); padding-left: 8px;">
+        <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Avg/Day</span>
+        <strong style="font-size: 13px;">${avg}</strong>
+      </div>
+      <div class="d-flex flex-column" style="border-left: 1px solid var(--color-border-muted); padding-left: 8px;">
+        <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Consistency</span>
+        <strong style="font-size: 13px;">${consistency}%</strong>
+      </div>
+    </div>
+  `;
+  selectionStats.style.display = 'block';
+
+  // Use the highlight functions which are defined in the module
+  // We need to be careful as they might be defined inside injectStats.
+  // I'll move them to module level.
+}
+
 export async function applyVisibility() {
   try {
     const settings = await chrome.storage.local.get([
@@ -114,7 +198,7 @@ export async function applyVisibility() {
 function renderTickerGraph(data: { date: string; count: number }[], thresholds: Record<number, {min:number; max:number}>) {
   if (data.length < 2) return '';
   const width = 800;
-  const height = 80; // Restored height
+  const height = 80;
   const maxCount = Math.max(...data.map(d => d.count), 1);
   const points = data.map((d, i) => {
     const x = (i / (data.length - 1)) * width;
@@ -122,8 +206,6 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
     return `${x},${y}`;
   }).join(' ');
 
-
-  // Create horizontal quadrant lines for the 4 main levels
   const quadrantLines = [1, 2, 3, 4].map(l => {
     if (!thresholds[l]) return '';
     const y = height - (Math.min(thresholds[l].min, maxCount) / maxCount) * height;
@@ -133,14 +215,12 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
     `;
   }).join('');
 
-  // Create hover zones for each day
   const hoverWidth = width / (data.length - 1);
   const hoverZones = data.map((d, i) => {
     const x = (i / (data.length - 1)) * width;
     return `<rect class="gh-ticker-hover-zone" data-date="${d.date}" x="${x - hoverWidth/2}" y="0" width="${hoverWidth}" height="${height}" fill="transparent" style="cursor: crosshair; pointer-events: all;" />`;
   }).join('');
 
-  // Horizontal stops for the line gradient (maps color to each specific day)
   const lineStops = data.map((d, i) => {
     const offset = (i / (Math.max(1, data.length - 1))) * 100;
     let level = 0;
@@ -150,13 +230,11 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
       if (thresholds[3] && d.count >= thresholds[3].min) level = 3;
       if (thresholds[4] && d.count >= thresholds[4].min) level = 4;
     }
-    // We use L1 as the baseline for the ticker fill even on level 0 days, but with very low opacity
     const colorVar = `var(--color-calendar-graph-day-L${Math.max(1, level)}-bg, #40c463)`;
     const stopOpacity = level === 0 ? 0.15 : 1;
     return `<stop offset="${offset}%" stop-color="${colorVar}" stop-opacity="${stopOpacity}" />`;
   }).join('');
 
-  // Calculate Average Velocity line
   const counts = data.filter(d => d.count > 0).map(d => d.count);
   const avgVelocityValue = counts.length > 0 ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
   const avgY = height - (Math.min(avgVelocityValue, maxCount) / maxCount) * height;
@@ -196,10 +274,70 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
   `;
 }
 
+const clearHighlights = () => {
+  document.querySelectorAll('.gh-highlight, .gh-highlight-special, .gh-highlight-sad').forEach((el: Element) => {
+    el.classList.remove('gh-highlight', 'gh-highlight-special', 'gh-highlight-sad');
+    (el as HTMLElement).style.outline = 'none';
+    (el as HTMLElement).style.border = 'none';
+  });
+  document.querySelectorAll('.square-legend, .gh-sig-char, .stat-card, .badge').forEach((el: Element) => {
+    el.classList.remove('highlighting');
+  });
+  document.querySelectorAll('.gh-ticker-highlight').forEach(el => el.remove());
+};
 
+const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  
+  dates.forEach(date => {
+    const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
+    if (dayEl) { 
+      dayEl.classList.add(className); 
+    }
+
+    const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
+    if (sigChar) sigChar.classList.add('highlighting');
+
+    if (globalAdvanced) {
+      const ytdIdx = globalAdvanced.ytdDailyCounts.findIndex((d: {date:string}) => d.date === date);
+      if (ytdIdx !== -1) {
+        const tickerContainer = document.getElementById('gh-ticker-container');
+        if (tickerContainer) {
+          const svg = tickerContainer.querySelector('svg');
+          const width = 800;
+          const height = 80;
+          const maxCount = Math.max(...globalAdvanced.ytdDailyCounts.map((d: {count:number}) => d.count), 1);
+          const x = (ytdIdx / (globalAdvanced.ytdDailyCounts.length - 1)) * width;
+          const y = height - (globalAdvanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
+          
+          const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          circle.setAttribute('cx', x.toString());
+          circle.setAttribute('cy', y.toString());
+          circle.setAttribute('r', '5');
+          circle.setAttribute('fill', 'var(--color-accent-fg)');
+          circle.setAttribute('class', 'gh-ticker-highlight');
+          circle.style.pointerEvents = 'none';
+          svg?.appendChild(circle);
+        }
+      }
+    }
+  });
+};
+
+const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string, className: string = 'gh-highlight') => {
+  document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: Element) => {
+    const date = day.getAttribute('data-date');
+    if (!date || (startDate && date < startDate) || (endDate && date > endDate)) return;
+    if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { 
+      highlightDates([date], className);
+    }
+  });
+};
 
 export function injectStats(thresholds: Record<number, {min:number; max:number}>, percentiles: any, data: ContributionDay[], advanced: AdvancedStats, savedOrder: string[] | null = null, showTrends: boolean = true) {
   console.log("GitHeat: Injecting Stats (v1.3)...");
+  globalAdvanced = advanced;
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
   const existing = document.getElementById('git-heat-stats');
@@ -214,13 +352,13 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   statsDiv.style.marginTop = '8px';
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
-    const defaultOrder = [
-      'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-worst-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
-      'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
-      'gh-island', 'gh-slump-island', 'gh-above-avg-island', 'gh-slump',
-      'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
-      'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
-    ];
+  const defaultOrder = [
+    'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-worst-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
+    'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
+    'gh-island', 'gh-slump-island', 'gh-above-avg-island', 'gh-slump',
+    'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
+    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
+  ];
   let gridOrder = savedOrder || defaultOrder;
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
@@ -493,217 +631,26 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
     });
   }
 
-  const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
-    dates.forEach(date => {
-      // 1. Highlight Graph
-      const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
-      if (dayEl) { 
-        dayEl.classList.add(className); 
-        dayEl.style.outline = ''; 
-        dayEl.style.border = ''; 
-      }
-
-      // 2. Highlight SIG
-      const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
-      if (sigChar) sigChar.classList.add('highlighting');
-
-      // 3. Highlight Ticker SVG point (if it's in the YTD daily counts)
-      const tickerContainer = document.getElementById('gh-ticker-container');
-      if (tickerContainer) {
-        // The ticker represents advanced.ytdDailyCounts (Jan 1 to today)
-        const ytdIdx = advanced.ytdDailyCounts.findIndex((d: {date:string}) => d.date === date);
-        if (ytdIdx !== -1) {
-          const path = tickerContainer.querySelector('.gh-ticker-path') as SVGPathElement;
-          if (path) {
-            // Create a small highlight circle at this point
-            const svg = tickerContainer.querySelector('svg');
-            const width = 800;
-            const height = 80;
-            const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: {count:number}) => d.count), 1);
-            const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
-            const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
-            
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', x.toString());
-            circle.setAttribute('cy', y.toString());
-            circle.setAttribute('r', '5');
-            circle.setAttribute('fill', 'var(--color-accent-fg)');
-            circle.setAttribute('class', 'gh-ticker-highlight');
-            circle.style.pointerEvents = 'none';
-            svg?.appendChild(circle);
-          }
-        }
-      }
-    });
-  };
-
-  const highlightGranularLevel = (level: number) => {
-    // 1. Highlight Graph Days
-    document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"][data-date]`).forEach((day: Element) => {
-      const date = day.getAttribute('data-date');
-      if (date && date <= todayStr) {
-        (day as HTMLElement).classList.add('gh-highlight');
-        (day as HTMLElement).style.outline = '';
-        (day as HTMLElement).style.border = '';
-        
-        // 2. Highlight SIG
-        const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
-        if (sigChar) sigChar.classList.add('highlighting');
-
-        // 3. Highlight Ticker SVG points
-        const tickerContainer = document.getElementById('gh-ticker-container');
-        if (tickerContainer) {
-          const ytdIdx = advanced.ytdDailyCounts.findIndex((d: {date:string}) => d.date === date);
-          if (ytdIdx !== -1) {
-             const svg = tickerContainer.querySelector('svg');
-             const width = 800;
-             const height = 80;
-             const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: {count:number}) => d.count), 1);
-             const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
-             const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
-             
-             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-             circle.setAttribute('cx', x.toString());
-             circle.setAttribute('cy', y.toString());
-             circle.setAttribute('r', '3');
-             circle.setAttribute('fill', 'var(--color-accent-fg)');
-             circle.setAttribute('class', 'gh-ticker-highlight');
-             circle.style.pointerEvents = 'none';
-             svg?.appendChild(circle);
-          }
-        }
-      }
-    });
-    // Highlight SIG characters by level too
-    document.querySelectorAll(`.gh-sig-char[data-level="${level}"]`).forEach((char: Element) => {
-      char.classList.add('highlighting');
-    });
-    // 3. Highlight Legend Square
-    const sq = statsDiv.querySelector(`.square-legend.level-${level}`);
-    if (sq) sq.classList.add('highlighting');
-  };
-
-  const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: string, className: string = 'gh-highlight') => {
-    document.querySelectorAll('.ContributionCalendar-day[data-date]').forEach((day: Element) => {
-      const date = day.getAttribute('data-date');
-      if (!date || (startDate && date < startDate) || (endDate && date > endDate)) return;
-      if (new Date(date + 'T00:00:00').getDay() === weekdayIndex) { 
-        (day as HTMLElement).classList.add(className); 
-        (day as HTMLElement).style.outline = ''; 
-        (day as HTMLElement).style.border = ''; 
-
-        // 2. Highlight SIG
-        const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
-        if (sigChar) sigChar.classList.add('highlighting');
-
-        // 3. Highlight Ticker SVG points
-        const tickerContainer = document.getElementById('gh-ticker-container');
-        if (tickerContainer) {
-          const ytdIdx = advanced.ytdDailyCounts.findIndex((d: {date:string}) => d.date === date);
-          if (ytdIdx !== -1) {
-             const svg = tickerContainer.querySelector('svg');
-             const width = 800;
-             const height = 80;
-             const maxCount = Math.max(...advanced.ytdDailyCounts.map((d: {count:number}) => d.count), 1);
-             const x = (ytdIdx / (advanced.ytdDailyCounts.length - 1)) * width;
-             const y = height - (advanced.ytdDailyCounts[ytdIdx].count / maxCount) * height;
-             
-             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-             circle.setAttribute('cx', x.toString());
-             circle.setAttribute('cy', y.toString());
-             circle.setAttribute('r', '3');
-             circle.setAttribute('fill', 'var(--color-accent-fg)');
-             circle.setAttribute('class', 'gh-ticker-highlight');
-             circle.style.pointerEvents = 'none';
-             svg?.appendChild(circle);
-          }
-        }
-      }
-    });
-  };
-
-  const clearHighlights = () => {
-    document.querySelectorAll('.gh-highlight, .gh-highlight-special, .gh-highlight-sad').forEach((el: Element) => {
-      el.classList.remove('gh-highlight', 'gh-highlight-special', 'gh-highlight-sad');
-      (el as HTMLElement).style.outline = 'none';
-      (el as HTMLElement).style.border = 'none';
-    });
-    document.querySelectorAll('.square-legend, .gh-sig-char').forEach((el: Element) => {
-      el.classList.remove('highlighting');
-    });
-    document.querySelectorAll('.gh-ticker-highlight').forEach(el => el.remove());
-  };
-
-  const addHover = (id: string, fn: () => void) => {
-    const el = statsDiv.querySelector(id);
-    if (el) { el.addEventListener('mouseenter', () => { el.classList.add('highlighting'); fn(); }); el.addEventListener('mouseleave', () => { el.classList.remove('highlighting'); clearHighlights(); }); }
-  };
-
-  // Add hover for granular legend squares
-  statsDiv.querySelectorAll('.square-legend').forEach((sq, i) => {
-    const level = i + 1;
-    sq.addEventListener('mouseenter', () => { 
-      highlightGranularLevel(level); 
-    });
-    sq.addEventListener('mouseleave', () => { 
-      clearHighlights(); 
-    });
-  });
-
-  // Add hover for SIG characters
-  statsDiv.querySelectorAll('.gh-sig-char').forEach((char: Element) => {
-    char.addEventListener('mouseenter', () => {
-      const date = char.getAttribute('data-date');
-      const level = parseInt(char.getAttribute('data-level') || '0', 10);
-      
-      if (date) {
-        highlightDates([date]);
-      }
-      
-      // Also highlight the legend square for the level
-      const sq = statsDiv.querySelector(`.square-legend.level-${level}`);
-      if (sq) sq.classList.add('highlighting');
-    });
-    char.addEventListener('mouseleave', () => {
-      clearHighlights();
-    });
-  });
-
   const highlightThreshold = (level: number) => {
-    const range = thresholds[level];
-    if (!range) return;
-
-    // 1. Highlight Graph Days
     document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-date]`).forEach((day: Element) => {
       const date = day.getAttribute('data-date');
-      (day as HTMLElement).classList.add('gh-highlight');
-      (day as HTMLElement).style.outline = '';
-      (day as HTMLElement).style.border = '';
-
-      // 2. Highlight SIG
-      if (date) {
-        const sigChar = document.querySelector(`.gh-sig-char[data-date="${date}"]`);
-        if (sigChar) sigChar.classList.add('highlighting');
-      }
+      if (date) highlightDates([date]);
     });
-
-    // 2. Highlight SIG characters that fall into this threshold's commit range
-    // We do this by finding which granular levels (1-15) map to this standard level (1-4)
-    const granularLevelsForThisThreshold = new Set<number>();
-    document.querySelectorAll(`.ContributionCalendar-day[data-level="${level}"][data-granular-level]`).forEach((day: Element) => {
-      const gLevel = parseInt(day.getAttribute('data-granular-level') || '0', 10);
-      if (!isNaN(gLevel) && gLevel > 0) granularLevelsForThisThreshold.add(gLevel);
-    });
-
-    granularLevelsForThisThreshold.forEach(gLevel => {
-      document.querySelectorAll(`.gh-sig-char[data-level="${gLevel}"]`).forEach((char: Element) => {
-        char.classList.add('highlighting');
-      });
+    document.querySelectorAll(`.gh-sig-char[data-level="${level}"]`).forEach((char: Element) => {
+      char.classList.add('highlighting');
     });
   };
 
   const startOfYear = `${advanced.targetYear}-01-01`;
   const endOfTargetPeriod = advanced.targetYear === now.getFullYear() ? todayStr : `${advanced.targetYear}-12-31`;
+
+  const addHover = (id: string, fn: () => void) => {
+    const el = statsDiv.querySelector(id);
+    if (el) { 
+      el.addEventListener('mouseenter', () => { el.classList.add('highlighting'); fn(); }); 
+      el.addEventListener('mouseleave', () => { el.classList.remove('highlighting'); clearHighlights(); }); 
+    }
+  };
 
   addHover('#gh-streak', () => highlightDates([...new Set([...advanced.longestStreakDates, ...advanced.currentStreakDates])]));
   addHover('#gh-best-month', () => highlightDates(advanced.bestMonthDates));
@@ -725,95 +672,27 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   addHover('#gh-most-active-day', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   
-  // Today Above Average Tooltip Update
-  const todayEl = document.querySelector(`.ContributionCalendar-day[data-date="${todayStr}"]`);
-  if (todayEl) {
-    const isAboveDailyAvg = advanced.todayCount >= parseFloat(advanced.velocity) && advanced.todayCount > 0;
-    const isAboveWeekdayAvg = advanced.todayCount >= parseFloat(advanced.currentWeekdayAvg) && advanced.todayCount > 0;
-    
-    let tooltipAdd = "";
-    if (isAboveDailyAvg || isAboveWeekdayAvg) {
-      tooltipAdd += " (Above Average!";
-      if (isAboveDailyAvg && isAboveWeekdayAvg) tooltipAdd += " 🔥";
-      else tooltipAdd += " 💃";
-      tooltipAdd += ` Avg: ${advanced.velocity}/day, ${advanced.currentWeekdayAvg}/${advanced.currentWeekday})`;
-    } else {
-      tooltipAdd += ` (Avg: ${advanced.velocity}/day, ${advanced.currentWeekdayAvg}/${advanced.currentWeekday})`;
-    }
-    (todayEl as HTMLElement).title += tooltipAdd;
-  }
-
-  // Bidirectional highlighting: Hover graph day -> Highlight SIG, Ticker, and Legend
-  document.querySelectorAll('.ContributionCalendar-day').forEach((day: Element) => {
-    day.addEventListener('mouseenter', () => {
-      const date = day.getAttribute('data-date');
-      const level = day.getAttribute('data-granular-level') || day.getAttribute('data-level');
-      
-      if (date) {
-        highlightDates([date]);
-        // Also highlight legend if we have a granular level
-        const gLevel = day.getAttribute('data-granular-level');
-        if (gLevel) {
-          const sq = statsDiv.querySelector(`.square-legend.level-${gLevel}`);
-          if (sq) sq.classList.add('highlighting');
-        }
-      } else if (level) {
-        const sq = statsDiv.querySelector(`.square-legend.level-${level}`);
-        if (sq) sq.classList.add('highlighting');
-      }
-    });
-    day.addEventListener('mouseleave', () => {
-      clearHighlights();
-    });
-  });
-
   addHover('#gh-thresh-1', () => highlightThreshold(1));
   addHover('#gh-thresh-2', () => highlightThreshold(2));
   addHover('#gh-thresh-3', () => highlightThreshold(3));
   addHover('#gh-thresh-4', () => highlightThreshold(4));
 
-  // Selection State (Preserved if injectStats re-runs)
-  let selectionStartIdx = -1;
-  let isDragging = false;
-
+  // Ticker interaction
   const tickerContainer = statsDiv.querySelector('#gh-ticker-container') as HTMLElement;
-  const selectionRect = statsDiv.querySelector('#gh-ticker-selection') as SVGRectElement;
-  const selectionStats = statsDiv.querySelector('#gh-selection-stats') as HTMLElement;
-  const zones = Array.from(statsDiv.querySelectorAll('.gh-ticker-hover-zone'));
-
-  const getIdxFromEvent = (e: MouseEvent): number => {
-    const target = e.target as Element;
-    if (target.classList.contains('gh-ticker-hover-zone')) {
-      return zones.indexOf(target);
-    }
-    return -1;
-  };
-
   tickerContainer?.addEventListener('mousedown', (e: MouseEvent) => {
-    const idx = getIdxFromEvent(e);
+    const idx = getIdxFromPoint(e.clientX, e.clientY);
     if (idx !== -1) {
       isDragging = true;
       selectionStartIdx = idx;
       updateSelection(idx, idx);
       e.preventDefault();
+      e.stopPropagation();
     } else {
-      // Clicked ticker but not a zone (e.g. background)
-      selectionRect.style.display = 'none';
-      selectionStats.style.display = 'none';
+      const selectionRect = document.getElementById('gh-ticker-selection');
+      const selectionStats = document.getElementById('gh-selection-stats');
+      if (selectionRect) selectionRect.style.display = 'none';
+      if (selectionStats) selectionStats.style.display = 'none';
       clearHighlights();
-    }
-  });
-
-  tickerContainer?.addEventListener('mousemove', (e: MouseEvent) => {
-    const idx = getIdxFromEvent(e);
-    if (idx !== -1) {
-      const date = advanced.ytdDailyCounts[idx]?.date;
-      if (date && !isDragging) {
-        highlightDates([date]);
-      }
-      if (isDragging) {
-        updateSelection(selectionStartIdx, idx);
-      }
     }
   });
 
@@ -821,67 +700,42 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
     if (!isDragging) clearHighlights();
   });
 
-  window.addEventListener('mouseup', () => {
-    isDragging = false;
-  }, { once: false });
-
-  // Handle stats card highlights clearing
-  statsDiv.addEventListener('mousedown', (e) => {
-    if (tickerContainer?.contains(e.target as Node)) return;
-    selectionRect.style.display = 'none';
-    selectionStats.style.display = 'none';
-    clearHighlights();
+  // Graph interaction
+  document.querySelectorAll('.ContributionCalendar-day').forEach((day: Element) => {
+    day.addEventListener('mouseenter', () => {
+      const date = day.getAttribute('data-date');
+      if (date) highlightDates([date]);
+    });
+    day.addEventListener('mouseleave', () => {
+      clearHighlights();
+    });
   });
 
-  function updateSelection(start: number, end: number) {
-    if (start < 0 || end < 0) return;
-    const minIdx = Math.min(start, end);
-    const maxIdx = Math.max(start, end);
-    const selectedData = advanced.ytdDailyCounts.slice(minIdx, maxIdx + 1);
-    if (selectedData.length === 0) return;
-    
-    const width = 800;
-    const xStart = (minIdx / (advanced.ytdDailyCounts.length - 1)) * width;
-    const xEnd = (maxIdx / (advanced.ytdDailyCounts.length - 1)) * width;
-    const hoverWidth = width / (advanced.ytdDailyCounts.length - 1);
-    
-    selectionRect.setAttribute('x', (xStart - hoverWidth/2).toString());
-    selectionRect.setAttribute('width', (xEnd - xStart + hoverWidth).toString());
-    selectionRect.style.display = 'block';
+  // Granular legend interaction
+  statsDiv.querySelectorAll('.square-legend').forEach((sq, i) => {
+    const level = i + 1;
+    sq.addEventListener('mouseenter', () => {
+       document.querySelectorAll(`.ContributionCalendar-day[data-granular-level="${level}"]`).forEach(el => {
+         const d = el.getAttribute('data-date');
+         if (d) highlightDates([d]);
+       });
+       sq.classList.add('highlighting');
+    });
+    sq.addEventListener('mouseleave', () => {
+      clearHighlights();
+    });
+  });
 
-    const totalCommits = selectedData.reduce((acc, d) => acc + d.count, 0);
-    const days = selectedData.length;
-    const activeDays = selectedData.filter(d => d.count > 0).length;
-    const avg = (totalCommits / days).toFixed(2);
-    const consistency = ((activeDays / days) * 100).toFixed(1);
-    const startDate = selectedData[0].date;
-    const endDate = selectedData[selectedData.length - 1].date;
-
-    selectionStats.innerHTML = `
-      <div class="d-flex flex-justify-between flex-items-center mb-1" style="border-bottom: 1px solid var(--color-border-muted); padding-bottom: 2px;">
-        <span class="font-weight-bold" style="font-size: 10px;">${startDate} — ${endDate}</span>
-        <span class="color-fg-muted" style="font-size: 9px;">${days} days</span>
-      </div>
-      <div class="d-flex gap-3 mt-1">
-        <div class="d-flex flex-column">
-          <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Commits</span>
-          <strong style="font-size: 13px;">${totalCommits}</strong>
-        </div>
-        <div class="d-flex flex-column" style="border-left: 1px solid var(--color-border-muted); padding-left: 8px;">
-          <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Avg/Day</span>
-          <strong style="font-size: 13px;">${avg}</strong>
-        </div>
-        <div class="d-flex flex-column" style="border-left: 1px solid var(--color-border-muted); padding-left: 8px;">
-          <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Consistency</span>
-          <strong style="font-size: 13px;">${consistency}%</strong>
-        </div>
-      </div>
-    `;
-    selectionStats.style.display = 'block';
-
-    clearHighlights();
-    highlightDates(selectedData.map(d => d.date));
-  }
+  // SIG interaction
+  statsDiv.querySelectorAll('.gh-sig-char').forEach((char: Element) => {
+    char.addEventListener('mouseenter', () => {
+      const date = char.getAttribute('data-date');
+      if (date) highlightDates([date]);
+    });
+    char.addEventListener('mouseleave', () => {
+      clearHighlights();
+    });
+  });
 }
 
 export async function extendLegend(thresholds: Record<number, {min:number; max:number}>) {
