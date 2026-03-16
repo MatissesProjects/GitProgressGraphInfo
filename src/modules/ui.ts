@@ -220,8 +220,8 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
   const itemMap: Record<string, string> = {
-    'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${(advanced.currentStreakDates || []).join(',')}" data-longest-streak="${(advanced.longestStreakDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
-    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${(advanced.bestMonthDates || []).join(',')}" title="Best month score vs average month score. (${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak)">
+    'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${(advanced.currentStreakDates || []).join(',')}" data-longest-streak="${(advanced.longestStreakDates || []).join(',')}" title="Your current streak: ${advanced.currentStreak} days. Longest streak ever: ${advanced.longestStreak} days."><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
+    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${(advanced.bestMonthDates || []).join(',')}" title="Best month score vs average month score (${Math.round(advanced.avgMonthScore)}). (${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak)">
       <span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong>
@@ -241,7 +241,7 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
           </span>` : ''}
       </div>
     </div>`,
-    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${(advanced.bestWeekDates || []).join(',')}" title="Best week score vs average week score. (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak)">
+    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${(advanced.bestWeekDates || []).join(',')}" title="Best week score vs average week score (${Math.round(advanced.avgWeekScore)}). (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak)">
       <span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong>
@@ -261,15 +261,15 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
           </span>` : ''}
       </div>
     </div>`,
-    'gh-current-week': `<div class="stat-card highlightable" id="gh-current-week" data-week-dates="${(advanced.currentWeekDates || []).join(',')}" title="Your performance this week so far. (${advanced.currentWeekStats.count} commits, ${advanced.currentWeekStats.consistency}% consistency, ${advanced.currentWeekStats.streak} day streak)">
+    'gh-current-week': `<div class="stat-card highlightable" id="gh-current-week" data-week-dates="${(advanced.currentWeekDates || []).join(',')}" title="Your performance this week so far vs average week score (${Math.round(advanced.avgWeekScore)}). (${advanced.currentWeekStats.count} commits, ${advanced.currentWeekStats.consistency}% consistency, ${advanced.currentWeekStats.streak} day streak)">
       <span class="color-fg-muted d-block text-small">Current Week</span>
       <strong class="f3-light">Score: ${advanced.currentWeekStats.score}</strong>
     </div>`,
-    'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday"><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
-    'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${(advanced.biggestIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
-    'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${(advanced.biggestSlumpIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
-    'gh-above-avg-island': `<div class="stat-card highlightable" id="gh-above-avg-island" data-island="${(advanced.biggestAboveAvgIslandDates || []).join(',')}"><span class="color-fg-muted d-block text-small">Longest Above Avg Island</span><strong class="f3-light">${advanced.biggestAboveAvgIslandSize} days</strong></div>`,
-    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Avg commits per active day. Trend: Last 7 days vs Overall. Acceleration: Last 7 days vs 7 days prior.">
+    'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday" title="The day of the week you are most active in terms of being the 'winner' of the week most often."><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
+    'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${(advanced.biggestIslandDates || []).join(',')}" title="The longest continuous period where you had at least level 2 (moderate) activity."><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
+    'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${(advanced.biggestSlumpIslandDates || []).join(',')}" title="The longest continuous period where you had level 0-1 (minimal) activity."><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
+    'gh-above-avg-island': `<div class="stat-card highlightable" id="gh-above-avg-island" data-island="${(advanced.biggestAboveAvgIslandDates || []).join(',')}" title="The longest continuous period where you were above your daily average velocity (${advanced.velocity} commits)."><span class="color-fg-muted d-block text-small">Longest Above Avg Island</span><strong class="f3-light">${advanced.biggestAboveAvgIslandSize} days</strong></div>`,
+    'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Average commits per active day: ${advanced.velocity}. Trend: Last 7 days vs Overall. Acceleration: Last 7 days vs 7 days prior.">
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
       <div class="d-flex flex-items-center flex-wrap gap-1">
         <strong class="f3-light">${advanced.velocity} <small style="font-size: 0.6em; opacity: 0.8;">c/d</small></strong>
@@ -285,12 +285,12 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
         </div>
       </div>
     </div>`,
-    'gh-velocity-above': `<div class="stat-card highlightable" id="gh-velocity-above"><span class="color-fg-muted d-block text-small">Above Average Days</span><strong class="f3-light">${advanced.aboveVelocityDates.length} days</strong></div>`,
-    'gh-velocity-below': `<div class="stat-card highlightable" id="gh-velocity-below"><span class="color-fg-muted d-block text-small">Below Average Days</span><strong class="f3-light">${advanced.belowVelocityDates.length} days</strong></div>`,
-    'gh-consistency': `<div class="stat-card" id="gh-consistency" title="${advanced.statsForTooltips.consistency.active} / ${advanced.statsForTooltips.consistency.total} days active"><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
-    'gh-weekend': `<div class="stat-card" id="gh-weekend" title="${advanced.statsForTooltips.weekend.active} / ${advanced.statsForTooltips.weekend.total} weekend days active"><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
-    'gh-slump': `<div class="stat-card highlightable" id="gh-slump" title="${(advanced.longestSlumpDates || []).length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
-    'gh-best-day': `<div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}" title="Avg for this day vs overall avg across all weekdays.">
+    'gh-velocity-above': `<div class="stat-card highlightable" id="gh-velocity-above" title="Days where your commit count was >= your average velocity (${advanced.velocity})."><span class="color-fg-muted d-block text-small">Above Average Days</span><strong class="f3-light">${advanced.aboveVelocityDates.length} days</strong></div>`,
+    'gh-velocity-below': `<div class="stat-card highlightable" id="gh-velocity-below" title="Days where your commit count was > 0 but < your average velocity (${advanced.velocity})."><span class="color-fg-muted d-block text-small">Below Average Days</span><strong class="f3-light">${advanced.belowVelocityDates.length} days</strong></div>`,
+    'gh-consistency': `<div class="stat-card" id="gh-consistency" title="${advanced.statsForTooltips.consistency.active} active days out of ${advanced.statsForTooltips.consistency.total} total days. Average active days per week: ${((advanced.statsForTooltips.consistency.active / advanced.statsForTooltips.consistency.total) * 7).toFixed(1)}."><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
+    'gh-weekend': `<div class="stat-card" id="gh-weekend" title="${advanced.statsForTooltips.weekend.active} active weekend days out of ${advanced.statsForTooltips.weekend.total} total weekend days. Weekend contribution share: ${((advanced.weekendCommits / advanced.total) * 100).toFixed(1)}%."><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
+    'gh-slump': `<div class="stat-card highlightable" id="gh-slump" title="Longest period without any commits: ${advanced.longestSlump} days. Period: ${(advanced.longestSlumpDates || []).length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
+    'gh-best-day': `<div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}" title="Average for this day: ${advanced.bestWeekdayAvg} commits. Comparison vs other weekdays: ${advanced.bestWeekdayTrend > 0 ? '+' : ''}${advanced.bestWeekdayTrend}%.">
       <span class="color-fg-muted d-block text-small">Best Weekday</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.bestDay} (${advanced.bestDayCount})</strong>
@@ -300,8 +300,8 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
           </span>` : ''}
       </div>
     </div>`,
-    'gh-worst-day': `<div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}"><span class="color-fg-muted d-block text-small">Worst Weekday</span><strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong></div>`,
-    'gh-current-weekday': `<div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}" title="Today's count vs the average count for this specific weekday.">
+    'gh-worst-day': `<div class="stat-card highlightable" id="gh-worst-day" data-weekday="${advanced.worstDayIndex}" title="Average for this day: ${advanced.worstWeekdayAvg} commits."><span class="color-fg-muted d-block text-small">Worst Weekday</span><strong class="f3-light">${advanced.worstDay} (${advanced.worstDayCount})</strong></div>`,
+    'gh-current-weekday': `<div class="stat-card highlightable" id="gh-current-weekday" data-weekday="${advanced.currentWeekdayIndex}" title="Today's count: ${advanced.currentWeekdayCount}. Average for this specific weekday: ${advanced.currentWeekdayAvg}. Trend: ${advanced.currentWeekdayTrend > 0 ? '+' : ''}${advanced.currentWeekdayTrend}%.">
       <span class="color-fg-muted d-block text-small">Current Weekday (${advanced.currentWeekday})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">${advanced.currentWeekdayCount}</strong>
@@ -311,8 +311,8 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
           </span>` : ''}
       </div>
     </div>`,
-    'gh-power-day': `<div class="stat-card highlightable" id="gh-power-day" data-weekday="${advanced.powerDayIndex}"><span class="color-fg-muted d-block text-small">Most Productive (Avg)</span><strong class="f3-light">${advanced.powerDay} (${advanced.powerDayAvg})</strong></div>`,
-    'gh-peak-day': `<div class="stat-card highlightable" id="gh-peak-day" data-weekday="${advanced.peakWeekdayIndex}"><span class="color-fg-muted d-block text-small">Peak Frequency (L2+)</span><strong class="f3-light">${advanced.peakWeekday} (${advanced.peakWeekdayCount})</strong></div>`,
+    'gh-power-day': `<div class="stat-card highlightable" id="gh-power-day" data-weekday="${advanced.powerDayIndex}" title="The day of the week with the highest average commit count (${advanced.powerDayAvg})."><span class="color-fg-muted d-block text-small">Most Productive (Avg)</span><strong class="f3-light">${advanced.powerDay} (${advanced.powerDayAvg})</strong></div>`,
+    'gh-peak-day': `<div class="stat-card highlightable" id="gh-peak-day" data-weekday="${advanced.peakWeekdayIndex}" title="The day of the week where you most frequently reach at least moderate (L2+) activity levels. Count: ${advanced.peakWeekdayCount} days."><span class="color-fg-muted d-block text-small">Peak Frequency (L2+)</span><strong class="f3-light">${advanced.peakWeekday} (${advanced.peakWeekdayCount})</strong></div>`,
     'gh-most-active-day': `<div class="stat-card highlightable" id="gh-most-active-day" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}"><span class="color-fg-muted d-block text-small">Most Active Day</span><strong class="f3-light">${advanced.mostActiveDay}</strong></div>`,
     'gh-max-commits': `<div class="stat-card highlightable" id="gh-max-commits" data-date="${advanced.mostActiveDay}" data-weekday="${advanced.mostActiveDayWeekday}"><span class="color-fg-muted d-block text-small">Max Daily Commits</span><strong class="f3-light">${advanced.mostActiveDayCount}</strong></div>`,
     'gh-stars': `<div class="stat-card" id="gh-stars"><span class="color-fg-muted d-block text-small">Pinned Stars / Forks</span><strong class="f3-light">${advanced.totalStars} / ${advanced.totalForks}</strong></div>`,
@@ -721,11 +721,21 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   addHover('#gh-max-commits', () => highlightDates([advanced.mostActiveDay], 'gh-highlight-special'));
   
   // Today Above Average Tooltip Update
-  if (advanced.todayCount >= parseFloat(advanced.velocity) && advanced.todayCount > 0) {
-    const todayEl = document.querySelector(`.ContributionCalendar-day[data-date="${todayStr}"]`);
-    if (todayEl) {
-      (todayEl as HTMLElement).title += " (Above Average! 💃)";
+  const todayEl = document.querySelector(`.ContributionCalendar-day[data-date="${todayStr}"]`);
+  if (todayEl) {
+    const isAboveDailyAvg = advanced.todayCount >= parseFloat(advanced.velocity) && advanced.todayCount > 0;
+    const isAboveWeekdayAvg = advanced.todayCount >= parseFloat(advanced.currentWeekdayAvg) && advanced.todayCount > 0;
+    
+    let tooltipAdd = "";
+    if (isAboveDailyAvg || isAboveWeekdayAvg) {
+      tooltipAdd += " (Above Average!";
+      if (isAboveDailyAvg && isAboveWeekdayAvg) tooltipAdd += " 🔥";
+      else tooltipAdd += " 💃";
+      tooltipAdd += ` Avg: ${advanced.velocity}/day, ${advanced.currentWeekdayAvg}/${advanced.currentWeekday})`;
+    } else {
+      tooltipAdd += ` (Avg: ${advanced.velocity}/day, ${advanced.currentWeekdayAvg}/${advanced.currentWeekday})`;
     }
+    (todayEl as HTMLElement).title += tooltipAdd;
   }
 
   // Bidirectional highlighting: Hover graph day -> Highlight SIG, Ticker, and Legend

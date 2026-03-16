@@ -218,16 +218,19 @@ export async function calculateAdvancedStats(
   const belowVelocityDates = targetDaysForVelocity.filter(d => d.count > 0 && d.count < avgVel).map(d => d.date);
 
   const currentWeekdayIdx = isCurrentYear ? now.getDay() : -1;
-  let currentWeekdayTrend = 0, currentWeekdayIcon = '';
+  let currentWeekdayTrend = 0, currentWeekdayIcon = '', currentWeekdayAvgVal = 0;
   if (currentWeekdayIdx >= 0) {
-    const currentWeekdayAvg = weekdayTotalDays[currentWeekdayIdx] > 0 ? (base.weekdayCounts[currentWeekdayIdx] / weekdayTotalDays[currentWeekdayIdx]) : 0;
-    if (currentWeekdayAvg > 0) {
-      currentWeekdayTrend = Math.round(((todayCount - currentWeekdayAvg) / currentWeekdayAvg) * 100);
+    currentWeekdayAvgVal = weekdayTotalDays[currentWeekdayIdx] > 0 ? (base.weekdayCounts[currentWeekdayIdx] / weekdayTotalDays[currentWeekdayIdx]) : 0;
+    if (currentWeekdayAvgVal > 0) {
+      currentWeekdayTrend = Math.round(((todayCount - currentWeekdayAvgVal) / currentWeekdayAvgVal) * 100);
       currentWeekdayIcon = currentWeekdayTrend > 0 ? '▲' : (currentWeekdayTrend < 0 ? '▼' : '');
     } else if (todayCount > 0) {
       currentWeekdayTrend = 100; currentWeekdayIcon = '▲';
     }
   }
+
+  const bestWeekdayAvgVal = weekdayTotalDays[bestDayIndex] > 0 ? (base.weekdayCounts[bestDayIndex] / weekdayTotalDays[bestDayIndex]) : 0;
+  const worstWeekdayAvgVal = weekdayTotalDays[worstDayIndex] > 0 ? (base.weekdayCounts[worstDayIndex] / weekdayTotalDays[worstDayIndex]) : 0;
 
   const totalCommits = Object.values(base.weekdayCounts).reduce((a, b) => a + b, 0);
   const overallWeekdayAvg = totalCommits / 7;
@@ -250,9 +253,10 @@ export async function calculateAdvancedStats(
     ...base, ...timeBased, ...rpg,
     isYTD: true, targetYear: yearFromData, total: ytdTotalContributions,
     weekendScore, velocity, consistency, persona,
-    bestDay: daysOfWeek[bestDayIndex], bestDayIndex, bestDayCount: maxWeekdayCount,
-    worstDay: daysOfWeek[worstDayIndex], worstDayIndex, worstDayCount: minWeekdayCount,
+    bestDay: daysOfWeek[bestDayIndex], bestDayIndex, bestDayCount: maxWeekdayCount, bestWeekdayAvg: bestWeekdayAvgVal.toFixed(1),
+    worstDay: daysOfWeek[worstDayIndex], worstDayIndex, worstDayCount: minWeekdayCount, worstWeekdayAvg: worstWeekdayAvgVal.toFixed(1),
     currentWeekday: daysOfWeek[isCurrentYear ? now.getDay() : 0], currentWeekdayIndex: isCurrentYear ? now.getDay() : 0, currentWeekdayCount: todayCount,
+    currentWeekdayAvg: currentWeekdayAvgVal.toFixed(1),
     todayCount, mostActiveDay, mostActiveDayCount, mostActiveDayWeekday,
     powerDay: daysOfWeek[powerDayIndex], powerDayIndex, powerDayAvg: maxAvg.toFixed(1),
     peakWeekday: daysOfWeek[peakWeekdayIndex], peakWeekdayIndex, peakWeekdayCount: maxHighFreq,

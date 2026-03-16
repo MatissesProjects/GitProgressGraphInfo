@@ -140,9 +140,12 @@ export interface AdvancedStats {
   accelerationIcon: string;
   currentWeekday: string;
   currentWeekdayCount: number;
+  currentWeekdayAvg: string;
   currentWeekdayIndex: number;
   currentWeekdayTrend: number;
   currentWeekdayIcon: string;
+  bestWeekdayAvg: string;
+  worstWeekdayAvg: string;
   bestWeekdayTrend: number;
   bestWeekdayIcon: string;
   todayCount: number;
