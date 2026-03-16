@@ -142,6 +142,11 @@ async function run() {
     const wrapper = await page.$('#githeat-screenshot-wrapper');
     if (!wrapper) throw new Error('Could not find wrapper');
 
+    console.log('Taking high-quality PNG for GitHeat...');
+    const pngPath = path.join(process.cwd(), '../githeat.png');
+    await wrapper.screenshot({ path: pngPath });
+    console.log(`Success! Image saved to: ${pngPath}`);
+
     console.log('Taking high-quality PNG frames for animation...');
     const framesDir = path.join(process.cwd(), 'frames');
     if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir);

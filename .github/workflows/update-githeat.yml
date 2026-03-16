@@ -71,20 +71,26 @@ jobs:
           ANIMATION_STYLE: ${{ github.event.inputs.animation_style || 'hue' }}
         run: npm start
 
-      - name: Check for generated animation
+      - name: Check for generated assets
         run: |
           if [ -f "githeat.gif" ]; then
             echo "githeat.gif found!"
             ls -l githeat.gif
           else
             echo "githeat.gif NOT found!"
-            find . -name "*.gif"
+            exit 1
+          fi
+          if [ -f "githeat.png" ]; then
+            echo "githeat.png found!"
+            ls -l githeat.png
+          else
+            echo "githeat.png NOT found!"
             exit 1
           fi
 
-      - name: Commit and Push Animation
+      - name: Commit and Push Assets
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add githeat.gif
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Update GitHeat Profile Analytics Animation" && git push)
+          git add githeat.gif githeat.png
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update GitHeat Profile Analytics Assets" && git push)
