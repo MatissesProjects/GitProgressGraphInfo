@@ -166,10 +166,14 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
   ` : '';
 
   return `
-    <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px; position: relative;">
-      <span class="color-fg-muted text-small d-block mb-1">Activity Intensity Ticker (Vertical Heat Zones)</span>
+    <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px; position: relative; user-select: none;">
+      <div class="d-flex flex-justify-between flex-items-center mb-1">
+        <span class="color-fg-muted text-small d-block">Activity Intensity Ticker (Vertical Heat Zones)</span>
+        <span class="color-fg-accent text-small" style="font-size: 9px;">Click & Drag to select range</span>
+      </div>
       <div id="gh-ticker-tooltip" style="position: absolute; display: none; background: var(--color-neutral-emphasis-plus); color: var(--color-fg-on-emphasis); padding: 4px 8px; border-radius: 6px; font-size: 11px; pointer-events: none; z-index: 1000; box-shadow: 0 2px 5px rgba(0,0,0,0.3); white-space: nowrap; transform: translate(-50%, -120%); transition: opacity 0.1s;"></div>
-      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible; background: var(--color-canvas-default); border-radius: 4px; border: 1px solid var(--color-border-muted);">
+      <div id="gh-selection-stats" style="position: absolute; display: none; background: var(--color-canvas-overlay); color: var(--color-fg-default); padding: 6px 10px; border-radius: 6px; font-size: 11px; z-index: 1001; box-shadow: var(--color-shadow-large); border: 1px solid var(--color-border-default); pointer-events: none; top: 10px; left: 50%; transform: translateX(-50%);"></div>
+      <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="overflow: visible; background: var(--color-canvas-default); border-radius: 4px; border: 1px solid var(--color-border-muted); cursor: crosshair;">
         <defs>
           <linearGradient id="ticker-line-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
             ${lineStops}
@@ -185,6 +189,7 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
         <g id="gh-ticker-quadrants">${quadrantLines}${avgLineHtml}</g>
         <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#ticker-line-gradient)" mask="url(#gh-ticker-area-mask)" style="filter: saturate(1.5) brightness(1.2);" />
         <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="var(--color-fg-default, #1f2328)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));" />
+        <rect id="gh-ticker-selection" x="0" y="0" width="0" height="${height}" fill="var(--color-accent-emphasis)" fill-opacity="0.2" stroke="var(--color-accent-fg)" stroke-width="1" style="display: none; pointer-events: none;" />
         ${hoverZones}
       </svg>
     </div>
@@ -767,18 +772,116 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   addHover('#gh-thresh-3', () => highlightThreshold(3));
   addHover('#gh-thresh-4', () => highlightThreshold(4));
 
-  // Add hover for Ticker Zones
-  statsDiv.querySelectorAll('.gh-ticker-hover-zone').forEach((zone: Element) => {
-    zone.addEventListener('mouseenter', () => {
-      const date = zone.getAttribute('data-date');
-      if (date) {
+  // Selection State (Preserved if injectStats re-runs)
+  let selectionStartIdx = -1;
+  let isDragging = false;
+
+  const tickerContainer = statsDiv.querySelector('#gh-ticker-container') as HTMLElement;
+  const selectionRect = statsDiv.querySelector('#gh-ticker-selection') as SVGRectElement;
+  const selectionStats = statsDiv.querySelector('#gh-selection-stats') as HTMLElement;
+  const zones = Array.from(statsDiv.querySelectorAll('.gh-ticker-hover-zone'));
+
+  const getIdxFromEvent = (e: MouseEvent): number => {
+    const target = e.target as Element;
+    if (target.classList.contains('gh-ticker-hover-zone')) {
+      return zones.indexOf(target);
+    }
+    return -1;
+  };
+
+  tickerContainer?.addEventListener('mousedown', (e: MouseEvent) => {
+    const idx = getIdxFromEvent(e);
+    if (idx !== -1) {
+      isDragging = true;
+      selectionStartIdx = idx;
+      updateSelection(idx, idx);
+      e.preventDefault();
+    } else {
+      // Clicked ticker but not a zone (e.g. background)
+      selectionRect.style.display = 'none';
+      selectionStats.style.display = 'none';
+      clearHighlights();
+    }
+  });
+
+  tickerContainer?.addEventListener('mousemove', (e: MouseEvent) => {
+    const idx = getIdxFromEvent(e);
+    if (idx !== -1) {
+      const date = advanced.ytdDailyCounts[idx]?.date;
+      if (date && !isDragging) {
         highlightDates([date]);
       }
-    });
-    zone.addEventListener('mouseleave', () => {
-      clearHighlights();
-    });
+      if (isDragging) {
+        updateSelection(selectionStartIdx, idx);
+      }
+    }
   });
+
+  tickerContainer?.addEventListener('mouseleave', () => {
+    if (!isDragging) clearHighlights();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+  }, { once: false });
+
+  // Handle stats card highlights clearing
+  statsDiv.addEventListener('mousedown', (e) => {
+    if (tickerContainer?.contains(e.target as Node)) return;
+    selectionRect.style.display = 'none';
+    selectionStats.style.display = 'none';
+    clearHighlights();
+  });
+
+  function updateSelection(start: number, end: number) {
+    if (start < 0 || end < 0) return;
+    const minIdx = Math.min(start, end);
+    const maxIdx = Math.max(start, end);
+    const selectedData = advanced.ytdDailyCounts.slice(minIdx, maxIdx + 1);
+    if (selectedData.length === 0) return;
+    
+    const width = 800;
+    const xStart = (minIdx / (advanced.ytdDailyCounts.length - 1)) * width;
+    const xEnd = (maxIdx / (advanced.ytdDailyCounts.length - 1)) * width;
+    const hoverWidth = width / (advanced.ytdDailyCounts.length - 1);
+    
+    selectionRect.setAttribute('x', (xStart - hoverWidth/2).toString());
+    selectionRect.setAttribute('width', (xEnd - xStart + hoverWidth).toString());
+    selectionRect.style.display = 'block';
+
+    const totalCommits = selectedData.reduce((acc, d) => acc + d.count, 0);
+    const days = selectedData.length;
+    const activeDays = selectedData.filter(d => d.count > 0).length;
+    const avg = (totalCommits / days).toFixed(2);
+    const consistency = ((activeDays / days) * 100).toFixed(1);
+    const startDate = selectedData[0].date;
+    const endDate = selectedData[selectedData.length - 1].date;
+
+    selectionStats.innerHTML = `
+      <div class="d-flex flex-justify-between flex-items-center mb-1" style="border-bottom: 1px solid var(--color-border-muted); padding-bottom: 2px;">
+        <span class="font-weight-bold" style="font-size: 10px;">${startDate} — ${endDate}</span>
+        <span class="color-fg-muted" style="font-size: 9px;">${days} days</span>
+      </div>
+      <div class="d-flex gap-3 mt-1">
+        <div class="d-flex flex-column">
+          <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Commits</span>
+          <strong style="font-size: 13px;">${totalCommits}</strong>
+        </div>
+        <div class="d-flex flex-column" style="border-left: 1px solid var(--color-border-muted); padding-left: 8px;">
+          <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Avg/Day</span>
+          <strong style="font-size: 13px;">${avg}</strong>
+        </div>
+        <div class="d-flex flex-column" style="border-left: 1px solid var(--color-border-muted); padding-left: 8px;">
+          <span class="color-fg-muted" style="font-size: 8px; text-transform: uppercase;">Consistency</span>
+          <strong style="font-size: 13px;">${consistency}%</strong>
+        </div>
+      </div>
+    `;
+    selectionStats.style.display = 'block';
+
+    clearHighlights();
+    highlightDates(selectedData.map(d => d.date));
+  }
 }
 
 export async function extendLegend(thresholds: Record<number, {min:number; max:number}>) {
