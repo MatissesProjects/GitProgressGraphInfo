@@ -79,6 +79,13 @@ We will target the SVG/Table elements in the GitHub UI.
 - [x] Streamline `package.json` build scripts.
 - [x] Decouple UI rendering from data processing logic.
 
+### Phase 6: Testing & Code Quality (In Progress)
+- [x] Integrate `vitest` and `jsdom` for unit and UI testing.
+- [x] Implement comprehensive test suite for RPG logic, Scraping, and Popup UI.
+- [x] Centralize all constants (XP, Levels, Gear, Visibility Keys) in `src/modules/constants.ts`.
+- [x] Unified visibility logic across extension and standalone profile updater.
+- [x] Fix PR activity double-counting in timeline scraper.
+
 ## 6. Future Expansion Ideas
 * **Year Comparison:** Compare "Level 4" thresholds between 2023 and 2024.
 * **Global Leaderboard:** (Concept) Compare levels with other users.
