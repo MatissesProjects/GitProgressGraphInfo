@@ -97,7 +97,17 @@ function init() {
         
         const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p, s.customAvatar);
         
-        await injectStats(t, p, data, advanced, order, showTrends);
+        let yearlyComparison: YearlyStats[] = [];
+        if (s.showYearComparison) {
+          try {
+            const { compareYears } = await import('./modules/analytics');
+            yearlyComparison = await compareYears(pinned, timeline, achievements, socials, s.customAvatar);
+          } catch (e) {
+            console.error("GitHeat: Year comparison error", e);
+          }
+        }
+
+        await injectStats(t, p, data, advanced, order, showTrends, yearlyComparison);
         await extendLegend(t);
         await applyDeepRecoloring(data, p, theme, s.customStart, s.customStop, advanced.ytdDailyCounts, s.colorMode);
         await applyVisibility();

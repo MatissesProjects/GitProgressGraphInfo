@@ -290,7 +290,45 @@ const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: st
   });
 };
 
-export function injectStats(thresholds: Record<number, {min:number; max:number}>, percentiles: any, data: ContributionDay[], advanced: AdvancedStats, savedOrder: string[] | null = null, showTrends: boolean = true) {
+function renderYearComparison(results: YearlyStats[]) {
+  if (results.length === 0) return '';
+  
+  return `
+    <div id="gh-year-comparison" class="mb-3" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px;">
+      <div class="d-flex flex-justify-between flex-items-center mb-2">
+        <span class="color-fg-muted text-small font-weight-bold">Yearly Performance Comparison</span>
+      </div>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--color-border-muted); text-align: left;">
+              <th style="padding: 4px;">Year</th>
+              <th style="padding: 4px;">Total</th>
+              <th style="padding: 4px;">Max Streak</th>
+              <th style="padding: 4px;">Avg Velocity</th>
+              <th style="padding: 4px;">Consistency</th>
+              <th style="padding: 4px;">L4 Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${results.map(r => `
+              <tr style="border-bottom: 1px solid var(--color-border-subtle);">
+                <td style="padding: 4px; font-weight: 600;">${r.year}</td>
+                <td style="padding: 4px;">${r.total}</td>
+                <td style="padding: 4px;">${r.advanced.longestStreak}d</td>
+                <td style="padding: 4px;">${r.advanced.velocity} c/d</td>
+                <td style="padding: 4px;">${r.advanced.consistency}%</td>
+                <td style="padding: 4px;">${r.thresholds[4]?.min ?? '?'}+</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+export function injectStats(thresholds: Record<number, {min:number; max:number}>, percentiles: any, data: ContributionDay[], advanced: AdvancedStats, savedOrder: string[] | null = null, showTrends: boolean = true, yearlyComparison: YearlyStats[] = []) {
   console.log("GitHeat: Injecting Stats (v1.3)...");
   globalAdvanced = advanced;
   const container = document.querySelector('.js-yearly-contributions');

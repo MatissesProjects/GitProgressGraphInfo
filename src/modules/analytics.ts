@@ -1,5 +1,47 @@
-import { ContributionDay, PinnedProject, TimelineActivity, SocialStats, AdvancedStats, StatScore, TooltipStat } from '../types';
+import { ContributionDay, PinnedProject, TimelineActivity, SocialStats, AdvancedStats, StatScore, TooltipStat, YearlyStats } from '../types';
 import { calculateRPGStats, getPersona } from './rpg';
+import { parseAvailableYears, parseContributionGraph } from './scraper';
+
+export async function fetchYearData(year: number): Promise<ContributionDay[] | null> {
+  const url = `${window.location.origin}${window.location.pathname}?tab=overview&from=${year}-01-01&to=${year}-12-31`;
+  try {
+    const resp = await fetch(url);
+    const html = await resp.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    return parseContributionGraph(doc);
+  } catch (e) {
+    console.error(`GitHeat: Failed to fetch data for ${year}`, e);
+    return null;
+  }
+}
+
+export async function calculateYearlyStats(year: number, data: ContributionDay[], pinned: PinnedProject[], timeline: TimelineActivity, achievements: string[], socials: SocialStats, customAvatarSettings?: any): Promise<YearlyStats> {
+  const thresholds = calculateThresholds(data);
+  const percentiles = calculatePercentiles(data);
+  const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, true, percentiles, customAvatarSettings);
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+  
+  return { year, total, thresholds, percentiles, advanced };
+}
+
+export async function compareYears(pinned: PinnedProject[], timeline: TimelineActivity, achievements: string[], socials: SocialStats, customAvatarSettings?: any): Promise<YearlyStats[]> {
+  const years = parseAvailableYears();
+  const results: YearlyStats[] = [];
+  
+  // We'll fetch up to the last 5 years to keep it fast
+  const targetYears = years.slice(0, 5);
+  
+  for (const year of targetYears) {
+    const data = await fetchYearData(year);
+    if (data) {
+      const stats = await calculateYearlyStats(year, data, pinned, timeline, achievements, socials, customAvatarSettings);
+      results.push(stats);
+    }
+  }
+  
+  return results;
+}
 
 export function calculateThresholds(data: ContributionDay[]) {
   const thresholds: Record<number, { min: number; max: number }> = {};

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { parseSocials, parsePinnedProjects, parseContributionGraph } from '../src/modules/scraper';
+import { parseSocials, parsePinnedProjects, parseContributionGraph, parseAvailableYears } from '../src/modules/scraper';
 
 describe('Scraper Module', () => {
   beforeEach(() => {
@@ -26,6 +26,18 @@ describe('Scraper Module', () => {
       `;
       const stats = parseSocials();
       expect(stats.followers).toBe(1500);
+    });
+  });
+
+  describe('parseAvailableYears', () => {
+    it('should parse years from sidebar links', () => {
+      document.body.innerHTML = `
+        <a class="js-year-link">2024</a>
+        <a class="js-year-link">2023</a>
+        <a class="js-year-link">2022</a>
+      `;
+      const years = parseAvailableYears();
+      expect(years).toEqual([2024, 2023, 2022]);
     });
   });
 

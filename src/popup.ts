@@ -92,7 +92,8 @@ export async function initPopup() {
     'toggle-pr': 'showPR',
     'toggle-issue-created': 'showIssueCreated',
     'toggle-langs': 'showLangs',
-    'toggle-network': 'showNetwork'
+    'toggle-network': 'showNetwork',
+    'toggle-year-comparison': 'showYearComparison'
   };
 
   const defaultOrder = [

@@ -195,8 +195,18 @@ export function parsePinnedProjects(): PinnedProject[] {
   return projects;
 }
 
-export function parseContributionGraph(): ContributionDay[] | null {
-  const days = document.querySelectorAll('.ContributionCalendar-day');
+export function parseAvailableYears(): number[] {
+  const years: number[] = [];
+  const yearLinks = document.querySelectorAll('.js-year-link');
+  yearLinks.forEach(link => {
+    const year = parseInt(link.textContent?.trim() || "", 10);
+    if (!isNaN(year)) years.push(year);
+  });
+  return years.sort((a, b) => b - a);
+}
+
+export function parseContributionGraph(root: Document | Element = document): ContributionDay[] | null {
+  const days = root.querySelectorAll('.ContributionCalendar-day');
   const contributionData: ContributionDay[] = [];
 
   days.forEach((day) => {
@@ -207,7 +217,8 @@ export function parseContributionGraph(): ContributionDay[] | null {
       let count = 0;
       const id = day.getAttribute('id');
       if (id) {
-        const tooltip = document.querySelector(`tool-tip[for="${id}"]`);
+        // When parsing a detached document, we must look within that document
+        const tooltip = root.querySelector(`tool-tip[for="${id}"]`);
         if (tooltip) {
           count = parseCountText(tooltip.textContent || "");
         }

@@ -59,6 +59,14 @@ export interface TooltipStat {
   total: number;
 }
 
+export interface YearlyStats {
+  year: number;
+  total: number;
+  thresholds: Record<number, { min: number; max: number }>;
+  percentiles: Record<number, number>;
+  advanced: AdvancedStats;
+}
+
 export interface AdvancedStats {
   isYTD: boolean;
   targetYear: number;
@@ -202,6 +210,7 @@ export interface GitHeatSettings {
   showIssueCreated?: boolean;
   showLangs?: boolean;
   showNetwork?: boolean;
+  showYearComparison?: boolean;
   showBestMonth?: boolean;
   showWorstMonth?: boolean;
   showBestWeek?: boolean;
