@@ -532,41 +532,41 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
       </summary>
       
       <div class="mt-2">
-        \${['Coding', 'Social', 'Consistency'].map(cat => {
+        ${['Coding', 'Social', 'Consistency'].map(cat => {
           const catSkills = (advanced.skills || []).filter((s: Skill) => s.category === cat);
           if (catSkills.length === 0) return '';
-          return \`
+          return `
             <div class="mb-1">
-              <div class="text-small color-fg-muted" style="font-size: 8px; text-transform: uppercase; margin-bottom: 2px;">\${cat}</div>
+              <div class="text-small color-fg-muted" style="font-size: 8px; text-transform: uppercase; margin-bottom: 2px;">${cat}</div>
               <div class="d-flex flex-wrap gap-1">
-                \${catSkills.map((s: Skill) => \`
-                  <div class="skill-node \${s.unlocked ? 'unlocked' : 'locked'}" 
-                       title="\${s.name}: \${s.description}\\nRequirement: \${s.requirement}"
-                       style="display: flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 10px; font-size: 10px; border: 1px solid \${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: \${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: \${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
-                    <span style="font-size: 12px;">\${s.icon}</span>
-                    <span style="font-weight: \${s.unlocked ? '600' : 'normal'};">\${s.name}</span>
+                ${catSkills.map((s: Skill) => `
+                  <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
+                       title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
+                       style="display: flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 10px; font-size: 10px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
+                    <span style="font-size: 12px;">${s.icon}</span>
+                    <span style="font-weight: ${s.unlocked ? '600' : 'normal'};">${s.name}</span>
                   </div>
-                \`).join('')}
+                `).join('')}
               </div>
             </div>
-          \`;
+          `;
         }).join('')}
       </div>
     </details>
 
-    <div class="git-heat-grid" id="gh-grid-stats">\${gridOrder.map(id => itemMap[id] || '').join('')}</div>
+    <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">
       <div style="flex: 1; min-width: 160px;" id="gh-active-repos">
         <span class="color-fg-muted text-small d-block mb-1">Most Active Repos (Commits)</span>
-        <div class="d-flex flex-column gap-1">\${advanced.topRepos.slice(0, 3).map((r: {name:string; commits:number}) => \`<div class="d-flex flex-justify-between text-small"><span>\${r.name}</span></div>\`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div>
+        <div class="d-flex flex-column gap-1">${advanced.topRepos.slice(0, 3).map((r: {name:string; commits:number}) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div>
       </div>
       <div style="flex: 1; min-width: 160px;" id="gh-created-repos">
         <span class="color-fg-muted text-small d-block mb-1">Created Repositories</span>
-        <div class="d-flex flex-column gap-1">\${advanced.createdRepoList.slice(0, 3).map((r: {name:string; date:string}) => \`<div class="d-flex flex-justify-between text-small"><span>\${r.name}</span></div>\`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
+        <div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: {name:string; date:string}) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
       </div>
       <div style="flex: 1; min-width: 160px;" id="gh-achievements">
         <span class="color-fg-muted text-small d-block mb-1">Recent Achievements</span>
-        <div class="d-flex flex-wrap gap-1">\${advanced.achievements.map((a: string) => \`<span class="Label Label--secondary" title="\${a}">\${a}</span>\`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div>
+        <div class="d-flex flex-wrap gap-1">${advanced.achievements.map((a: string) => `<span class="Label Label--secondary" title="${a}">${a}</span>`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div>
       </div>
     </div>
     <div class="mt-2 pt-2 border-top color-border-muted" id="gh-footer">
