@@ -107,13 +107,14 @@ export function parseActivityTimeline(): TimelineActivity {
         const count = match ? parseInt(match[1], 10) : 1;
         pullRequests += count;
         if (isTodaySection) todayActions.prs += count;
-      }
-      if (bodyText.includes('Merged')) {
+      } else if (bodyText.includes('Merged')) {
         const match = bodyText.match(/Merged (\d+) (?:other )?pull request/i);
         const count = match ? parseInt(match[1], 10) : 1;
         mergedPullRequests += count;
-        if (isTodaySection) todayActions.prs += count;
+        // Not adding to todayActions.prs here to avoid double counting 
+        // if the user also opened it today. We prioritize 'Opened' for the combo.
       }
+      
       if (bodyText.includes('Reviewed')) {
         const match = bodyText.match(/Reviewed (\d+) (?:other )?pull request/i);
         const count = match ? parseInt(match[1], 10) : 1;
