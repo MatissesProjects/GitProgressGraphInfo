@@ -1,6 +1,6 @@
 import { GitHeatSettings, AdvancedStats, CustomAvatarSettings } from './types';
 
-document.addEventListener('DOMContentLoaded', async () => {
+export async function initPopup() {
   console.log("GitHeat Popup: Loaded");
   const loading = document.getElementById('loading');
   const error = document.getElementById('error');
@@ -407,12 +407,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             achievementList.appendChild(span);
           });
         }
-      } else {
-        if (error) {
-          error.textContent = response?.error || "Could not find contribution graph. Make sure you are on a GitHub profile page.";
-          error.style.display = 'block';
-        }
-        if (loading) loading.style.display = 'none';
       }
     });
   } catch (err: any) {
@@ -422,4 +416,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       error.style.display = 'block';
     }
   }
-});
+}
+
+document.addEventListener('DOMContentLoaded', initPopup);
+
