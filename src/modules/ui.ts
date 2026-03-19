@@ -453,73 +453,75 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
 
   const rpgClasses = getCodingClass(advanced);
   const tickerHtml = renderTickerGraph(advanced.ytdDailyCounts, thresholds);
+  const comparisonHtml = renderYearComparison(yearlyComparison);
 
-  statsDiv.innerHTML = \`
+  statsDiv.innerHTML = `
     <div class="d-flex flex-justify-between flex-items-start mb-2" style="gap: 15px;">
       <div class="d-flex flex-column" style="flex: 1; min-width: 0;">
         <div class="d-flex flex-items-center flex-wrap gap-2">
-          <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics \${titleSuffix}</h3>
-          <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: \${advanced.persona}</span>
+          <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
+          <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: ${advanced.persona}</span>
         </div>
         
-        \${rpgClasses.length > 0 ? \`
+        ${rpgClasses.length > 0 ? `
           <div class="d-flex flex-items-center flex-wrap gap-1 mt-1">
             <span class="color-fg-muted text-small" style="white-space: nowrap;">Class:</span>
-            \${rpgClasses.map(c => \`
-              <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="\${c.description}">
-                <span>\${c.icon}</span> \${c.name}
+            ${rpgClasses.map(c => `
+              <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="${c.description}">
+                <span>${c.icon}</span> ${c.name}
               </span>
-            \`).join('')}
+            `).join('')}
           </div>
-        \` : ''}
+        ` : ''}
       </div>
 
       <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
-        \${advanced.avatar ? \`
-          <div class="gh-avatar-wrapper" title="\${advanced.avatar.description}" style="position: relative; width: 65px; height: 55px; cursor: help; user-select: none; margin-right: 5px;">
+        ${advanced.avatar ? `
+          <div class="gh-avatar-wrapper" title="${advanced.avatar.description}" style="position: relative; width: 65px; height: 55px; cursor: help; user-select: none; margin-right: 5px;">
             <!-- Companion -->
             <div style="position: absolute; left: -15px; bottom: -5px; font-size: 22px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); z-index: 1;">
-              \${advanced.avatar.companion}
+              ${advanced.avatar.companion}
             </div>
             <!-- Base Character -->
             <div style="position: absolute; left: 50%; top: 55%; transform: translate(-50%, -35%); font-size: 34px; z-index: 2;">
-              \${advanced.avatar.base}
+              ${advanced.avatar.base}
             </div>
             <!-- Headgear -->
             <div style="position: absolute; left: 50%; top: -6px; transform: translateX(-50%); font-size: 26px; z-index: 5; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
-              \${advanced.avatar.headgear}
+              ${advanced.avatar.headgear}
             </div>
             <!-- Weapon (Left Hand) -->
             <div style="position: absolute; left: -8px; top: 62%; transform: translateY(-50%) rotate(-10deg); font-size: 28px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
-              \${advanced.avatar.weapon}
+              ${advanced.avatar.weapon}
             </div>
             <!-- Shield (Right Hand) -->
             <div style="position: absolute; right: -2px; top: 55%; transform: translateY(-50%) rotate(10deg); font-size: 28px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
-              \${advanced.avatar.shield}
+              ${advanced.avatar.shield}
             </div>
           </div>
-        \` : ''}
+        ` : ''}
 
-        \${advanced.todayCombo >= 2 ? \`
-          <div class="gh-combo-badge" title="\${advanced.todayComboMath}">
-            <div style="line-height: 1;">\${advanced.todayCombo}x COMBO</div>
-            <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">\${advanced.todayComboReason}</div>
-          </div>\` : ''}
+        ${advanced.todayCombo >= 2 ? `
+          <div class="gh-combo-badge" title="${advanced.todayComboMath}">
+            <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
+            <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">${advanced.todayComboReason}</div>
+          </div>` : ''}
         
         <div id="gh-header-level" class="gh-level-header" style="margin: 0; width: 180px;">
           <div class="d-flex flex-items-center gap-2">
-            <span class="gh-level-badge">LVL \${advanced.level}</span>
-            <span class="gh-level-title">\${advanced.levelTitle}</span>
+            <span class="gh-level-badge">LVL ${advanced.level}</span>
+            <span class="gh-level-title">${advanced.levelTitle}</span>
           </div>
-          <div class="gh-progress-container" title="\${advanced.totalXP} XP earned (commits + bonuses). \${advanced.xpToNext} to level up.">
-            <div class="gh-progress-bar" style="width: \${advanced.progressPercent}%;"></div>
+          <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
+            <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
           </div>
-          <span class="gh-xp-text" style="font-size: 8px;">\${advanced.levelProgressXP} / \${advanced.levelTotalXP} XP</span>
+          <span class="gh-xp-text" style="font-size: 8px;">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
         </div>
       </div>
     </div>
 
-    \${tickerHtml}
+    ${tickerHtml}
+    ${comparisonHtml}
 
     <details id="gh-skill-tree" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
       <summary class="color-fg-muted text-small font-weight-bold" style="cursor: pointer; outline: none; list-style: none;">
@@ -571,12 +573,12 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
       <div id="gh-pulse-signature" class="mb-2" style="min-height: 14px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
         <div class="d-flex flex-items-center">
           <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block; flex: 1;">
-            SIG: 0x\${advanced.pulseHash.split('').map((char: string, i: number) => {
+            SIG: 0x${advanced.pulseHash.split('').map((char: string, i: number) => {
               const level = parseInt(char, 16);
               const dateIdx = advanced.ytdDailyCounts.length - 1 - i;
               const date = advanced.ytdDailyCounts[dateIdx]?.date || '';
               const count = advanced.ytdDailyCounts[dateIdx]?.count || 0;
-              return \`<span class="gh-sig-char" data-level="\${level}" data-date="\${date}" title="\${date}: \${count} commits">\${char}</span>\`;
+              return `<span class="gh-sig-char" data-level="${level}" data-date="${date}" title="${date}: ${count} commits">${char}</span>`;
             }).join('')}
           </span>
           <button id="gh-sig-copy-btn" class="gh-sig-copy" title="Copy Signature to clipboard">Copy</button>
@@ -585,17 +587,17 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
       <div class="d-flex flex-items-center flex-wrap mt-1">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
         <div id="granular-legend" class="d-flex gap-1 mr-3">
-          \${Array.from({ length: 15 }).map((_, i) => \`<div class="square-legend level-\${i+1}"></div>\`).join('')}
+          ${Array.from({ length: 15 }).map((_, i) => `<div class="square-legend level-${i+1}"></div>`).join('')}
         </div>
         <div id="gh-thresholds-container" class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
           <span class="color-fg-muted text-small mr-1">Thresholds: </span>
-          <span id="gh-thresh-1" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L1: \${thresholds[1]?.min ?? '?'}\${thresholds[1]?.min === thresholds[1]?.max ? '' : `-\${thresholds[1]?.max ?? '?'}`}</span>
-          <span id="gh-thresh-2" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L2: \${thresholds[2]?.min ?? '?'}\${thresholds[2]?.min === thresholds[2]?.max ? '' : `-\${thresholds[2]?.max ?? '?'}`}</span>
-          <span id="gh-thresh-3" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L3: \${thresholds[3]?.min ?? '?'}\${thresholds[3]?.min === thresholds[3]?.max ? '' : `-\${thresholds[3]?.max ?? '?'}`}</span>
-          <span id="gh-thresh-4" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L4: \${thresholds[4]?.min ?? '?'}+</span>
+          <span id="gh-thresh-1" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L1: ${thresholds[1]?.min ?? '?'}${thresholds[1]?.min === thresholds[1]?.max ? '' : `-${thresholds[1]?.max ?? '?'}`}</span>
+          <span id="gh-thresh-2" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L2: ${thresholds[2]?.min ?? '?'}${thresholds[2]?.min === thresholds[2]?.max ? '' : `-${thresholds[2]?.max ?? '?'}`}</span>
+          <span id="gh-thresh-3" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L3: ${thresholds[3]?.min ?? '?'}${thresholds[3]?.min === thresholds[3]?.max ? '' : `-${thresholds[3]?.max ?? '?'}`}</span>
+          <span id="gh-thresh-4" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L4: ${thresholds[4]?.min ?? '?'}+</span>
         </div>
       </div>
-    </div>\`;
+    </div>`;
   container.prepend(statsDiv);
 
   // Copy Signature logic
