@@ -167,6 +167,12 @@ export interface AdvancedStats {
   todayComboMath: string;
   todayComboReason: string;
   persona: string;
+  streakHeat: {
+    status: string;
+    multiplier: number;
+    icon: string;
+    color: string;
+  };
   skills: Skill[];
   avatar: AvatarData;
   pulseHash: string;

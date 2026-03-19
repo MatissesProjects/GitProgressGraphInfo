@@ -87,6 +87,15 @@ export function getPersona(weekendVolumeShare: number, consistency: string, velo
   return "Steady Developer";
 }
 
+export function getStreakHeat(current: number, best: number) {
+  if (current === 0) return { status: 'Cold', multiplier: 1, icon: '❄️', color: '#57606a' };
+  if (current > best) return { status: 'Supernova', multiplier: 2.0, icon: '🌟', color: '#0969da' }; // Breaking record!
+  if (current === best) return { status: 'On Fire', multiplier: 1.5, icon: '🔥', color: '#cf222e' };
+  if (current >= best * 0.8) return { status: 'Hot', multiplier: 1.3, icon: '🔸', color: '#d44c1e' };
+  if (current > 3) return { status: 'Warm', multiplier: 1.1, icon: '🔆', color: '#9a6700' };
+  return { status: 'Active', multiplier: 1, icon: '⚡', color: '#30a14e' };
+}
+
 export async function calculateRPGStats(
   data: ContributionDay[], 
   timeline: TimelineActivity, 
@@ -105,12 +114,21 @@ export async function calculateRPGStats(
   
   const ytdCommits = data.filter(d => d.date >= ytdStart).reduce((s, d) => s + d.count, 0);
   
+  const heat = getStreakHeat(currentStreak, longestStreak);
+
   // Balanced XP Calculation (YTD focused for commits)
-  const totalXP = (ytdCommits * XP_VALUES.COMMIT) + 
+  let totalXP = (ytdCommits * XP_VALUES.COMMIT) + 
                   (longestStreak * XP_VALUES.LONGEST_STREAK_DAY) + 
                   (timeline.pullRequests * XP_VALUES.PULL_REQUEST) + 
                   (timeline.issuesOpened * XP_VALUES.ISSUE_OPENED) + 
                   (socials.followers * XP_VALUES.FOLLOWER);
+
+  // Apply streak multiplier to recent gains if needed, but for now we apply a flat bonus to total
+  // to make it feel like "leveling faster" when on a streak
+  if (heat.multiplier > 1) {
+    const bonus = Math.floor(totalXP * (heat.multiplier - 1) * 0.1); // 10% of weight * multiplier
+    totalXP += bonus;
+  }
 
   // Balanced Level Logic: 
   // Formula: (Level-1)^1.8 * 500
@@ -146,7 +164,8 @@ export async function calculateRPGStats(
     todayCombo: combo.multiplier,
     todayComboMath: combo.title,
     todayComboReason: combo.bonusReasons.join(', '),
-    avatar
+    avatar,
+    streakHeat: heat
   };
 }
 

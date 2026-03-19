@@ -336,6 +336,29 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   const existing = document.getElementById('git-heat-stats');
   if (existing) existing.remove();
 
+  // Add streak-specific styles
+  if (!document.getElementById('gh-streak-styles')) {
+    const style = document.createElement('style');
+    style.id = 'gh-streak-styles';
+    style.textContent = `
+      @keyframes streak-glow {
+        0% { box-shadow: 0 0 5px rgba(207, 34, 46, 0.2); border-color: rgba(207, 34, 46, 0.3); }
+        50% { box-shadow: 0 0 15px rgba(207, 34, 46, 0.5); border-color: rgba(207, 34, 46, 0.6); }
+        100% { box-shadow: 0 0 5px rgba(207, 34, 46, 0.2); border-color: rgba(207, 34, 46, 0.3); }
+      }
+      @keyframes record-pulse {
+        0% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.02); filter: brightness(1.2); box-shadow: 0 0 20px rgba(9, 105, 218, 0.4); }
+        100% { transform: scale(1); filter: brightness(1); }
+      }
+      .streak-hot { animation: streak-glow 2s infinite ease-in-out; border-width: 1.5px !important; }
+      .streak-supernova { animation: record-pulse 1.5s infinite ease-in-out; border: 2px solid #0969da !important; background: var(--color-accent-subtle) !important; }
+      .streak-progress-bg { height: 3px; width: 100%; background: var(--color-border-muted); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+      .streak-progress-fill { height: 100%; transition: width 0.5s ease-out; }
+    `;
+    document.head.appendChild(style);
+  }
+
   const now = new Date();
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
@@ -348,8 +371,26 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   let gridOrder = savedOrder || DEFAULT_GRID_ORDER;
   DEFAULT_GRID_ORDER.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
+  const streakPercent = Math.min(100, Math.floor((advanced.currentStreak / advanced.longestStreak) * 100));
+  const heatClass = advanced.streakHeat.status === 'Supernova' ? 'streak-supernova' : 
+                    (advanced.streakHeat.status === 'On Fire' || advanced.streakHeat.status === 'Hot' ? 'streak-hot' : '');
+
   const itemMap: Record<string, string> = {
-    'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${(advanced.currentStreakDates || []).join(',')}" data-longest-streak="${(advanced.longestStreakDates || []).join(',')}" title="Your current streak: ${advanced.currentStreak} days. Longest streak ever: ${advanced.longestStreak} days."><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
+    'gh-streak': `<div class="stat-card highlightable ${heatClass}" id="gh-streak" data-current-streak="${(advanced.currentStreakDates || []).join(',')}" data-longest-streak="${(advanced.longestStreakDates || []).join(',')}" title="Your current streak: ${advanced.currentStreak} days. Longest streak ever: ${advanced.longestStreak} days.">
+      <div class="d-flex flex-justify-between flex-items-center">
+        <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
+        ${advanced.streakHeat.multiplier > 1 ? `<span class="Label" style="background: ${advanced.streakHeat.color}; color: white; font-size: 9px; padding: 0 4px;">${advanced.streakHeat.icon} ${advanced.streakHeat.status}</span>` : ''}
+      </div>
+      <strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong>
+      ${advanced.streakHeat.status !== 'Supernova' ? `
+        <div class="streak-progress-bg">
+          <div class="streak-progress-fill" style="width: ${streakPercent}%; background: ${advanced.streakHeat.color};"></div>
+        </div>
+        <div class="text-small color-fg-muted mt-1" style="font-size: 9px;">
+          ${advanced.currentStreak >= advanced.longestStreak ? 'Record matched!' : `${advanced.longestStreak - advanced.currentStreak} days to personal best`}
+        </div>
+      ` : `<div class="text-small color-fg-accent mt-1 font-weight-bold" style="font-size: 9px;">NEW PERSONAL RECORD! 🏆</div>`}
+    </div>`,
     'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${(advanced.bestMonthDates || []).join(',')}" title="Best month score vs average month score (${Math.round(advanced.avgMonthScore)}). (${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak)">
       <span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span>
       <div class="d-flex flex-items-center gap-1">
