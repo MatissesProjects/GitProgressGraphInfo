@@ -1,5 +1,6 @@
 import { ContributionDay, AdvancedStats, GitHeatSettings, Skill } from '../types';
 import { getCodingClass } from './rpg';
+import { DEFAULT_GRID_ORDER, GRID_ITEM_TO_SETTING, VISIBILITY_KEYS } from './constants';
 
 // Module-level state to persist across re-injections
 let selectionStartIdx = -1;
@@ -79,20 +80,11 @@ function updateSelection(start: number, end: number) {
     </div>
   `;
   selectionStats.style.display = 'block';
-
-  // Use the highlight functions which are defined in the module
-  // We need to be careful as they might be defined inside injectStats.
-  // I'll move them to module level.
 }
 
 export async function applyVisibility() {
   try {
-    const settings = await chrome.storage.local.get([
-      'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
-      'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
-      'showMostActiveDay', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showAboveAvgIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
-    ]) as GitHeatSettings;
+    const settings = await chrome.storage.local.get(VISIBILITY_KEYS) as GitHeatSettings;
 
     const grid = document.getElementById('gh-grid-stats');
     const detailed = document.getElementById('gh-detailed-stats');
@@ -130,55 +122,21 @@ export async function applyVisibility() {
 
     // Gear toggles
     if (avatar) {
-      const head = avatar.querySelector('div:nth-child(3)') as HTMLElement; // Headgear is 3rd child
-      const weapon = avatar.querySelector('div:nth-child(4)') as HTMLElement; // Weapon is 4th
-      const shield = avatar.querySelector('div:nth-child(5)') as HTMLElement; // Shield is 5th
-      const companion = avatar.querySelector('div:nth-child(1)') as HTMLElement; // Companion is 1st
-
-      if (head) head.style.display = (settings.showGearHead !== false) ? 'block' : 'none';
-      if (weapon) weapon.style.display = (settings.showGearWeapon !== false) ? 'block' : 'none';
-      if (shield) shield.style.display = (settings.showGearShield !== false) ? 'block' : 'none';
-      if (companion) companion.style.display = (settings.showGearCompanion !== false) ? 'block' : 'none';
+      const gearSelectors = [
+        { el: 'div:nth-child(3)', key: settings.showGearHead },
+        { el: 'div:nth-child(4)', key: settings.showGearWeapon },
+        { el: 'div:nth-child(5)', key: settings.showGearShield },
+        { el: 'div:nth-child(1)', key: settings.showGearCompanion }
+      ];
+      gearSelectors.forEach(({ el, key }) => {
+        const gearEl = avatar.querySelector(el) as HTMLElement;
+        if (gearEl) gearEl.style.display = (key !== false) ? 'block' : 'none';
+      });
     }
 
-    const toggleMap: Record<string, boolean | undefined> = {
-      'gh-total': settings.showTotal,
-      'gh-today': settings.showTodayCount,
-      'gh-streak': settings.showStreak,
-      'gh-best-month': settings.showBestMonth,
-      'gh-worst-month': settings.showWorstMonth,
-      'gh-best-week': settings.showBestWeek,
-      'gh-worst-week': settings.showWorstWeek,
-      'gh-current-week': settings.showCurrentWeek,
-      'gh-dominant-weekday': settings.showDominantWeekday,
-      'gh-island': settings.showIsland,
-      'gh-slump-island': settings.showSlumpIsland,
-      'gh-above-avg-island': settings.showAboveAvgIsland,
-      'gh-velocity': settings.showVelocity,
-      'gh-velocity-above': settings.showVelocityAbove,
-      'gh-velocity-below': settings.showVelocityBelow,
-      'gh-consistency': settings.showConsistency,
-      'gh-weekend': settings.showWeekend,
-      'gh-slump': settings.showSlump,
-      'gh-best-day': settings.showBestDay,
-      'gh-worst-day': settings.showWorstDay,
-      'gh-current-weekday': settings.showCurrentWeekday,
-      'gh-power-day': settings.showPowerDay,
-      'gh-peak-day': settings.showPeakDay,
-      'gh-most-active-day': settings.showMostActiveDay,
-      'gh-max-commits': settings.showMaxCommits,
-      'gh-stars': settings.showStars,
-      'gh-pr': settings.showPR,
-      'gh-issue-created': settings.showIssueCreated,
-      'gh-langs': settings.showLangs,
-      'gh-network': settings.showNetwork,
-      'gh-pulse-signature': settings.showPulseHash,
-      'gh-level': settings.showLevel
-    };
-
-    Object.entries(toggleMap).forEach(([id, val]) => {
+    Object.entries(GRID_ITEM_TO_SETTING).forEach(([id, settingKey]) => {
       const el = document.getElementById(id);
-      if (el) el.style.display = (val !== false) ? 'block' : 'none';
+      if (el) el.style.display = (settings[settingKey] !== false) ? 'block' : 'none';
     });
 
     const legendLabels = document.querySelectorAll('.git-heat-legend-label');
@@ -287,9 +245,6 @@ const clearHighlights = () => {
 };
 
 const highlightDates = (dates: string[], className: string = 'gh-highlight') => {
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  
   dates.forEach(date => {
     const dayEl = (document.querySelector(`.ContributionCalendar-day[data-date="${date}"]`) as HTMLElement);
     if (dayEl) { 
@@ -352,15 +307,8 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   statsDiv.style.marginTop = '8px';
   const titleSuffix = advanced.isYTD ? '(YTD)' : '(Year)';
 
-  const defaultOrder = [
-    'gh-streak', 'gh-best-month', 'gh-worst-month', 'gh-best-week', 'gh-worst-week', 'gh-current-week', 'gh-dominant-weekday', 'gh-most-active-day', 'gh-max-commits',
-    'gh-velocity', 'gh-velocity-above', 'gh-velocity-below', 'gh-consistency', 'gh-weekend',
-    'gh-island', 'gh-slump-island', 'gh-above-avg-island', 'gh-slump',
-    'gh-best-day', 'gh-worst-day', 'gh-power-day', 'gh-peak-day', 'gh-current-weekday',
-    'gh-stars', 'gh-pr', 'gh-issue-created', 'gh-langs', 'gh-network'
-  ];
-  let gridOrder = savedOrder || defaultOrder;
-  defaultOrder.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
+  let gridOrder = savedOrder || DEFAULT_GRID_ORDER;
+  DEFAULT_GRID_ORDER.forEach(id => { if (!gridOrder.includes(id)) gridOrder.push(id); });
 
   const itemMap: Record<string, string> = {
     'gh-streak': `<div class="stat-card highlightable" id="gh-streak" data-current-streak="${(advanced.currentStreakDates || []).join(',')}" data-longest-streak="${(advanced.longestStreakDates || []).join(',')}" title="Your current streak: ${advanced.currentStreak} days. Longest streak ever: ${advanced.longestStreak} days."><span class="color-fg-muted d-block text-small">Current / Best Streak</span><strong class="f3-light">${advanced.currentStreak} / ${advanced.longestStreak} days</strong></div>`,
@@ -468,72 +416,72 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
   const rpgClasses = getCodingClass(advanced);
   const tickerHtml = renderTickerGraph(advanced.ytdDailyCounts, thresholds);
 
-  statsDiv.innerHTML = `
+  statsDiv.innerHTML = \`
     <div class="d-flex flex-justify-between flex-items-start mb-2" style="gap: 15px;">
       <div class="d-flex flex-column" style="flex: 1; min-width: 0;">
         <div class="d-flex flex-items-center flex-wrap gap-2">
-          <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics ${titleSuffix}</h3>
-          <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: ${advanced.persona}</span>
+          <h3 class="h4 mb-0" style="white-space: nowrap;">GitHeat Analytics \${titleSuffix}</h3>
+          <span id="gh-persona" class="Label Label--info" style="white-space: nowrap; cursor: help;" title="Your general coding persona based on recent activity.">Persona: \${advanced.persona}</span>
         </div>
         
-        ${rpgClasses.length > 0 ? `
+        \${rpgClasses.length > 0 ? \`
           <div class="d-flex flex-items-center flex-wrap gap-1 mt-1">
             <span class="color-fg-muted text-small" style="white-space: nowrap;">Class:</span>
-            ${rpgClasses.map(c => `
-              <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="${c.description}">
-                <span>${c.icon}</span> ${c.name}
+            \${rpgClasses.map(c => \`
+              <span class="Label Label--secondary" style="cursor: help; display: inline-flex; align-items: center; gap: 4px;" title="\${c.description}">
+                <span>\${c.icon}</span> \${c.name}
               </span>
-            `).join('')}
+            \`).join('')}
           </div>
-        ` : ''}
+        \` : ''}
       </div>
 
       <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
-        ${advanced.avatar ? `
-          <div class="gh-avatar-wrapper" title="${advanced.avatar.description}" style="position: relative; width: 65px; height: 55px; cursor: help; user-select: none; margin-right: 5px;">
+        \${advanced.avatar ? \`
+          <div class="gh-avatar-wrapper" title="\${advanced.avatar.description}" style="position: relative; width: 65px; height: 55px; cursor: help; user-select: none; margin-right: 5px;">
             <!-- Companion -->
             <div style="position: absolute; left: -15px; bottom: -5px; font-size: 22px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); z-index: 1;">
-              ${advanced.avatar.companion}
+              \${advanced.avatar.companion}
             </div>
             <!-- Base Character -->
             <div style="position: absolute; left: 50%; top: 55%; transform: translate(-50%, -35%); font-size: 34px; z-index: 2;">
-              ${advanced.avatar.base}
+              \${advanced.avatar.base}
             </div>
             <!-- Headgear -->
             <div style="position: absolute; left: 50%; top: -6px; transform: translateX(-50%); font-size: 26px; z-index: 5; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
-              ${advanced.avatar.headgear}
+              \${advanced.avatar.headgear}
             </div>
             <!-- Weapon (Left Hand) -->
             <div style="position: absolute; left: -8px; top: 62%; transform: translateY(-50%) rotate(-10deg); font-size: 28px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
-              ${advanced.avatar.weapon}
+              \${advanced.avatar.weapon}
             </div>
             <!-- Shield (Right Hand) -->
             <div style="position: absolute; right: -2px; top: 55%; transform: translateY(-50%) rotate(10deg); font-size: 28px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
-              ${advanced.avatar.shield}
+              \${advanced.avatar.shield}
             </div>
           </div>
-        ` : ''}
+        \` : ''}
 
-        ${advanced.todayCombo >= 2 ? `
-          <div class="gh-combo-badge" title="${advanced.todayComboMath}">
-            <div style="line-height: 1;">${advanced.todayCombo}x COMBO</div>
-            <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">${advanced.todayComboReason}</div>
-          </div>` : ''}
+        \${advanced.todayCombo >= 2 ? \`
+          <div class="gh-combo-badge" title="\${advanced.todayComboMath}">
+            <div style="line-height: 1;">\${advanced.todayCombo}x COMBO</div>
+            <div style="font-size: 9px; opacity: 0.95; margin-top: 1px; font-weight: 700;">\${advanced.todayComboReason}</div>
+          </div>\` : ''}
         
         <div id="gh-header-level" class="gh-level-header" style="margin: 0; width: 180px;">
           <div class="d-flex flex-items-center gap-2">
-            <span class="gh-level-badge">LVL ${advanced.level}</span>
-            <span class="gh-level-title">${advanced.levelTitle}</span>
+            <span class="gh-level-badge">LVL \${advanced.level}</span>
+            <span class="gh-level-title">\${advanced.levelTitle}</span>
           </div>
-          <div class="gh-progress-container" title="${advanced.totalXP} XP earned (commits + bonuses). ${advanced.xpToNext} to level up.">
-            <div class="gh-progress-bar" style="width: ${advanced.progressPercent}%;"></div>
+          <div class="gh-progress-container" title="\${advanced.totalXP} XP earned (commits + bonuses). \${advanced.xpToNext} to level up.">
+            <div class="gh-progress-bar" style="width: \${advanced.progressPercent}%;"></div>
           </div>
-          <span class="gh-xp-text" style="font-size: 8px;">${advanced.levelProgressXP} / ${advanced.levelTotalXP} XP</span>
+          <span class="gh-xp-text" style="font-size: 8px;">\${advanced.levelProgressXP} / \${advanced.levelTotalXP} XP</span>
         </div>
       </div>
     </div>
 
-    ${tickerHtml}
+    \${tickerHtml}
 
     <details id="gh-skill-tree" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
       <summary class="color-fg-muted text-small font-weight-bold" style="cursor: pointer; outline: none; list-style: none;">
@@ -544,53 +492,53 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
       </summary>
       
       <div class="mt-2">
-        ${['Coding', 'Social', 'Consistency'].map(cat => {
+        \${['Coding', 'Social', 'Consistency'].map(cat => {
           const catSkills = (advanced.skills || []).filter((s: Skill) => s.category === cat);
           if (catSkills.length === 0) return '';
-          return `
+          return \`
             <div class="mb-1">
-              <div class="text-small color-fg-muted" style="font-size: 8px; text-transform: uppercase; margin-bottom: 2px;">${cat}</div>
+              <div class="text-small color-fg-muted" style="font-size: 8px; text-transform: uppercase; margin-bottom: 2px;">\${cat}</div>
               <div class="d-flex flex-wrap gap-1">
-                ${catSkills.map((s: Skill) => `
-                  <div class="skill-node ${s.unlocked ? 'unlocked' : 'locked'}" 
-                       title="${s.name}: ${s.description}\nRequirement: ${s.requirement}"
-                       style="display: flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 10px; font-size: 10px; border: 1px solid ${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: ${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: ${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
-                    <span style="font-size: 12px;">${s.icon}</span>
-                    <span style="font-weight: ${s.unlocked ? '600' : 'normal'};">${s.name}</span>
+                \${catSkills.map((s: Skill) => \`
+                  <div class="skill-node \${s.unlocked ? 'unlocked' : 'locked'}" 
+                       title="\${s.name}: \${s.description}\\nRequirement: \${s.requirement}"
+                       style="display: flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 10px; font-size: 10px; border: 1px solid \${s.unlocked ? 'var(--color-success-emphasis)' : 'var(--color-border-muted)'}; background: \${s.unlocked ? 'var(--color-success-subtle)' : 'transparent'}; opacity: \${s.unlocked ? '1' : '0.4'}; cursor: help; transition: all 0.2s ease;">
+                    <span style="font-size: 12px;">\${s.icon}</span>
+                    <span style="font-weight: \${s.unlocked ? '600' : 'normal'};">\${s.name}</span>
                   </div>
-                `).join('')}
+                \`).join('')}
               </div>
             </div>
-          `;
+          \`;
         }).join('')}
       </div>
     </details>
 
-    <div class="git-heat-grid" id="gh-grid-stats">${gridOrder.map(id => itemMap[id] || '').join('')}</div>
+    <div class="git-heat-grid" id="gh-grid-stats">\${gridOrder.map(id => itemMap[id] || '').join('')}</div>
     <div class="mt-2 pt-2 border-top color-border-muted d-flex flex-wrap gap-3" id="gh-detailed-stats">
       <div style="flex: 1; min-width: 160px;" id="gh-active-repos">
         <span class="color-fg-muted text-small d-block mb-1">Most Active Repos (Commits)</span>
-        <div class="d-flex flex-column gap-1">${advanced.topRepos.slice(0, 3).map((r: {name:string; commits:number}) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div>
+        <div class="d-flex flex-column gap-1">\${advanced.topRepos.slice(0, 3).map((r: {name:string; commits:number}) => \`<div class="d-flex flex-justify-between text-small"><span>\${r.name}</span></div>\`).join('') || '<span class="text-small color-fg-muted">No recent activity found</span>'}</div>
       </div>
       <div style="flex: 1; min-width: 160px;" id="gh-created-repos">
         <span class="color-fg-muted text-small d-block mb-1">Created Repositories</span>
-        <div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: {name:string; date:string}) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
+        <div class="d-flex flex-column gap-1">\${advanced.createdRepoList.slice(0, 3).map((r: {name:string; date:string}) => \`<div class="d-flex flex-justify-between text-small"><span>\${r.name}</span></div>\`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
       </div>
       <div style="flex: 1; min-width: 160px;" id="gh-achievements">
         <span class="color-fg-muted text-small d-block mb-1">Recent Achievements</span>
-        <div class="d-flex flex-wrap gap-1">${advanced.achievements.map((a: string) => `<span class="Label Label--secondary" title="${a}">${a}</span>`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div>
+        <div class="d-flex flex-wrap gap-1">\${advanced.achievements.map((a: string) => \`<span class="Label Label--secondary" title="\${a}">\${a}</span>\`).join('') || '<span class="text-small color-fg-muted">None found</span>'}</div>
       </div>
     </div>
     <div class="mt-2 pt-2 border-top color-border-muted" id="gh-footer">
       <div id="gh-pulse-signature" class="mb-2" style="min-height: 14px;" title="A unique hexadecimal signature built from your daily contribution levels since Jan 1st. Reversed: Most recent day first. 0=Empty, 1-F=Deep Scale Level.">
         <div class="d-flex flex-items-center">
           <span class="color-fg-muted" style="font-size: 9px; font-family: monospace; letter-spacing: 1px; word-break: break-all; line-height: 1.4; display: block; flex: 1;">
-            SIG: 0x${advanced.pulseHash.split('').map((char: string, i: number) => {
+            SIG: 0x\${advanced.pulseHash.split('').map((char: string, i: number) => {
               const level = parseInt(char, 16);
               const dateIdx = advanced.ytdDailyCounts.length - 1 - i;
               const date = advanced.ytdDailyCounts[dateIdx]?.date || '';
               const count = advanced.ytdDailyCounts[dateIdx]?.count || 0;
-              return `<span class="gh-sig-char" data-level="${level}" data-date="${date}" title="${date}: ${count} commits">${char}</span>`;
+              return \`<span class="gh-sig-char" data-level="\${level}" data-date="\${date}" title="\${date}: \${count} commits">\${char}</span>\`;
             }).join('')}
           </span>
           <button id="gh-sig-copy-btn" class="gh-sig-copy" title="Copy Signature to clipboard">Copy</button>
@@ -599,17 +547,17 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
       <div class="d-flex flex-items-center flex-wrap mt-1">
         <span class="color-fg-muted text-small mr-2">Deep Scale: </span>
         <div id="granular-legend" class="d-flex gap-1 mr-3">
-          ${Array.from({ length: 15 }).map((_, i) => `<div class="square-legend level-${i+1}"></div>`).join('')}
+          \${Array.from({ length: 15 }).map((_, i) => \`<div class="square-legend level-\${i+1}"></div>\`).join('')}
         </div>
         <div id="gh-thresholds-container" class="d-flex flex-items-center flex-wrap gap-2 ml-auto">
           <span class="color-fg-muted text-small mr-1">Thresholds: </span>
-          <span id="gh-thresh-1" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L1: ${thresholds[1]?.min ?? '?'}${thresholds[1]?.min === thresholds[1]?.max ? '' : `-${thresholds[1]?.max ?? '?'}`}</span>
-          <span id="gh-thresh-2" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L2: ${thresholds[2]?.min ?? '?'}${thresholds[2]?.min === thresholds[2]?.max ? '' : `-${thresholds[2]?.max ?? '?'}`}</span>
-          <span id="gh-thresh-3" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L3: ${thresholds[3]?.min ?? '?'}${thresholds[3]?.min === thresholds[3]?.max ? '' : `-${thresholds[3]?.max ?? '?'}`}</span>
-          <span id="gh-thresh-4" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L4: ${thresholds[4]?.min ?? '?'}+</span>
+          <span id="gh-thresh-1" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L1: \${thresholds[1]?.min ?? '?'}\${thresholds[1]?.min === thresholds[1]?.max ? '' : `-\${thresholds[1]?.max ?? '?'}`}</span>
+          <span id="gh-thresh-2" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L2: \${thresholds[2]?.min ?? '?'}\${thresholds[2]?.min === thresholds[2]?.max ? '' : `-\${thresholds[2]?.max ?? '?'}`}</span>
+          <span id="gh-thresh-3" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L3: \${thresholds[3]?.min ?? '?'}\${thresholds[3]?.min === thresholds[3]?.max ? '' : `-\${thresholds[3]?.max ?? '?'}`}</span>
+          <span id="gh-thresh-4" class="badge highlightable" style="border: 1px solid var(--color-border-default); cursor: pointer;">L4: \${thresholds[4]?.min ?? '?'}+</span>
         </div>
       </div>
-    </div>`;
+    </div>\`;
   container.prepend(statsDiv);
 
   // Copy Signature logic

@@ -12,6 +12,8 @@ import {
 } from './modules/analytics';
 import { applyDeepRecoloring } from './modules/theme';
 import { injectStats, extendLegend, applyVisibility } from './modules/ui';
+import { VISIBILITY_KEYS } from './modules/constants';
+import { GitHeatSettings } from './types';
 
 function init() {
   console.log("GitHeat: Initializing...");
@@ -53,14 +55,7 @@ function init() {
     if (!isContextValid()) return;
     console.log("GitHeat: Storage changed", Object.keys(changes));
 
-    const visibilityKeys = [
-      'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
-      'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
-      'showMostActiveDay', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showAboveAvgIsland', 
-      'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
-    ];
-
-    if (visibilityKeys.some(key => changes[key])) {
+    if (VISIBILITY_KEYS.some(key => changes[key])) {
       console.log("GitHeat: Visibility key changed, applying...");
       await applyVisibility();
       if (changes.showTrends) runAnalysis().catch(() => {});
@@ -71,13 +66,14 @@ function init() {
       runAnalysis().catch(() => {});
     }
 
-    if (changes.theme || changes.customStart || changes.customStop || changes.colorMode || changes.showColorAnimation || changes.animationSpeed || changes.animationStyle) {
+    const themeKeys = ['theme', 'customStart', 'customStop', 'colorMode', 'showColorAnimation', 'animationSpeed', 'animationStyle'];
+    if (themeKeys.some(key => changes[key])) {
       console.log("GitHeat: Theme or Animation setting changed, recoloring...");
       const data = parseContributionGraph();
       if (data) {
         const p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(['theme', 'customStart', 'customStop', 'colorMode', 'showColorAnimation', 'animationSpeed', 'animationStyle']);
-        await applyDeepRecoloring(data, p, (s.theme as string) || 'green', (s.customStart as string), (s.customStop as string), undefined, s.colorMode as any);
+        const s = await chrome.storage.local.get(themeKeys) as GitHeatSettings;
+        await applyDeepRecoloring(data, p, s.theme || 'green', s.customStart, s.customStop, undefined, s.colorMode);
       }
     }
   });
@@ -94,17 +90,16 @@ function init() {
       const socials = parseSocials();
       if (data) {
         const t = calculateThresholds(data), p = calculatePercentiles(data);
-        const s = await chrome.storage.local.get(null);
-        const theme = (s.theme as string) || 'green', order = (s.gridOrder as string[]) || null;
+        const s = await chrome.storage.local.get(null) as GitHeatSettings;
+        const theme = s.theme || 'green', order = s.gridOrder || null;
         const wrapAround = true; 
         const showTrends = s.showTrends !== false;
         
-        // Pass custom avatar settings to analytics
         const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p, s.customAvatar);
         
         await injectStats(t, p, data, advanced, order, showTrends);
         await extendLegend(t);
-        await applyDeepRecoloring(data, p, theme, (s.customStart as string), (s.customStop as string), advanced.ytdDailyCounts, s.colorMode as any);
+        await applyDeepRecoloring(data, p, theme, s.customStart, s.customStop, advanced.ytdDailyCounts, s.colorMode);
         await applyVisibility();
       }
     } catch (e) {
@@ -127,3 +122,4 @@ function init() {
 }
 
 init();
+

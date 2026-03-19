@@ -1,4 +1,5 @@
-import { AvatarData, Skill, AdvancedStats } from '../types';
+import { AvatarData, AdvancedStats, CustomAvatarSettings, TimelineActivity, SocialStats, ContributionDay, PinnedProject } from '../types';
+import { XP_VALUES, LEVEL_TITLES, GEAR_ITEMS } from './constants';
 
 export interface TodayActions {
   commits: number;
@@ -8,18 +9,14 @@ export interface TodayActions {
   stars: number;
 }
 
-export function getAvatar(level: number, currentStreak: number, totalStars: number, actions: TodayActions, todayCount: number, customSettings?: any): AvatarData {
-  const bases = ['🧙', '🧙‍♂️', '🧙‍♀️', '🧑‍💻', '👩‍💻', '🧔‍♂️', '🧝', '🧝‍♂️', '🧝‍♀️', '🧛', '🧛‍♂️', '🧛‍♀️'];
-  const heads = ['👑', '🎓', '⛑️', '👒', '🧢', '🎓', '🪖', '👒'];
-  const weapons = ['🪄', '🗡️', '🏹', '🪓', '⚔️', '⚒️', '🔫', '🔫'];
-  const shields = ['🛡️', '💠', '🧼', '📁', '📦', '🔋'];
-  const companions = ['🐱', '🐕', '🦊', '🐼', '🐨', '🤖', '👻', '👾', '🐉'];
+export function getAvatar(level: number, currentStreak: number, totalStars: number, actions: TodayActions, todayCount: number, customSettings?: CustomAvatarSettings): AvatarData {
+  const { BASES, HEADS, WEAPONS, SHIELDS, COMPANIONS } = GEAR_ITEMS;
 
-  const base = customSettings?.base || bases[level % bases.length];
-  const head = customSettings?.headgear || (level >= 5 ? heads[Math.floor(level/5) % heads.length] : '');
-  const weapon = customSettings?.weapon || (totalStars >= 10 ? weapons[Math.floor(totalStars/10) % weapons.length] : '');
-  const shield = customSettings?.shield || (currentStreak >= 7 ? shields[Math.floor(currentStreak/7) % shields.length] : '');
-  const companion = customSettings?.companion || (actions.prs >= 1 ? companions[Math.floor(actions.prs) % companions.length] : '');
+  const base = customSettings?.base || BASES[level % BASES.length];
+  const head = customSettings?.headgear || (level >= 5 ? HEADS[Math.floor(level/5) % HEADS.length] : '');
+  const weapon = customSettings?.weapon || (totalStars >= 10 ? WEAPONS[Math.floor(totalStars/10) % WEAPONS.length] : '');
+  const shield = customSettings?.shield || (currentStreak >= 7 ? SHIELDS[Math.floor(currentStreak/7) % SHIELDS.length] : '');
+  const companion = customSettings?.companion || (actions.prs >= 1 ? COMPANIONS[Math.floor(actions.prs) % COMPANIONS.length] : '');
 
   return {
     base,
@@ -91,16 +88,16 @@ export function getPersona(weekendVolumeShare: number, consistency: string, velo
 }
 
 export async function calculateRPGStats(
-  data: any[], 
-  timeline: any, 
+  data: ContributionDay[], 
+  timeline: TimelineActivity, 
   todayCount: number, 
   currentStreak: number, 
   velocity: string, 
   totalStars: number, 
-  socials: any, 
-  pinned: any[], 
+  socials: SocialStats, 
+  pinned: PinnedProject[], 
   longestStreak: number,
-  customAvatarSettings?: any
+  customAvatarSettings?: CustomAvatarSettings
 ) {
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -109,22 +106,13 @@ export async function calculateRPGStats(
   const ytdCommits = data.filter(d => d.date >= ytdStart).reduce((s, d) => s + d.count, 0);
   
   // Balanced XP Calculation (YTD focused for commits)
-  // Commits: 15 XP each
-  // Longest Streak: 100 XP per day
-  // PRs: 250 XP each (High value)
-  // Issues: 100 XP each
-  // Followers: 50 XP each
-  const totalXP = (ytdCommits * 15) + 
-                  (longestStreak * 100) + 
-                  (timeline.pullRequests * 250) + 
-                  (timeline.issuesOpened * 100) + 
-                  (socials.followers * 50);
+  const totalXP = (ytdCommits * XP_VALUES.COMMIT) + 
+                  (longestStreak * XP_VALUES.LONGEST_STREAK_DAY) + 
+                  (timeline.pullRequests * XP_VALUES.PULL_REQUEST) + 
+                  (timeline.issuesOpened * XP_VALUES.ISSUE_OPENED) + 
+                  (socials.followers * XP_VALUES.FOLLOWER);
 
   // Balanced Level Logic: 
-  // Level 1: 0 XP
-  // Level 2: 500 XP
-  // Level 3: 1500 XP
-  // Level 4: 3000 XP
   // Formula: (Level-1)^1.8 * 500
   const level = Math.floor(Math.pow(totalXP / 500, 1 / 1.8)) + 1;
   const xpForCurrentLevel = Math.floor(Math.pow(level - 1, 1.8) * 500);
@@ -134,8 +122,7 @@ export async function calculateRPGStats(
   const levelTotalXP = xpForNextLevel - xpForCurrentLevel;
   const progressPercent = Math.min(100, Math.floor((levelProgressXP / levelTotalXP) * 100));
 
-  const levelTitles = ["Novice", "Apprentice", "Scripter", "Coder", "Developer", "Engineer", "Architect", "Senior Architect", "Grandmaster", "Legend", "Mythic"];
-  const levelTitle = levelTitles[Math.min(levelTitles.length - 1, Math.floor(level / 3))];
+  const levelTitle = LEVEL_TITLES[Math.min(LEVEL_TITLES.length - 1, Math.floor(level / 3))];
 
   const todayActions: TodayActions = {
     commits: todayCount,
@@ -162,3 +149,4 @@ export async function calculateRPGStats(
     avatar
   };
 }
+

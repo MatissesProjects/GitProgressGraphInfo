@@ -1,4 +1,5 @@
 import { GitHeatSettings, AdvancedStats, CustomAvatarSettings } from './types';
+import { GEAR_ITEMS, DEFAULT_GRID_ORDER } from './modules/constants';
 
 export async function initPopup() {
   console.log("GitHeat Popup: Loaded");
@@ -16,11 +17,7 @@ export async function initPopup() {
   const animationStyleList = document.getElementById('animation-styles-list');
   const sortableList = document.getElementById('sortable-grid-list');
 
-  const gearBases = ['🧙', '🧙‍♂️', '🧙‍♀️', '🧑‍💻', '👩‍💻', '🧔‍♂️', '🧝', '🧝‍♂️', '🧝‍♀️', '🧛', '🧛‍♂️', '🧛‍♀️'];
-  const gearHeads = ['👑', '🎓', '⛑️', '👒', '🧢', '🪖'];
-  const gearWeapons = ['🪄', '🗡️', '🏹', '🪓', '⚔️', '⚒️', '🔫'];
-  const gearShields = ['🛡️', '💠', '🧼', '📁', '📦', '🔋'];
-  const gearCompanions = ['🐱', '🐕', '🦊', '🐼', '🐨', '🤖', '👻', '👾', '🐉'];
+  const { BASES, HEADS, WEAPONS, SHIELDS, COMPANIONS } = GEAR_ITEMS;
 
   const populateGear = (id: string, items: string[], current: string | undefined) => {
     const el = document.getElementById(id);
@@ -231,11 +228,11 @@ export async function initPopup() {
     }
 
     const custom = s.customAvatar || {};
-    populateGear('custom-bases', gearBases, custom.base);
-    populateGear('custom-headgear', gearHeads, custom.headgear);
-    populateGear('custom-weapons', gearWeapons, custom.weapon);
-    populateGear('custom-shields', gearShields, custom.shield);
-    populateGear('custom-companions', gearCompanions, custom.companion);
+    populateGear('custom-bases', BASES, custom.base);
+    populateGear('custom-headgear', HEADS, custom.headgear);
+    populateGear('custom-weapons', WEAPONS, custom.weapon);
+    populateGear('custom-shields', SHIELDS, custom.shield);
+    populateGear('custom-companions', COMPANIONS, custom.companion);
 
     renderSortableList(s.gridOrder || defaultOrder);
     setupSortable();

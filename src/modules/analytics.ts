@@ -81,7 +81,7 @@ export async function calculateAdvancedStats(
   socials: SocialStats, 
   wrapAround: boolean = true, 
   percentiles?: Record<number, number>,
-  customAvatarSettings?: any
+  customAvatarSettings?: CustomAvatarSettings
 ): Promise<AdvancedStats> {
   const now = new Date();
   const sortedData = [...data].sort((a, b) => a.date.localeCompare(b.date));

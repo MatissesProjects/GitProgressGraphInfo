@@ -12,6 +12,7 @@ import {
 } from '../../src/modules/analytics';
 import { applyDeepRecoloring } from '../../src/modules/theme';
 import { injectStats, extendLegend, applyVisibility } from '../../src/modules/ui';
+import { VISIBILITY_KEYS } from '../../src/modules/constants';
 
 async function runStandalone() {
   console.log("GitHeat Standalone: Initializing (v1.2 - Quantile Scale) on " + window.location.href + "...");
@@ -25,61 +26,27 @@ async function runStandalone() {
   (window as any).chrome = {
     storage: {
       local: {
-        get: (keys: string[] | any) => {
+        get: (keys: string | string[] | null) => {
           const settings: any = {
-            // Panel Sections (All Checked)
-            showGrid: true,
-            showPersona: true,
-            showActiveRepos: true,
-            showCreatedRepos: true,
-            showAchievements: true,
-            showFooter: true,
-            showLegendNumbers: true,
-            showDominantWeekday: true,
-            showTrends: true,
-            showColorAnimation: true,
-            animationSpeed: animationSpeed || 8,
-            animationStyle: Array.isArray(animationStyle) ? animationStyle : [animationStyle || 'hue'],
-            
-            // Main Grid Items (Checked)
-            showTotal: true,
-            showTodayCount: true,
-            showStreak: true,
-            showLevel: true,
-            showBestMonth: true,
-            showBestWeek: true,
-            showIsland: true,
-            showSlumpIsland: true,
-            showVelocity: true,
-            showVelocityAbove: true,
-            showVelocityBelow: true,
-            showConsistency: true,
-            showWeekend: true,
-            showSlump: true,
-            showBestDay: true,
-            showWorstDay: true,
-            showCurrentWeekday: true,
-            showPeakDay: true,
-            showMaxCommits: true,
-
-            // Main Grid Items (Unchecked)
-            showPowerDay: false,
-            showMostActiveDay: false,
-            showStars: false,
-            showPR: false,
-            showIssueCreated: false,
-            showLangs: false,
-            showNetwork: false,
-
             theme: 'custom',
             customStart: startColor,
-            customStop: stopColor
+            customStop: stopColor,
+            animationSpeed: animationSpeed || 8,
+            animationStyle: Array.isArray(animationStyle) ? animationStyle : [animationStyle || 'hue'],
+            showTrends: true,
+            showColorAnimation: true
           };
 
-          if (typeof keys === 'string') return Promise.resolve({ [keys]: (settings as any)[keys] });
+          // Default all visibility keys to true for standalone (full report)
+          VISIBILITY_KEYS.forEach(key => {
+            if (settings[key] === undefined) settings[key] = true;
+          });
+
+          if (keys === null) return Promise.resolve(settings);
+          if (typeof keys === 'string') return Promise.resolve({ [keys]: settings[keys] });
           if (Array.isArray(keys)) {
             const result: any = {};
-            keys.forEach(k => result[k] = (settings as any)[k] ?? true);
+            keys.forEach(k => result[k] = settings[k]);
             return Promise.resolve(result);
           }
           return Promise.resolve(settings);
@@ -103,20 +70,14 @@ async function runStandalone() {
       const p = calculatePercentiles(data);
       const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, true, p);
       
-      injectStats(t, p, data, advanced, null, true);
+      await injectStats(t, p, data, advanced, null, true);
       await extendLegend(t);
-      await applyDeepRecoloring(data, p, 'custom', startColor, stopColor);
+      await applyDeepRecoloring(data, p, 'custom', startColor, stopColor, advanced.ytdDailyCounts);
       await applyVisibility();
       
       console.log("GitHeat Standalone: Analysis complete.");
     } else {
-      console.error("GitHeat Standalone: No graph found. Looking for .ContributionCalendar-day elements...");
-      const days = document.querySelectorAll('.ContributionCalendar-day');
-      console.log("Found " + days.length + " calendar day elements.");
-      
-      if (days.length === 0) {
-        console.log("DOM state: " + (document.querySelector('.js-yearly-contributions') ? "Container found" : "Container NOT found"));
-      }
+      console.error("GitHeat Standalone: No graph found.");
     }
     
     // Always signal completion so we don't just time out
