@@ -187,6 +187,28 @@ function renderAvatar(avatar: AvatarData, size: number = 50, isEnemy: boolean = 
   `;
 }
 
+function renderBattleMap(sig: string) {
+  const tiles: Record<string, string> = {
+    '0': '', 
+    '1': '🌱', '2': '🌱', '3': '🌿', 
+    '4': '🌼', '5': '🍀', '6': '🍄', '7': '🍃', 
+    '8': '🌲', '9': '🌳', 'A': '⛰️', 'B': '🪨', 
+    'C': '🌋', 'D': '🔥', 'E': '✨', 'F': '💎'
+  };
+  
+  let mapHtml = `<div class="gh-battle-map" style="position: absolute; inset: 0; display: flex; flex-wrap: wrap; opacity: 0.15; pointer-events: none; user-select: none; overflow: hidden; padding: 2px;">`;
+  
+  // Map characters into a textured grid
+  for (let i = 0; i < sig.length; i++) {
+    const char = sig[i];
+    const tile = tiles[char] || '';
+    mapHtml += `<div style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0;">${tile}</div>`;
+  }
+  
+  mapHtml += `</div>`;
+  return mapHtml;
+}
+
 interface BattleEntity {
   x: number;
   y: number;
@@ -205,7 +227,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
   if (!arena || !arenaContainer) return;
 
   if (battleInterval) clearInterval(battleInterval);
-  arena.innerHTML = '';
+  arena.innerHTML = renderBattleMap(enemyStats.pulseHash);
 
   // Add Scoreboard to the header if not already there
   let scoreboard = arenaContainer.querySelector('.gh-battle-scoreboard');
