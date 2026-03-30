@@ -188,23 +188,40 @@ function renderAvatar(avatar: AvatarData, size: number = 50, isEnemy: boolean = 
 }
 
 function renderBattleMap(sig: string) {
-  const tiles: Record<string, string> = {
-    '0': '', 
-    '1': '🌱', '2': '🌱', '3': '🌿', 
-    '4': '🌼', '5': '🍀', '6': '🍄', '7': '🍃', 
-    '8': '🌲', '9': '🌳', 'A': '⛰️', 'B': '🪨', 
-    'C': '🌋', 'D': '🔥', 'E': '✨', 'F': '💎'
+  const tileSize = 16;
+  const rows = 8;
+  const numCols = 40; // Fixed width for consistent map generation
+  
+  // We divide the signature into vertical slices
+  // Each slice (column) represents a "section" of the year
+  const charsPerCol = Math.max(1, Math.floor(sig.length / numCols));
+  
+  let mapHtml = `<div class="gh-battle-map" style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(${numCols}, ${tileSize}px); grid-template-rows: repeat(${rows}, ${tileSize}px); opacity: 0.15; pointer-events: none; user-select: none; overflow: hidden; justify-content: center;">`;
+
+  const getBiomeTile = (intensity: number, row: number) => {
+    // Background transformation logic
+    if (intensity === 0) return '🌊'; // All water for zero activity
+    if (intensity <= 2) return (row > 5) ? '🏖️' : '🌊'; // Coastline
+    if (intensity <= 7) return (row < 2 || row > 5) ? '🌱' : '🌳'; // Plains/Forest mix
+    if (intensity <= 11) return (row % 3 === 0) ? '⛰️' : '🌲'; // Mountain/Dense Forest
+    return (row % 2 === 0) ? '🏔️' : '⛰️'; // High Peaks
   };
-  
-  let mapHtml = `<div class="gh-battle-map" style="position: absolute; inset: 0; display: flex; flex-wrap: wrap; opacity: 0.15; pointer-events: none; user-select: none; overflow: hidden; padding: 2px;">`;
-  
-  // Map characters into a textured grid
-  for (let i = 0; i < sig.length; i++) {
-    const char = sig[i];
-    const tile = tiles[char] || '';
-    mapHtml += `<div style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0;">${tile}</div>`;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < numCols; c++) {
+      // Get the chunk of the signature for this vertical slice
+      const start = c * charsPerCol;
+      const chunk = sig.substring(start, start + charsPerCol) || '0';
+      
+      // Calculate average intensity for the slice
+      const sum = chunk.split('').reduce((acc, char) => acc + parseInt(char, 16), 0);
+      const avg = sum / chunk.length;
+      
+      const tile = getBiomeTile(Math.round(avg), r);
+      mapHtml += `<div style="width: ${tileSize}px; height: ${tileSize}px; display: flex; align-items: center; justify-content: center; font-size: 11px;">${tile}</div>`;
+    }
   }
-  
+
   mapHtml += `</div>`;
   return mapHtml;
 }
