@@ -16,6 +16,8 @@ export async function initPopup() {
   const speedVal = document.getElementById('speed-val');
   const animationStyleList = document.getElementById('animation-styles-list');
   const sortableList = document.getElementById('sortable-grid-list');
+  const randomnessSlider = document.getElementById('battle-randomness') as HTMLInputElement;
+  const randomnessVal = document.getElementById('randomness-value');
 
   const { BASES, HEADS, WEAPONS, SHIELDS, COMPANIONS } = GEAR_ITEMS;
 
@@ -59,6 +61,7 @@ export async function initPopup() {
     'toggle-xp-bar': 'showXPBar',
     'toggle-skill-tree': 'showSkillTree',
     'toggle-battle': 'showBattle',
+    'battle-randomness': 'battleRandomness',
     'toggle-color-animation': 'showColorAnimation',
     'toggle-sync-animations': 'syncAnimations',
     'toggle-pulse-hash': 'showPulseHash',
@@ -222,6 +225,11 @@ export async function initPopup() {
       if (speedVal) speedVal.textContent = `${speedSlider.value}s`;
     }
 
+    if (randomnessSlider) {
+      randomnessSlider.value = (s.battleRandomness ?? 50).toString();
+      if (randomnessVal) randomnessVal.textContent = `${randomnessSlider.value}%`;
+    }
+
     if (animationStyleList) {
       const currentStyles = s.animationStyle || ['hue'];
       animationStyleList.querySelectorAll('input[type="checkbox"]').forEach((cb: any) => {
@@ -276,6 +284,15 @@ export async function initPopup() {
     });
     speedSlider.addEventListener('change', () => {
       saveSetting('animationSpeed', parseFloat(speedSlider.value));
+    });
+  }
+
+  if (randomnessSlider) {
+    randomnessSlider.addEventListener('input', () => {
+      if (randomnessVal) randomnessVal.textContent = `${randomnessSlider.value}%`;
+    });
+    randomnessSlider.addEventListener('change', () => {
+      saveSetting('battleRandomness', parseInt(randomnessSlider.value, 10));
     });
   }
 

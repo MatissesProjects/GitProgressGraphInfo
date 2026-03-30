@@ -216,6 +216,14 @@
         <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 11px;">
           <input type="checkbox" id="toggle-battle" checked> AFK Battler
         </label>
+        <div style="padding-left: 15px; margin-bottom: 8px; border-left: 2px solid #d0d7de; display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; color: #57606a;">Player Randomness</span>
+            <span id="randomness-value" style="font-size: 10px; font-weight: bold;">50%</span>
+          </div>
+          <input type="range" id="battle-randomness" min="0" max="100" value="50" style="width: 100%; height: 4px; cursor: pointer;">
+          <span style="font-size: 9px; color: #8c959f;">Higher = more chaotic movement for you</span>
+        </div>
         <label class="toggle-item" style="display: flex; align-items: center; gap: 5px; font-size: 11px;">
           <input type="checkbox" id="toggle-year-comparison"> Year Comparison
         </label>

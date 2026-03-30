@@ -247,6 +247,7 @@ export interface GitHeatSettings {
   showXPBar?: boolean;
   showSkillTree?: boolean;
   showBattle?: boolean;
+  battleRandomness?: number; // 0-100, how random the player's movement/decisions are
   showColorAnimation?: boolean;
   syncAnimations?: boolean;
   animationSpeed?: number;
