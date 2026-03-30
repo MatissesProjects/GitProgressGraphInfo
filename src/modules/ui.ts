@@ -222,7 +222,6 @@ function renderBattleMap(sig: string) {
   mapHtml += `</div>`;
   return mapHtml;
 }
-
 interface BattleEntity {
   x: number;
   y: number;
@@ -235,6 +234,8 @@ interface BattleEntity {
   isPlayer: boolean;
   currentHp: number;
   lastAttack: number;
+  attackType: 'melee' | 'ranged';
+  range: number;
 }
 
 function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
@@ -269,14 +270,24 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
   };
   updateScoreboard();
 
+  // Attack type decided by Class or Stats
+  // Classes like "Hunter" or high consistency might favor ranged
+  const getAttackType = (stats: AdvancedStats): 'melee' | 'ranged' => {
+    if (stats.persona.includes('Hunter') || stats.persona.includes('Architect')) return 'ranged';
+    return Math.random() > 0.5 ? 'ranged' : 'melee';
+  };
+
   const player: BattleEntity = {
     x: 50, y: 50, vx: 0, vy: 0, kx: 0, ky: 0,
     stats: playerStats.battleStats,
     avatar: playerStats.avatar,
     isPlayer: true,
     currentHp: playerStats.battleStats.maxHp,
-    lastAttack: 0
+    lastAttack: 0,
+    attackType: getAttackType(playerStats),
+    range: 0
   };
+  player.range = player.attackType === 'ranged' ? 120 : 35;
 
   const enemy: BattleEntity = {
     x: 250, y: 50, vx: 0, vy: 0, kx: 0, ky: 0,
@@ -284,8 +295,11 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
     avatar: enemyStats.avatar,
     isPlayer: false,
     currentHp: enemyStats.battleStats.maxHp,
-    lastAttack: 0
+    lastAttack: 0,
+    attackType: getAttackType(enemyStats),
+    range: 0
   };
+  enemy.range = enemy.attackType === 'ranged' ? 120 : 35;
 
   const renderEntity = (ent: BattleEntity) => {
     const el = document.createElement('div');
@@ -296,6 +310,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
       <div class="gh-hp-bar-container" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; background: #eee; border: 1px solid #ccc; border-radius: 2px; overflow: hidden;">
         <div class="gh-hp-bar-fill" style="width: 100%; height: 100%; background: ${ent.isPlayer ? '#2da44e' : '#cf222e'}; transition: width 0.3s;"></div>
       </div>
+      <div class="gh-attack-label" style="position: absolute; top: -28px; left: 50%; transform: translateX(-50%); font-size: 8px; font-weight: bold; color: var(--color-fg-muted); opacity: 0.7;">${ent.attackType.toUpperCase()}</div>
       ${renderAvatar(ent.avatar, 30, !ent.isPlayer)}
     `;
     arena.appendChild(el);
@@ -319,6 +334,28 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
     d.style.animation = 'gh-damage-up 0.8s ease-out forwards';
     arena.appendChild(d);
     setTimeout(() => d.remove(), 800);
+  };
+
+  const spawnProjectile = (from: BattleEntity, to: BattleEntity) => {
+    const p = document.createElement('div');
+    p.style.position = 'absolute';
+    p.style.left = `${from.x + 15}px`;
+    p.style.top = `${from.y + 15}px`;
+    p.style.width = '8px';
+    p.style.height = '8px';
+    p.style.background = from.isPlayer ? '#2da44e' : '#cf222e';
+    p.style.borderRadius = '50%';
+    p.style.zIndex = '50';
+    p.style.boxShadow = '0 0 5px rgba(0,0,0,0.2)';
+    p.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    arena.appendChild(p);
+
+    // Force reflow for transition
+    p.getBoundingClientRect();
+    p.style.left = `${to.x + 15}px`;
+    p.style.top = `${to.y + 15}px`;
+
+    setTimeout(() => p.remove(), 400);
   };
 
   const showWinner = (isPlayer: boolean) => {
@@ -359,7 +396,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
 
     const rect = arena.getBoundingClientRect();
 
-    // AI logic: Chase or Retreat
+    // AI logic: Chase, Range, or Retreat
     if (target && target.currentHp > 0) {
       const dx = target.x - ent.x;
       const dy = target.y - ent.y;
@@ -367,31 +404,48 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
       
       const isRetreating = ent.currentHp < ent.stats.maxHp * 0.25;
 
+      // Add Jitter/Randomness to movement
+      const jitterX = (Math.random() - 0.5) * 2;
+      const jitterY = (Math.random() - 0.5) * 2;
+
       if (isRetreating) {
         // Run away from target towards edges
-        ent.vx = -(dx / dist) * (ent.stats.speed / 4);
-        ent.vy = -(dy / dist) * (ent.stats.speed / 4);
-      } else if (dist > 35) {
-        ent.vx = (dx / dist) * (ent.stats.speed / 5);
-        ent.vy = (dy / dist) * (ent.stats.speed / 5);
+        ent.vx = -(dx / dist) * (ent.stats.speed / 4) + jitterX;
+        ent.vy = -(dy / dist) * (ent.stats.speed / 4) + jitterY;
+      } else if (dist > ent.range) {
+        // Move towards target
+        ent.vx = (dx / dist) * (ent.stats.speed / 5) + jitterX;
+        ent.vy = (dy / dist) * (ent.stats.speed / 5) + jitterY;
+      } else if (ent.attackType === 'ranged' && dist < 60) {
+        // Ranged tries to keep distance
+        ent.vx = -(dx / dist) * (ent.stats.speed / 6) + jitterX;
+        ent.vy = -(dy / dist) * (ent.stats.speed / 6) + jitterY;
       } else {
-        ent.vx = 0; ent.vy = 0;
+        // In range, maybe small circle movement
+        ent.vx = (Math.random() - 0.5) * 1;
+        ent.vy = (Math.random() - 0.5) * 1;
+        
         // Attack
         const now = Date.now();
-        if (now - ent.lastAttack > 1000) {
+        const attackCooldown = ent.attackType === 'ranged' ? 1500 : 1000;
+        if (now - ent.lastAttack > attackCooldown) {
           ent.lastAttack = now;
           const dmg = Math.max(1, ent.stats.attack - (target.stats.defense / 2));
           target.currentHp -= dmg;
           
-          // Apply Knockback to target
-          target.kx = (dx / dist) * 15;
-          target.ky = (dy / dist) * 15;
+          if (ent.attackType === 'ranged') {
+            spawnProjectile(ent, target);
+          } else {
+            // Melee Knockback
+            target.kx = (dx / dist) * 15;
+            target.ky = (dy / dist) * 15;
+          }
 
           const targetEl = (target === player ? playerEl : enemyEl);
           const fill = targetEl.querySelector('.gh-hp-bar-fill') as HTMLElement;
           if (fill) fill.style.width = `${Math.max(0, (target.currentHp / target.stats.maxHp) * 100)}%`;
           
-          showDamage(target.x, target.y, dmg);
+          setTimeout(() => showDamage(target.x, target.y, dmg), ent.attackType === 'ranged' ? 300 : 0);
           
           // Attack animation
           el.style.transform = `scale(1.2)`;
