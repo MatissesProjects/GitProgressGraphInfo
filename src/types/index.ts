@@ -67,6 +67,15 @@ export interface YearlyStats {
   advanced: AdvancedStats;
 }
 
+export interface BattleStats {
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  speed: number;
+  currentHp: number;
+}
+
 export interface AdvancedStats {
   isYTD: boolean;
   targetYear: number;
@@ -158,7 +167,8 @@ export interface AdvancedStats {
   bestWeekdayIcon: string;
   todayCount: number;
   level: number;
-  levelTitle: string;  totalXP: number;
+  levelTitle: string;
+  totalXP: number;
   xpToNext: number;
   levelProgressXP: number;
   levelTotalXP: number;
@@ -175,6 +185,7 @@ export interface AdvancedStats {
   };
   skills: Skill[];
   avatar: AvatarData;
+  battleStats: BattleStats;
   pulseHash: string;
   ytdDailyCounts: { date: string; count: number }[];
   statsForTooltips: {
@@ -235,6 +246,7 @@ export interface GitHeatSettings {
   showCombo?: boolean;
   showXPBar?: boolean;
   showSkillTree?: boolean;
+  showBattle?: boolean;
   showColorAnimation?: boolean;
   syncAnimations?: boolean;
   animationSpeed?: number;

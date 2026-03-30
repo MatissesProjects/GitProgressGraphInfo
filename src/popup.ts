@@ -58,6 +58,7 @@ export async function initPopup() {
     'toggle-combo': 'showCombo',
     'toggle-xp-bar': 'showXPBar',
     'toggle-skill-tree': 'showSkillTree',
+    'toggle-battle': 'showBattle',
     'toggle-color-animation': 'showColorAnimation',
     'toggle-sync-animations': 'syncAnimations',
     'toggle-pulse-hash': 'showPulseHash',

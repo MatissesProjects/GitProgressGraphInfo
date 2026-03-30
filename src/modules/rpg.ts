@@ -9,6 +9,15 @@ export interface TodayActions {
   stars: number;
 }
 
+export interface BattleStats {
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  speed: number;
+  currentHp: number;
+}
+
 export function getAvatar(level: number, currentStreak: number, totalStars: number, actions: TodayActions, todayCount: number, customSettings?: CustomAvatarSettings): AvatarData {
   const { BASES, HEADS, WEAPONS, SHIELDS, COMPANIONS } = GEAR_ITEMS;
 
@@ -25,6 +34,29 @@ export function getAvatar(level: number, currentStreak: number, totalStars: numb
     shield,
     companion,
     description: `Level ${level} Character`
+  };
+}
+
+export function calculateBattleStats(level: number, velocity: string, consistency: string, totalStars: number): BattleStats {
+  const v = parseFloat(velocity) || 0;
+  const c = parseFloat(consistency) || 0;
+  
+  // HP based on Level and Consistency
+  const maxHp = Math.floor(100 + (level * 20) + (c * 2));
+  // Attack based on Velocity and Level
+  const attack = Math.floor(10 + (v * 5) + (level * 2));
+  // Defense based on Level and totalStars
+  const defense = Math.floor(5 + (level * 1.5) + (Math.sqrt(totalStars) * 2));
+  // Speed based on Velocity and Consistency
+  const speed = Math.floor(5 + (v * 2) + (c / 10));
+
+  return {
+    hp: maxHp,
+    maxHp,
+    attack,
+    defense,
+    speed,
+    currentHp: maxHp
   };
 }
 

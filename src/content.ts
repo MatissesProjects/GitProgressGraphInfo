@@ -3,7 +3,8 @@ import {
   parsePinnedProjects, 
   parseActivityTimeline, 
   parseAchievements, 
-  parseSocials 
+  parseSocials,
+  isOwnProfile
 } from './modules/scraper';
 import { 
   calculateThresholds, 
@@ -13,7 +14,7 @@ import {
 import { applyDeepRecoloring } from './modules/theme';
 import { injectStats, extendLegend, applyVisibility } from './modules/ui';
 import { VISIBILITY_KEYS } from './modules/constants';
-import { GitHeatSettings } from './types';
+import { GitHeatSettings, YearlyStats } from './types';
 
 function init() {
   console.log("GitHeat: Initializing...");
@@ -97,6 +98,14 @@ function init() {
         
         const advanced = await calculateAdvancedStats(data, pinned, timeline, achievements, socials, wrapAround, p, s.customAvatar);
         
+        // Save own character if on own profile
+        if (isOwnProfile()) {
+          console.log("GitHeat: Saving own character stats...");
+          await chrome.storage.local.set({ ownCharacter: advanced });
+        }
+
+        const { ownCharacter } = await chrome.storage.local.get(['ownCharacter']);
+
         let yearlyComparison: YearlyStats[] = [];
         if (s.showYearComparison) {
           try {
@@ -107,7 +116,7 @@ function init() {
           }
         }
 
-        await injectStats(t, p, data, advanced, order, showTrends, yearlyComparison);
+        await injectStats(t, p, data, advanced, order, showTrends, yearlyComparison, ownCharacter);
         await extendLegend(t);
         await applyDeepRecoloring(data, p, theme, s.customStart, s.customStop, advanced.ytdDailyCounts, s.colorMode);
         await applyVisibility();

@@ -238,7 +238,24 @@ export function parseContributionGraph(root: Document | Element = document): Con
   return contributionData;
 }
 
-function parseCountText(text: string): number {
+export function getProfileUsername(): string {
+  const meta = document.querySelector('meta[property="profile:username"]');
+  if (meta) return meta.getAttribute('content') || "";
+  const title = document.title;
+  const match = title.match(/^\((.*?)\)/); 
+  if (match) return match[1];
+  const nickname = document.querySelector('.p-nickname')?.textContent?.trim();
+  if (nickname) return nickname;
+  return "";
+}
+
+export function isOwnProfile(): boolean {
+  const currentUser = document.querySelector('meta[name="user-login"]')?.getAttribute('content');
+  const profileUser = getProfileUsername();
+  return !!currentUser && !!profileUser && currentUser === profileUser;
+}
+
+export function parseCountText(text: string): number {
   if (!text) return 0;
   if (text.toLowerCase().includes("no contribution")) return 0;
   const match = text.match(/(\d+)/);

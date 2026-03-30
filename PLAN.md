@@ -85,6 +85,7 @@ We will target the SVG/Table elements in the GitHub UI.
 - [x] Centralize all constants (XP, Levels, Gear, Visibility Keys) in `src/modules/constants.ts`.
 - [x] Unified visibility logic across extension and standalone profile updater.
 - [x] Fix PR activity double-counting in timeline scraper.
+- [x] Implement AFK Battler toggle for persistent visibility and control.
 
 ## 6. Future Expansion Ideas
 * **Year Comparison:** Compare "Level 4" thresholds between 2023 and 2024.

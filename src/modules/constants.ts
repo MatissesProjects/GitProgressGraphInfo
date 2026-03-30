@@ -34,7 +34,7 @@ export const VISIBILITY_KEYS: (keyof GitHeatSettings)[] = [
   'showGrid', 'showActiveRepos', 'showCreatedRepos', 'showAchievements', 'showPersona', 'showFooter', 'showLegendNumbers',
   'showTotal', 'showTodayCount', 'showStreak', 'showVelocity', 'showVelocityAbove', 'showVelocityBelow', 'showConsistency', 'showWeekend', 'showSlump', 'showBestDay', 'showWorstDay', 
   'showMostActiveDay', 'showCurrentWeekday', 'showMaxCommits', 'showIsland', 'showSlumpIsland', 'showAboveAvgIsland', 
-  'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showYearComparison', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree'
+  'showPowerDay', 'showPeakDay', 'showStars', 'showPR', 'showIssueCreated', 'showLangs', 'showNetwork', 'showYearComparison', 'showBestMonth', 'showWorstMonth', 'showBestWeek', 'showWorstWeek', 'showCurrentWeek', 'showLevel', 'showDominantWeekday', 'showTrends', 'showPulseHash', 'showTicker', 'showAvatar', 'showGearHead', 'showGearWeapon', 'showGearShield', 'showGearCompanion', 'showCombo', 'showXPBar', 'showSkillTree', 'showBattle'
 ];
 
 export const GRID_ITEM_TO_SETTING: Record<string, keyof GitHeatSettings> = {

@@ -1,4 +1,4 @@
-import { ContributionDay, AdvancedStats, GitHeatSettings, Skill } from '../types';
+import { ContributionDay, AdvancedStats, GitHeatSettings, Skill, AvatarData, BattleStats, YearlyStats } from '../types';
 import { getCodingClass } from './rpg';
 import { DEFAULT_GRID_ORDER, GRID_ITEM_TO_SETTING, VISIBILITY_KEYS } from './constants';
 
@@ -6,6 +6,7 @@ import { DEFAULT_GRID_ORDER, GRID_ITEM_TO_SETTING, VISIBILITY_KEYS } from './con
 let selectionStartIdx = -1;
 let isDragging = false;
 let globalAdvanced: AdvancedStats | null = null;
+let battleInterval: any = null;
 
 // Global event listeners (added once)
 if (typeof window !== 'undefined') {
@@ -102,6 +103,7 @@ export async function applyVisibility() {
     const xpBar = document.querySelector('.gh-progress-container') as HTMLElement;
     const xpText = document.querySelector('.gh-xp-text') as HTMLElement;
     const skillTree = document.getElementById('gh-skill-tree');
+    const battleArena = document.getElementById('gh-battle-arena');
 
     if (grid) grid.style.display = (settings.showGrid !== false) ? 'grid' : 'none';
     if (activeRepos) activeRepos.style.display = (settings.showActiveRepos !== false) ? 'block' : 'none';
@@ -119,6 +121,7 @@ export async function applyVisibility() {
     if (xpBar) xpBar.style.display = (settings.showXPBar !== false) ? 'block' : 'none';
     if (xpText) xpText.style.display = (settings.showXPBar !== false) ? 'block' : 'none';
     if (skillTree) skillTree.style.display = (settings.showSkillTree !== false) ? 'block' : 'none';
+    if (battleArena) battleArena.style.display = (settings.showBattle !== false) ? 'block' : 'none';
 
     // Gear toggles
     if (avatar) {
@@ -151,6 +154,171 @@ export async function applyVisibility() {
   } catch (e) {
     console.error("GitHeat: Error applying visibility", e);
   }
+}
+
+function renderAvatar(avatar: AvatarData, size: number = 50, isEnemy: boolean = false) {
+  if (!avatar) return '';
+  const scale = size / 50;
+  return `
+    <div class="gh-avatar-wrapper ${isEnemy ? 'gh-enemy' : 'gh-player'}" title="${avatar.description}" style="position: relative; width: ${65*scale}px; height: ${55*scale}px; cursor: help; user-select: none;">
+      <!-- Companion -->
+      <div class="gh-avatar-gear" style="position: absolute; left: -${15*scale}px; bottom: -${5*scale}px; font-size: ${22*scale}px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); z-index: 1;">
+        ${avatar.companion}
+      </div>
+      <!-- Base Character -->
+      <div class="gh-avatar-base" style="position: absolute; left: 50%; top: 55%; transform: translate(-50%, -35%); font-size: ${34*scale}px; z-index: 2;">
+        ${avatar.base}
+      </div>
+      <!-- Headgear -->
+      <div class="gh-avatar-gear" style="position: absolute; left: 50%; top: -${6*scale}px; transform: translateX(-50%); font-size: ${26*scale}px; z-index: 5; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+        ${avatar.headgear}
+      </div>
+      <!-- Weapon -->
+      <div class="gh-avatar-weapon" style="position: absolute; left: -${8*scale}px; top: 62%; transform: translateY(-50%) rotate(-10deg); font-size: ${28*scale}px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
+        ${avatar.weapon}
+      </div>
+      <!-- Shield -->
+      <div class="gh-avatar-gear" style="position: absolute; right: -${2*scale}px; top: 55%; transform: translateY(-50%) rotate(10deg); font-size: ${28*scale}px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
+        ${avatar.shield}
+      </div>
+    </div>
+  `;
+}
+
+interface BattleEntity {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  stats: BattleStats;
+  avatar: AvatarData;
+  isPlayer: boolean;
+  currentHp: number;
+  lastAttack: number;
+}
+
+function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
+  const arena = document.getElementById('gh-battle-arena-content');
+  if (!arena) return;
+
+  if (battleInterval) clearInterval(battleInterval);
+  arena.innerHTML = '';
+
+  const player: BattleEntity = {
+    x: 50, y: 50, vx: 0, vy: 0,
+    stats: playerStats.battleStats,
+    avatar: playerStats.avatar,
+    isPlayer: true,
+    currentHp: playerStats.battleStats.maxHp,
+    lastAttack: 0
+  };
+
+  const enemy: BattleEntity = {
+    x: 250, y: 50, vx: 0, vy: 0,
+    stats: enemyStats.battleStats,
+    avatar: enemyStats.avatar,
+    isPlayer: false,
+    currentHp: enemyStats.battleStats.maxHp,
+    lastAttack: 0
+  };
+
+  const renderEntity = (ent: BattleEntity) => {
+    const el = document.createElement('div');
+    el.className = `gh-battle-entity ${ent.isPlayer ? 'player' : 'enemy'}`;
+    el.style.position = 'absolute';
+    el.style.transition = 'all 0.1s linear';
+    el.innerHTML = `
+      <div class="gh-hp-bar-container" style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; background: #eee; border: 1px solid #ccc; border-radius: 2px; overflow: hidden;">
+        <div class="gh-hp-bar-fill" style="width: 100%; height: 100%; background: ${ent.isPlayer ? '#2da44e' : '#cf222e'}; transition: width 0.3s;"></div>
+      </div>
+      ${renderAvatar(ent.avatar, 30, !ent.isPlayer)}
+    `;
+    arena.appendChild(el);
+    return el;
+  };
+
+  const playerEl = renderEntity(player);
+  const enemyEl = renderEntity(enemy);
+
+  const showDamage = (x: number, y: number, dmg: number) => {
+    const d = document.createElement('div');
+    d.className = 'gh-damage-popup';
+    d.textContent = `-${Math.round(dmg)}`;
+    d.style.position = 'absolute';
+    d.style.left = `${x + 20}px`;
+    d.style.top = `${y}px`;
+    d.style.color = '#cf222e';
+    d.style.fontWeight = 'bold';
+    d.style.fontSize = '12px';
+    d.style.pointerEvents = 'none';
+    d.style.animation = 'gh-damage-up 0.8s ease-out forwards';
+    arena.appendChild(d);
+    setTimeout(() => d.remove(), 800);
+  };
+
+  const updateEntity = (ent: BattleEntity, el: HTMLElement, target?: BattleEntity) => {
+    if (ent.currentHp <= 0) {
+      ent.currentHp = ent.stats.maxHp; // Respawn
+      const fill = el.querySelector('.gh-hp-bar-fill') as HTMLElement;
+      if (fill) fill.style.width = '100%';
+    }
+
+    // Simple movement AI
+    if (target) {
+      const dx = target.x - ent.x;
+      const dy = target.y - ent.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      
+      if (dist > 40) {
+        ent.vx = (dx / dist) * (ent.stats.speed / 5);
+        ent.vy = (dy / dist) * (ent.stats.speed / 5);
+      } else {
+        ent.vx = 0; ent.vy = 0;
+        // Attack
+        const now = Date.now();
+        if (now - ent.lastAttack > 1000) {
+          ent.lastAttack = now;
+          const dmg = Math.max(1, ent.stats.attack - (target.stats.defense / 2));
+          target.currentHp -= dmg;
+          const targetEl = (target === player ? playerEl : enemyEl);
+          const fill = targetEl.querySelector('.gh-hp-bar-fill') as HTMLElement;
+          if (fill) fill.style.width = `${(target.currentHp / target.stats.maxHp) * 100}%`;
+          
+          showDamage(target.x, target.y, dmg);
+          
+          // Attack animation
+          el.style.transform = `scale(1.2)`;
+          setTimeout(() => {
+            el.style.transform = `scale(1)`;
+          }, 100);
+        }
+      }
+    } else {
+      // Wander
+      if (Math.random() > 0.95) {
+        ent.vx = (Math.random() - 0.5) * 2;
+        ent.vy = (Math.random() - 0.5) * 2;
+      }
+    }
+
+    ent.x += ent.vx;
+    ent.y += ent.vy;
+
+    // Bounds
+    const rect = arena.getBoundingClientRect();
+    if (rect.width > 0) {
+      ent.x = Math.max(0, Math.min(ent.x, rect.width - 40));
+      ent.y = Math.max(0, Math.min(ent.y, rect.height - 40));
+    }
+
+    el.style.left = `${ent.x}px`;
+    el.style.top = `${ent.y}px`;
+  };
+
+  battleInterval = setInterval(() => {
+    updateEntity(player, playerEl, enemy);
+    updateEntity(enemy, enemyEl, player);
+  }, 50);
 }
 
 function renderTickerGraph(data: { date: string; count: number }[], thresholds: Record<number, {min:number; max:number}>) {
@@ -328,18 +496,21 @@ function renderYearComparison(results: YearlyStats[]) {
   `;
 }
 
-export function injectStats(thresholds: Record<number, {min:number; max:number}>, percentiles: any, data: ContributionDay[], advanced: AdvancedStats, savedOrder: string[] | null = null, showTrends: boolean = true, yearlyComparison: YearlyStats[] = []) {
-  console.log("GitHeat: Injecting Stats (v1.3)...");
+export async function injectStats(thresholds: Record<number, {min:number; max:number}>, percentiles: any, data: ContributionDay[], advanced: AdvancedStats, savedOrder: string[] | null = null, showTrends: boolean = true, yearlyComparison: YearlyStats[] = [], ownCharacter?: AdvancedStats) {
+  const settings = await chrome.storage.local.get(VISIBILITY_KEYS) as GitHeatSettings;
+  const isBattleEnabled = settings.showBattle !== false;
+
+  console.log("GitHeat: Injecting Stats (v1.4)...");
   globalAdvanced = advanced;
   const container = document.querySelector('.js-yearly-contributions');
   if (!container) return;
   const existing = document.getElementById('git-heat-stats');
   if (existing) existing.remove();
 
-  // Add streak-specific styles
-  if (!document.getElementById('gh-streak-styles')) {
+  // Add streak and battle styles
+  if (!document.getElementById('gh-extra-styles')) {
     const style = document.createElement('style');
-    style.id = 'gh-streak-styles';
+    style.id = 'gh-extra-styles';
     style.textContent = `
       @keyframes streak-glow {
         0% { box-shadow: 0 0 5px rgba(207, 34, 46, 0.2); border-color: rgba(207, 34, 46, 0.3); }
@@ -351,10 +522,21 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
         50% { transform: scale(1.02); filter: brightness(1.2); box-shadow: 0 0 20px rgba(9, 105, 218, 0.4); }
         100% { transform: scale(1); filter: brightness(1); }
       }
+      @keyframes gh-damage-up {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(-30px); opacity: 0; }
+      }
       .streak-hot { animation: streak-glow 2s infinite ease-in-out; border-width: 1.5px !important; }
       .streak-supernova { animation: record-pulse 1.5s infinite ease-in-out; border: 2px solid #0969da !important; background: var(--color-accent-subtle) !important; }
       .streak-progress-bg { height: 3px; width: 100%; background: var(--color-border-muted); border-radius: 2px; margin-top: 4px; overflow: hidden; }
       .streak-progress-fill { height: 100%; transition: width 0.5s ease-out; }
+      .gh-battle-arena { background: var(--color-canvas-subtle); border: 1px solid var(--color-border-muted); border-radius: 6px; overflow: hidden; position: relative; }
+      .gh-switch { position: relative; display: inline-block; width: 24px; height: 14px; margin-left: 6px; }
+      .gh-switch input { opacity: 0; width: 0; height: 0; }
+      .gh-switch-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--color-border-default); transition: .4s; border-radius: 14px; }
+      .gh-switch-slider:before { position: absolute; content: ""; height: 10px; width: 10px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+      input:checked + .gh-switch-slider { background-color: var(--color-success-emphasis); }
+      input:checked + .gh-switch-slider:before { transform: translateX(10px); }
     `;
     document.head.appendChild(style);
   }
@@ -517,30 +699,7 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
       </div>
 
       <div class="d-flex flex-items-center" style="gap: 12px; flex-shrink: 0;">
-        ${advanced.avatar ? `
-          <div class="gh-avatar-wrapper" title="${advanced.avatar.description}" style="position: relative; width: 65px; height: 55px; cursor: help; user-select: none; margin-right: 5px;">
-            <!-- Companion -->
-            <div style="position: absolute; left: -15px; bottom: -5px; font-size: 22px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2)); z-index: 1;">
-              ${advanced.avatar.companion}
-            </div>
-            <!-- Base Character -->
-            <div style="position: absolute; left: 50%; top: 55%; transform: translate(-50%, -35%); font-size: 34px; z-index: 2;">
-              ${advanced.avatar.base}
-            </div>
-            <!-- Headgear -->
-            <div style="position: absolute; left: 50%; top: -6px; transform: translateX(-50%); font-size: 26px; z-index: 5; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
-              ${advanced.avatar.headgear}
-            </div>
-            <!-- Weapon (Left Hand) -->
-            <div style="position: absolute; left: -8px; top: 62%; transform: translateY(-50%) rotate(-10deg); font-size: 28px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
-              ${advanced.avatar.weapon}
-            </div>
-            <!-- Shield (Right Hand) -->
-            <div style="position: absolute; right: -2px; top: 55%; transform: translateY(-50%) rotate(10deg); font-size: 28px; z-index: 4; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
-              ${advanced.avatar.shield}
-            </div>
-          </div>
-        ` : ''}
+        ${renderAvatar(advanced.avatar)}
 
         ${advanced.todayCombo >= 2 ? `
           <div class="gh-combo-badge" title="${advanced.todayComboMath}">
@@ -563,6 +722,22 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
 
     ${tickerHtml}
     ${comparisonHtml}
+
+    <div id="gh-battle-arena" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
+      <div class="d-flex flex-justify-between flex-items-center mb-2">
+        <div class="d-flex flex-items-center">
+          <span class="color-fg-muted text-small font-weight-bold" style="font-size: 10px; letter-spacing: 0.5px;">AFK BATTLE ARENA</span>
+          <label class="gh-switch" title="Toggle AFK Battler visibility">
+            <input type="checkbox" id="gh-battle-toggle-check" ${isBattleEnabled ? 'checked' : ''}>
+            <span class="gh-switch-slider"></span>
+          </label>
+        </div>
+        <span class="text-small color-fg-accent" style="font-size: 9px;">Auto-battling based on profile stats</span>
+      </div>
+      <div id="gh-battle-arena-content" class="gh-battle-arena" style="height: 120px; width: 100%;">
+        <!-- Battle entities injected here -->
+      </div>
+    </div>
 
     <details id="gh-skill-tree" class="mb-2 p-2 border rounded-2 color-bg-default" style="display: none;">
       <summary class="color-fg-muted text-small font-weight-bold" style="cursor: pointer; outline: none; list-style: none;">
@@ -640,6 +815,16 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
       </div>
     </div>`;
   container.prepend(statsDiv);
+
+  // Initialize Battle Arena if ownCharacter is available
+  if (ownCharacter && isBattleEnabled) {
+    startBattle(ownCharacter, advanced);
+  } else if (!ownCharacter) {
+    const arena = document.getElementById('gh-battle-arena-content');
+    if (arena) {
+      arena.innerHTML = `<div class="p-3 text-center color-fg-muted text-small">Visit your own profile first to initialize your character for battles!</div>`;
+    }
+  }
 
   // Copy Signature logic
   const copyBtn = document.getElementById('gh-sig-copy-btn');
@@ -765,6 +950,18 @@ export function injectStats(thresholds: Record<number, {min:number; max:number}>
       clearHighlights();
     });
   });
+
+  // Battle Toggle Event Listener
+  const battleToggleCheck = statsDiv.querySelector('#gh-battle-toggle-check') as HTMLInputElement;
+  if (battleToggleCheck) {
+    battleToggleCheck.addEventListener('change', async () => {
+      await chrome.storage.local.set({ showBattle: battleToggleCheck.checked });
+      if (!battleToggleCheck.checked && battleInterval) {
+        clearInterval(battleInterval);
+        battleInterval = null;
+      }
+    });
+  }
 }
 
 export async function extendLegend(thresholds: Record<number, {min:number; max:number}>) {

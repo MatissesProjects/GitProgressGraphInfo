@@ -1,5 +1,5 @@
-import { ContributionDay, PinnedProject, TimelineActivity, SocialStats, AdvancedStats, StatScore, TooltipStat, YearlyStats } from '../types';
-import { calculateRPGStats, getPersona } from './rpg';
+import { ContributionDay, PinnedProject, TimelineActivity, SocialStats, AdvancedStats, StatScore, TooltipStat, YearlyStats, BattleStats, CustomAvatarSettings } from '../types';
+import { calculateRPGStats, getPersona, calculateBattleStats } from './rpg';
 import { parseAvailableYears, parseContributionGraph } from './scraper';
 
 export async function fetchYearData(year: number): Promise<ContributionDay[] | null> {
@@ -290,6 +290,7 @@ export async function calculateAdvancedStats(
 
   const rpg = await calculateRPGStats(pastAndPresentData, timeline, todayCount, base.currentStreak, velocity, totalStars, socials, pinned, base.longestStreak, customAvatarSettings);
   const persona = getPersona(weekendVolumeShare, consistency, velocity, parseInt(weekendScore), totalStars);
+  const battleStats = calculateBattleStats(rpg.level, velocity, consistency, totalStars);
 
   const advanced: AdvancedStats = {
     ...base, ...timeBased, ...rpg,
@@ -314,7 +315,8 @@ export async function calculateAdvancedStats(
     issuesOpened: timeline.issuesOpened, pullRequests: timeline.pullRequests, pullRequestReviews: timeline.pullRequestReviews, mergedPullRequests: timeline.mergedPullRequests,
     achievements: achievements.slice(0, 4), socials,
     pulseHash, ytdDailyCounts: ytdDays.map(d => ({ date: d.date, count: d.count })),
-    skills: [] // Placeholder for now
+    skills: [], // Placeholder for now
+    battleStats
   };
 
   return advanced;
