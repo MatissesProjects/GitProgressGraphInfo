@@ -190,35 +190,32 @@ function renderAvatar(avatar: AvatarData, size: number = 50, isEnemy: boolean = 
 function renderBattleMap(sig: string) {
   const tileSize = 16;
   const rows = 8;
-  const numCols = 40; // Fixed width for consistent map generation
+  const numCols = 40; 
   
-  // We divide the signature into vertical slices
-  // Each slice (column) represents a "section" of the year
   const charsPerCol = Math.max(1, Math.floor(sig.length / numCols));
   
-  let mapHtml = `<div class="gh-battle-map" style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(${numCols}, ${tileSize}px); grid-template-rows: repeat(${rows}, ${tileSize}px); opacity: 0.15; pointer-events: none; user-select: none; overflow: hidden; justify-content: center;">`;
+  // Textured floor: Sand-like pattern for the arena background
+  const sandFloor = `background-image: radial-gradient(circle at 1px 1px, var(--color-border-subtle) 1px, transparent 0); background-size: 8px 8px; background-color: var(--color-canvas-subtle);`;
+
+  let mapHtml = `<div class="gh-battle-map" style="position: absolute; inset: 0; display: grid; grid-template-columns: repeat(${numCols}, ${tileSize}px); grid-template-rows: repeat(${rows}, ${tileSize}px); opacity: 0.35; pointer-events: none; user-select: none; overflow: hidden; justify-content: center; ${sandFloor}">`;
 
   const getBiomeTile = (intensity: number, row: number) => {
-    // Background transformation logic
-    if (intensity === 0) return '🌊'; // All water for zero activity
-    if (intensity <= 2) return (row > 5) ? '🏖️' : '🌊'; // Coastline
-    if (intensity <= 7) return (row < 2 || row > 5) ? '🌱' : '🌳'; // Plains/Forest mix
-    if (intensity <= 11) return (row % 3 === 0) ? '⛰️' : '🌲'; // Mountain/Dense Forest
-    return (row % 2 === 0) ? '🏔️' : '⛰️'; // High Peaks
+    if (intensity === 0) return ''; // 0 commits shows the floor texture instead of ocean
+    if (intensity <= 2) return (row > 5) ? '🏖️' : ''; 
+    if (intensity <= 7) return (row < 2 || row > 5) ? '🌱' : '🌳';
+    if (intensity <= 11) return (row % 3 === 0) ? '⛰️' : '🌲';
+    return (row % 2 === 0) ? '🏔️' : '⛰️';
   };
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < numCols; c++) {
-      // Get the chunk of the signature for this vertical slice
       const start = c * charsPerCol;
       const chunk = sig.substring(start, start + charsPerCol) || '0';
-      
-      // Calculate average intensity for the slice
       const sum = chunk.split('').reduce((acc, char) => acc + parseInt(char, 16), 0);
       const avg = sum / chunk.length;
       
       const tile = getBiomeTile(Math.round(avg), r);
-      mapHtml += `<div style="width: ${tileSize}px; height: ${tileSize}px; display: flex; align-items: center; justify-content: center; font-size: 11px;">${tile}</div>`;
+      mapHtml += `<div style="width: ${tileSize}px; height: ${tileSize}px; display: flex; align-items: center; justify-content: center; font-size: 11px; filter: saturate(1.5);">${tile}</div>`;
     }
   }
 
@@ -231,6 +228,8 @@ interface BattleEntity {
   y: number;
   vx: number;
   vy: number;
+  kx: number; // Knockback X
+  ky: number; // Knockback Y
   stats: BattleStats;
   avatar: AvatarData;
   isPlayer: boolean;
@@ -271,7 +270,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
   updateScoreboard();
 
   const player: BattleEntity = {
-    x: 50, y: 50, vx: 0, vy: 0,
+    x: 50, y: 50, vx: 0, vy: 0, kx: 0, ky: 0,
     stats: playerStats.battleStats,
     avatar: playerStats.avatar,
     isPlayer: true,
@@ -280,7 +279,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
   };
 
   const enemy: BattleEntity = {
-    x: 250, y: 50, vx: 0, vy: 0,
+    x: 250, y: 50, vx: 0, vy: 0, kx: 0, ky: 0,
     stats: enemyStats.battleStats,
     avatar: enemyStats.avatar,
     isPlayer: false,
@@ -348,8 +347,8 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
       showWinner(!ent.isPlayer);
 
       // Reset positions and HP
-      player.x = 50; player.y = 50; player.currentHp = player.stats.maxHp;
-      enemy.x = 250; enemy.y = 50; enemy.currentHp = enemy.stats.maxHp;
+      player.x = 50; player.y = 50; player.kx = 0; player.ky = 0; player.currentHp = player.stats.maxHp;
+      enemy.x = 250; enemy.y = 50; enemy.kx = 0; enemy.ky = 0; enemy.currentHp = enemy.stats.maxHp;
       
       const pFill = playerEl.querySelector('.gh-hp-bar-fill') as HTMLElement;
       if (pFill) pFill.style.width = '100%';
@@ -358,13 +357,21 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
       return;
     }
 
-    // Simple movement AI
+    const rect = arena.getBoundingClientRect();
+
+    // AI logic: Chase or Retreat
     if (target && target.currentHp > 0) {
       const dx = target.x - ent.x;
       const dy = target.y - ent.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
       
-      if (dist > 40) {
+      const isRetreating = ent.currentHp < ent.stats.maxHp * 0.25;
+
+      if (isRetreating) {
+        // Run away from target towards edges
+        ent.vx = -(dx / dist) * (ent.stats.speed / 4);
+        ent.vy = -(dy / dist) * (ent.stats.speed / 4);
+      } else if (dist > 35) {
         ent.vx = (dx / dist) * (ent.stats.speed / 5);
         ent.vy = (dy / dist) * (ent.stats.speed / 5);
       } else {
@@ -375,6 +382,11 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
           ent.lastAttack = now;
           const dmg = Math.max(1, ent.stats.attack - (target.stats.defense / 2));
           target.currentHp -= dmg;
+          
+          // Apply Knockback to target
+          target.kx = (dx / dist) * 15;
+          target.ky = (dy / dist) * 15;
+
           const targetEl = (target === player ? playerEl : enemyEl);
           const fill = targetEl.querySelector('.gh-hp-bar-fill') as HTMLElement;
           if (fill) fill.style.width = `${Math.max(0, (target.currentHp / target.stats.maxHp) * 100)}%`;
@@ -390,11 +402,13 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
       }
     }
 
-    ent.x += ent.vx;
-    ent.y += ent.vy;
+    // Apply movement, knockback, and friction
+    ent.x += ent.vx + ent.kx;
+    ent.y += ent.vy + ent.ky;
+    ent.kx *= 0.8; // Friction
+    ent.ky *= 0.8;
 
     // Bounds
-    const rect = arena.getBoundingClientRect();
     if (rect.width > 0) {
       ent.x = Math.max(0, Math.min(ent.x, rect.width - 40));
       ent.y = Math.max(0, Math.min(ent.y, rect.height - 40));
