@@ -415,7 +415,7 @@ export async function initPopup() {
         const achievementList = document.getElementById('achievement-list');
         if (achievementList) {
           achievementList.innerHTML = '';
-          adv.achievements.forEach(a => {
+          adv.achievements.forEach((a: string) => {
             const span = document.createElement('span');
             span.className = 'Label Label--secondary';
             span.style.cssText = "padding: 2px 8px; font-size: 10px; border-radius: 10px; background: #f6f8fa; border: 1px solid #d0d7de;";

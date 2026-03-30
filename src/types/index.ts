@@ -193,6 +193,7 @@ export interface AdvancedStats {
     consistency: TooltipStat;
     weekend: TooltipStat;
   };
+  achievements: string[];
 }
 
 export interface GitHeatSettings {
@@ -257,6 +258,7 @@ export interface GitHeatSettings {
   customStop?: string;
   colorMode?: 'rgb' | 'hsl' | 'lab';
   gridOrder?: string[];
+  customAvatar?: CustomAvatarSettings;
 }
 
 export interface CustomAvatarSettings {
