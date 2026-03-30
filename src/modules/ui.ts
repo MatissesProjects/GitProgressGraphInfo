@@ -7,6 +7,8 @@ let selectionStartIdx = -1;
 let isDragging = false;
 let globalAdvanced: AdvancedStats | null = null;
 let battleInterval: any = null;
+let playerScore = 0;
+let enemyScore = 0;
 
 // Global event listeners (added once)
 if (typeof window !== 'undefined') {
@@ -199,10 +201,35 @@ interface BattleEntity {
 
 function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
   const arena = document.getElementById('gh-battle-arena-content');
-  if (!arena) return;
+  const arenaContainer = document.getElementById('gh-battle-arena');
+  if (!arena || !arenaContainer) return;
 
   if (battleInterval) clearInterval(battleInterval);
   arena.innerHTML = '';
+
+  // Add Scoreboard to the header if not already there
+  let scoreboard = arenaContainer.querySelector('.gh-battle-scoreboard');
+  if (!scoreboard) {
+    const header = arenaContainer.querySelector('.d-flex.flex-justify-between.flex-items-center.mb-2');
+    scoreboard = document.createElement('div');
+    scoreboard.className = 'gh-battle-scoreboard d-flex flex-items-center gap-2 px-2 py-1 rounded-2';
+    scoreboard.style.background = 'var(--color-canvas-subtle)';
+    scoreboard.style.border = '1px solid var(--color-border-muted)';
+    scoreboard.style.fontSize = '11px';
+    scoreboard.style.fontWeight = 'bold';
+    header?.appendChild(scoreboard);
+  }
+  
+  const updateScoreboard = () => {
+    if (scoreboard) {
+      scoreboard.innerHTML = `
+        <span style="color: #2da44e;">YOU: ${playerScore}</span>
+        <span style="color: var(--color-border-muted);">|</span>
+        <span style="color: #cf222e;">ENEMY: ${enemyScore}</span>
+      `;
+    }
+  };
+  updateScoreboard();
 
   const player: BattleEntity = {
     x: 50, y: 50, vx: 0, vy: 0,
@@ -237,8 +264,8 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
     return el;
   };
 
-  const playerEl = renderEntity(player);
-  const enemyEl = renderEntity(enemy);
+  let playerEl = renderEntity(player);
+  let enemyEl = renderEntity(enemy);
 
   const showDamage = (x: number, y: number, dmg: number) => {
     const d = document.createElement('div');
@@ -256,15 +283,44 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
     setTimeout(() => d.remove(), 800);
   };
 
+  const showWinner = (isPlayer: boolean) => {
+    const msg = document.createElement('div');
+    msg.style.position = 'absolute';
+    msg.style.left = '50%';
+    msg.style.top = '50%';
+    msg.style.transform = 'translate(-50%, -50%)';
+    msg.style.padding = '10px 20px';
+    msg.style.borderRadius = '8px';
+    msg.style.background = isPlayer ? '#2da44e' : '#cf222e';
+    msg.style.color = 'white';
+    msg.style.fontWeight = 'bold';
+    msg.style.fontSize = '16px';
+    msg.style.zIndex = '100';
+    msg.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+    msg.textContent = isPlayer ? 'VICTORY! 🏆' : 'DEFEATED! 💀';
+    arena.appendChild(msg);
+    setTimeout(() => msg.remove(), 2000);
+  };
+
   const updateEntity = (ent: BattleEntity, el: HTMLElement, target?: BattleEntity) => {
     if (ent.currentHp <= 0) {
-      ent.currentHp = ent.stats.maxHp; // Respawn
-      const fill = el.querySelector('.gh-hp-bar-fill') as HTMLElement;
-      if (fill) fill.style.width = '100%';
+      if (ent.isPlayer) enemyScore++; else playerScore++;
+      updateScoreboard();
+      showWinner(!ent.isPlayer);
+
+      // Reset positions and HP
+      player.x = 50; player.y = 50; player.currentHp = player.stats.maxHp;
+      enemy.x = 250; enemy.y = 50; enemy.currentHp = enemy.stats.maxHp;
+      
+      const pFill = playerEl.querySelector('.gh-hp-bar-fill') as HTMLElement;
+      if (pFill) pFill.style.width = '100%';
+      const eFill = enemyEl.querySelector('.gh-hp-bar-fill') as HTMLElement;
+      if (eFill) eFill.style.width = '100%';
+      return;
     }
 
     // Simple movement AI
-    if (target) {
+    if (target && target.currentHp > 0) {
       const dx = target.x - ent.x;
       const dy = target.y - ent.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
@@ -282,7 +338,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
           target.currentHp -= dmg;
           const targetEl = (target === player ? playerEl : enemyEl);
           const fill = targetEl.querySelector('.gh-hp-bar-fill') as HTMLElement;
-          if (fill) fill.style.width = `${(target.currentHp / target.stats.maxHp) * 100}%`;
+          if (fill) fill.style.width = `${Math.max(0, (target.currentHp / target.stats.maxHp) * 100)}%`;
           
           showDamage(target.x, target.y, dmg);
           
@@ -292,12 +348,6 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
             el.style.transform = `scale(1)`;
           }, 100);
         }
-      }
-    } else {
-      // Wander
-      if (Math.random() > 0.95) {
-        ent.vx = (Math.random() - 0.5) * 2;
-        ent.vy = (Math.random() - 0.5) * 2;
       }
     }
 
