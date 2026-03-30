@@ -301,6 +301,18 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
   };
   enemy.range = enemy.attackType === 'ranged' ? 120 : 35;
 
+  // History-based AI parameters for enemy
+  // Deriving "Aggression", "Agility", and "Intelligence" from the signature
+  const sig = enemyStats.pulseHash;
+  const aiSeed = sig.substring(0, 8).split('').reduce((a, b) => a + parseInt(b, 16), 0);
+  const enemyAI = {
+    aggression: (parseInt(sig[0] || '8', 16) / 15), // 0-1
+    retreatThreshold: (parseInt(sig[1] || '4', 16) / 30) + 0.1, // 0.1 - 0.6
+    jitter: (1 - (parseInt(sig[2] || '8', 16) / 15)) * 4 // 0 - 4
+  };
+
+  const randomness = settings.battleRandomness ?? 50;
+
   const renderEntity = (ent: BattleEntity) => {
     const el = document.createElement('div');
     el.className = `gh-battle-entity ${ent.isPlayer ? 'player' : 'enemy'}`;
@@ -402,28 +414,33 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
       const dy = target.y - ent.y;
       const dist = Math.sqrt(dx*dx + dy*dy);
       
-      const isRetreating = ent.currentHp < ent.stats.maxHp * 0.25;
+      const retreatThreshold = ent.isPlayer ? 0.25 : enemyAI.retreatThreshold;
+      const isRetreating = ent.currentHp < ent.stats.maxHp * retreatThreshold;
 
-      // Add Jitter/Randomness to movement
-      const jitterX = (Math.random() - 0.5) * 2;
-      const jitterY = (Math.random() - 0.5) * 2;
+      // Randomness/Jitter: User configurable for Player, Signature-based for Enemy
+      const currentRandomness = ent.isPlayer ? randomness : (enemyAI.jitter * 25);
+      const jitterAmount = (currentRandomness / 100) * 4;
+      const jitterX = (Math.random() - 0.5) * jitterAmount;
+      const jitterY = (Math.random() - 0.5) * jitterAmount;
+
+      const speedMult = ent.isPlayer ? 1 : (0.8 + enemyAI.aggression * 0.4);
 
       if (isRetreating) {
         // Run away from target towards edges
-        ent.vx = -(dx / dist) * (ent.stats.speed / 4) + jitterX;
-        ent.vy = -(dy / dist) * (ent.stats.speed / 4) + jitterY;
+        ent.vx = -(dx / dist) * (ent.stats.speed / 4 * speedMult) + jitterX;
+        ent.vy = -(dy / dist) * (ent.stats.speed / 4 * speedMult) + jitterY;
       } else if (dist > ent.range) {
         // Move towards target
-        ent.vx = (dx / dist) * (ent.stats.speed / 5) + jitterX;
-        ent.vy = (dy / dist) * (ent.stats.speed / 5) + jitterY;
+        ent.vx = (dx / dist) * (ent.stats.speed / 5 * speedMult) + jitterX;
+        ent.vy = (dy / dist) * (ent.stats.speed / 5 * speedMult) + jitterY;
       } else if (ent.attackType === 'ranged' && dist < 60) {
         // Ranged tries to keep distance
-        ent.vx = -(dx / dist) * (ent.stats.speed / 6) + jitterX;
-        ent.vy = -(dy / dist) * (ent.stats.speed / 6) + jitterY;
+        ent.vx = -(dx / dist) * (ent.stats.speed / 6 * speedMult) + jitterX;
+        ent.vy = -(dy / dist) * (ent.stats.speed / 6 * speedMult) + jitterY;
       } else {
         // In range, maybe small circle movement
-        ent.vx = (Math.random() - 0.5) * 1;
-        ent.vy = (Math.random() - 0.5) * 1;
+        ent.vx = (Math.random() - 0.5) * jitterAmount;
+        ent.vy = (Math.random() - 0.5) * jitterAmount;
         
         // Attack
         const now = Date.now();
