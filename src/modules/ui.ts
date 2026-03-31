@@ -1,4 +1,4 @@
-import { ContributionDay, AdvancedStats, GitHeatSettings, Skill, AvatarData, BattleStats, YearlyStats } from '../types';
+import { ContributionDay, AdvancedStats, GitHeatSettings, Skill, AvatarData, BattleStats, YearlyStats, CreatedRepo } from '../types';
 import { getCodingClass } from './rpg';
 import { DEFAULT_GRID_ORDER, GRID_ITEM_TO_SETTING, VISIBILITY_KEYS } from './constants';
 
@@ -238,7 +238,7 @@ interface BattleEntity {
   range: number;
 }
 
-function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
+function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats, settings: GitHeatSettings) {
   const arena = document.getElementById('gh-battle-arena-content');
   const arenaContainer = document.getElementById('gh-battle-arena');
   if (!arena || !arenaContainer) return;
@@ -247,7 +247,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats) {
   arena.innerHTML = renderBattleMap(enemyStats.pulseHash);
 
   // Add Scoreboard to the header if not already there
-  let scoreboard = arenaContainer.querySelector('.gh-battle-scoreboard');
+  let scoreboard = arenaContainer.querySelector('.gh-battle-scoreboard') as HTMLElement | null;
   if (!scoreboard) {
     const header = arenaContainer.querySelector('.d-flex.flex-justify-between.flex-items-center.mb-2');
     scoreboard = document.createElement('div');
@@ -669,7 +669,6 @@ function renderYearComparison(results: YearlyStats[]) {
     </div>
   `;
 }
-
 export async function injectStats(thresholds: Record<number, {min:number; max:number}>, percentiles: any, data: ContributionDay[], advanced: AdvancedStats, savedOrder: string[] | null = null, showTrends: boolean = true, yearlyComparison: YearlyStats[] = [], ownCharacter?: AdvancedStats) {
   const settings = await chrome.storage.local.get(VISIBILITY_KEYS) as GitHeatSettings;
   const isBattleEnabled = settings.showBattle !== false;
@@ -952,7 +951,7 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
       </div>
       <div style="flex: 1; min-width: 160px;" id="gh-created-repos">
         <span class="color-fg-muted text-small d-block mb-1">Created Repositories</span>
-        <div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: {name:string; date:string}) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
+        <div class="d-flex flex-column gap-1">${advanced.createdRepoList.slice(0, 3).map((r: CreatedRepo) => `<div class="d-flex flex-justify-between text-small"><span>${r.name}</span></div>`).join('') || '<span class="text-small color-fg-muted">No repos created</span>'}</div>
       </div>
       <div style="flex: 1; min-width: 160px;" id="gh-achievements">
         <span class="color-fg-muted text-small d-block mb-1">Recent Achievements</span>
@@ -992,7 +991,7 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
 
   // Initialize Battle Arena if ownCharacter is available
   if (ownCharacter && isBattleEnabled) {
-    startBattle(ownCharacter, advanced);
+    startBattle(ownCharacter, advanced, settings);
   } else if (!ownCharacter) {
     const arena = document.getElementById('gh-battle-arena-content');
     if (arena) {
