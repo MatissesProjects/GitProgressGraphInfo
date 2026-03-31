@@ -294,6 +294,10 @@ export async function calculateAdvancedStats(
 
   const advanced: AdvancedStats = {
     ...base, ...timeBased, ...rpg,
+    streak: base.currentStreak,
+    maxStreak: base.longestStreak,
+    weekendCommits: base.ytdWeekendContributions,
+    slumpStreak: base.longestSlump,
     isYTD: true, targetYear: yearFromData, total: ytdTotalContributions,
     weekendScore, velocity, consistency, persona,
     bestDay: daysOfWeek[bestDayIndex], bestDayIndex, bestDayCount: maxWeekdayCount, bestWeekdayAvg: bestWeekdayAvgVal.toFixed(1),

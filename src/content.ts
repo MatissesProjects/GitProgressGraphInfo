@@ -14,7 +14,7 @@ import {
 import { applyDeepRecoloring } from './modules/theme';
 import { injectStats, extendLegend, applyVisibility } from './modules/ui';
 import { VISIBILITY_KEYS } from './modules/constants';
-import { GitHeatSettings, YearlyStats } from './types';
+import { GitHeatSettings, YearlyStats, AdvancedStats } from './types';
 
 function init() {
   console.log("GitHeat: Initializing...");
@@ -67,7 +67,7 @@ function init() {
       runAnalysis().catch(() => {});
     }
 
-    const themeKeys = ['theme', 'customStart', 'customStop', 'colorMode', 'showColorAnimation', 'animationSpeed', 'animationStyle'];
+    const themeKeys: (keyof GitHeatSettings)[] = ['theme', 'customStart', 'customStop', 'colorMode', 'showColorAnimation', 'animationSpeed', 'animationStyle'];
     if (themeKeys.some(key => changes[key])) {
       console.log("GitHeat: Theme or Animation setting changed, recoloring...");
       const data = parseContributionGraph();
@@ -104,7 +104,7 @@ function init() {
           await chrome.storage.local.set({ ownCharacter: advanced });
         }
 
-        const { ownCharacter } = await chrome.storage.local.get(['ownCharacter']);
+        const { ownCharacter } = await chrome.storage.local.get(['ownCharacter']) as { ownCharacter?: AdvancedStats };
 
         let yearlyComparison: YearlyStats[] = [];
         if (s.showYearComparison) {
