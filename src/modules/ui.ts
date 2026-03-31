@@ -244,7 +244,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats, sett
   const arenaContainer = document.getElementById('gh-battle-arena');
   if (!arena || !arenaContainer) return;
 
-  if (battleInterval) clearInterval(battleInterval);
+  if (battleAnimationFrame) cancelAnimationFrame(battleAnimationFrame);
   arena.innerHTML = renderBattleMap(enemyStats.pulseHash);
 
   // Add Scoreboard to the header if not already there
