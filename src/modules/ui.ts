@@ -1,5 +1,5 @@
 import { ContributionDay, AdvancedStats, GitHeatSettings, Skill, AvatarData, BattleStats, YearlyStats, CreatedRepo } from '../types';
-import { getCodingClass } from './rpg';
+import { getCodingClass, generateGuestCharacter } from './rpg';
 import { DEFAULT_GRID_ORDER, GRID_ITEM_TO_SETTING, VISIBILITY_KEYS } from './constants';
 
 // Module-level state to persist across re-injections
@@ -989,14 +989,10 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
     </div>`;
   container.prepend(statsDiv);
 
-  // Initialize Battle Arena if ownCharacter is available
-  if (ownCharacter && isBattleEnabled) {
-    startBattle(ownCharacter, advanced, settings);
-  } else if (!ownCharacter) {
-    const arena = document.getElementById('gh-battle-arena-content');
-    if (arena) {
-      arena.innerHTML = `<div class="p-3 text-center color-fg-muted text-small">Visit your own profile first to initialize your character for battles!</div>`;
-    }
+  // Initialize Battle Arena
+  if (isBattleEnabled) {
+    const effectiveOwnCharacter = ownCharacter || generateGuestCharacter(advanced);
+    startBattle(effectiveOwnCharacter, advanced, settings);
   }
 
   // Copy Signature logic
@@ -1133,8 +1129,9 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
         cancelAnimationFrame(battleAnimationFrame);
         battleAnimationFrame = null;
         isArenaVisible = false;
-      } else if (battleToggleCheck.checked && ownCharacter) {
-        startBattle(ownCharacter, advanced, settings);
+      } else if (battleToggleCheck.checked) {
+        const effectiveOwnCharacter = ownCharacter || generateGuestCharacter(advanced);
+        startBattle(effectiveOwnCharacter, advanced, settings);
       }
     });
   }

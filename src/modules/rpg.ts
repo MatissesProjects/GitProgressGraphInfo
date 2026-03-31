@@ -201,3 +201,45 @@ export async function calculateRPGStats(
   };
 }
 
+export function generateGuestCharacter(advanced: AdvancedStats): AdvancedStats {
+  const sig = advanced.pulseHash;
+  // Use signature to derive semi-random but consistent stats
+  const seed = sig.split('').reduce((acc, char) => acc + parseInt(char, 16), 0);
+  
+  // Random level between 1 and 20 based on signature
+  const level = (seed % 20) + 1;
+  
+  // Randomized battle stats
+  const battleStats: BattleStats = {
+    maxHp: 100 + (level * 15) + (seed % 50),
+    hp: 100 + (level * 15) + (seed % 50),
+    attack: 10 + Math.floor(level * 2.5) + (seed % 10),
+    defense: 5 + Math.floor(level * 1.2) + (seed % 8),
+    speed: 5 + Math.floor(level * 1.5) + (seed % 5),
+    currentHp: 100 + (level * 15) + (seed % 50)
+  };
+  battleStats.hp = battleStats.maxHp;
+  battleStats.currentHp = battleStats.maxHp;
+
+  // Use getAvatar with some derived values
+  const todayActions: TodayActions = {
+    commits: seed % 5,
+    prs: seed % 2,
+    issues: seed % 2,
+    reviews: seed % 2,
+    stars: seed % 10
+  };
+  
+  const avatar = getAvatar(level, seed % 14, seed % 50, todayActions, seed % 5);
+  avatar.description = "Guest Character (Initialize by visiting your profile)";
+
+  return {
+    ...advanced, // Spread original to keep signature and other data
+    level,
+    levelTitle: "Guest",
+    battleStats,
+    avatar,
+    persona: "Guest Adventurer"
+  };
+}
+
