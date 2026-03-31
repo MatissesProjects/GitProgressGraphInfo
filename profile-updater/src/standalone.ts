@@ -83,7 +83,8 @@ async function runStandalone() {
     // Always signal completion so we don't just time out
     document.body.classList.add('githeat-ready');
   } catch (e: any) {
-    console.error("GitHeat Standalone: Error during analysis: " + e.message);
+    console.error("GitHeat Standalone: Error during analysis:", e);
+    if (e.stack) console.error(e.stack);
     document.body.classList.add('githeat-failed');
   }
 }

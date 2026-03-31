@@ -92,7 +92,7 @@ async function run() {
     await page.evaluate(standaloneScript);
 
     console.log('Waiting for GitHeat to be ready...');
-    await page.waitForSelector('body.githeat-ready, body.githeat-failed', { timeout: 60000 });
+    await page.waitForSelector('body.githeat-ready, body.githeat-failed', { timeout: 120000 });
     
     const isFailed = await page.evaluate(() => document.body.classList.contains('githeat-failed'));
     if (isFailed) {

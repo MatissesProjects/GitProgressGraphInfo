@@ -543,6 +543,13 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
     <text x="5" y="${avgY - 3}" font-size="7" font-weight="bold" fill="var(--color-accent-fg)" style="text-shadow: 0 0 2px var(--color-canvas-default);">AVG VELOCITY (${avgVelocityValue.toFixed(1)})</text>
   ` : '';
 
+  const overallAvg = data.length > 0 ? data.reduce((a, b) => a + b.count, 0) / data.length : 0;
+  const overallAvgY = height - (Math.min(overallAvg, maxCount) / maxCount) * height;
+  const overallAvgLineHtml = overallAvg > 0 ? `
+    <line x1="0" y1="${overallAvgY}" x2="${width}" y2="${overallAvgY}" stroke="var(--color-fg-muted)" stroke-width="1" stroke-dasharray="2,2" opacity="0.5" />
+    <text x="${width - 5}" y="${overallAvgY + 7}" text-anchor="end" font-size="7" font-weight="bold" fill="var(--color-fg-muted)" style="text-shadow: 0 0 2px var(--color-canvas-default);">OVERALL AVG (${overallAvg.toFixed(2)})</text>
+  ` : '';
+
   return `
     <div id="gh-ticker-container" class="mb-2" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px; position: relative; user-select: none;">
       <div class="d-flex flex-justify-between flex-items-center mb-1">
@@ -564,7 +571,7 @@ function renderTickerGraph(data: { date: string; count: number }[], thresholds: 
             <rect width="100%" height="100%" fill="url(#pulse-area-gradient)" />
           </mask>
         </defs>
-        <g id="gh-ticker-quadrants">${quadrantLines}${avgLineHtml}</g>
+        <g id="gh-ticker-quadrants">${quadrantLines}${avgLineHtml}${overallAvgLineHtml}</g>
         <path class="gh-ticker-area" d="M 0,${height} L ${points} L ${width},${height} Z" fill="url(#ticker-line-gradient)" mask="url(#gh-ticker-area-mask)" style="filter: saturate(1.5) brightness(1.2);" />
         <path class="gh-ticker-path" d="M ${points}" fill="none" stroke="var(--color-fg-default, #1f2328)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));" />
         <rect id="gh-ticker-selection" x="0" y="0" width="0" height="${height}" fill="var(--color-accent-emphasis)" fill-opacity="0.2" stroke="var(--color-accent-fg)" stroke-width="1" style="display: none; pointer-events: none;" />
