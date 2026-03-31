@@ -6,7 +6,7 @@ A Chrome extension that turns your GitHub contribution graph into a deep-dive an
 
 ## Core Features
 
-### ⚔️ RPG Gamification & Hero Avatar
+### RPG Gamification & Hero Avatar
 - **Evolving Avatar:** Your profile now features a dynamic RPG hero that evolves as you level up. The avatar is visually assembled with layered gear:
   - **Evolution:** Your base character changes from a "Newbie" to a "Code God" as you gain levels.
   - **Daily Weaponry:** Reflects today's commit volume (Stick ➔ Club ➔ Sword ➔ Battle Axe ➔ Lightning).
@@ -20,13 +20,13 @@ A Chrome extension that turns your GitHub contribution graph into a deep-dive an
   - **Skill Tree Bonuses:** Earn permanent **+20 XP** and **+1 Daily Combo point** for every skill unlocked.
 - **Combo System:** Achieve a **COMBO x#** badge for high daily activity. The badge features a fiery animation and dynamic reasons like "Guardian of Code" or "Architect."
 
-### 🌲 Branching Skill Tree
+### Branching Skill Tree
 - **Milestone Unlocks:** Explicitly unlock skills by reaching specific GitHub milestones.
 - **Three Disciplines:** Skills are categorized into **Coding** (e.g., System Architect, Lead Maintainer), **Social** (e.g., Eagle Eye Reviewer, Socialite), and **Consistency** (e.g., Code Marathoner).
 - **Expandable View:** A space-saving, expandable Skill Tree panel lets you track your long-term goals without cluttering your profile.
 - **Permanent Power-ups:** Unlocked skills provide permanent stat boosts to your XP and daily combo scores.
 
-### 📊 Advanced Analytics & Ticker
+### Advanced Analytics & Ticker
 - **Activity Intensity Ticker:** A high-resolution horizontal line graph showing your daily commit intensity.
   - **Average Velocity Line:** A visual reference line representing your overall YTD average velocity.
   - **Dynamic Colorization:** The area under the graph is colorized based on each day's specific contribution level.
@@ -36,13 +36,13 @@ A Chrome extension that turns your GitHub contribution graph into a deep-dive an
   - **Island Discovery:** Find your largest clusters of high-intensity work or significant slumps.
 - **Scoped Scaling:** Analytics are accurately scoped to the year you are currently viewing, including full support for previous years.
 
-### 🎨 Deep Scale & Themes
+### Deep Scale & Themes
 - **15-Level Heatmap:** Re-calculates your contribution graph into 15 granular levels using data-driven quantile scaling.
 - **Pulse Signature (SIG):** A unique hexadecimal string (e.g., `0x5A3...`) representing your activity levels. Hovering over any character highlights matching days on the graph.
 - **Custom Themes:** Toggle between predefined themes (Flame, Ocean, Sunset) or use the **Custom Range** picker to match your personal aesthetic.
 - **Multi-Way Highlighting:** Full synchronization between the Graph, the Legend, and the Pulse Signature.
 
-### ⚙️ Full Customization
+### Full Customization
 - **Total Control:** Every single element (Avatar, Skill Tree, Ticker, SIG, etc.) can be toggled on or off via the extension popup.
 - **Custom Gear:** Set your own **Emojis**, **Image URLs**, or **Labels** for your avatar's growth tiers.
 - **Drag-and-Drop Reordering:** Move your analytics grid cards to prioritize the stats that matter most to you.
