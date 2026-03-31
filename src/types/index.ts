@@ -12,18 +12,39 @@ export interface PinnedProject {
   languageColor: string;
 }
 
+export interface CreatedRepo {
+  name: string;
+  language?: string;
+  date?: string;
+}
+
+export interface RepoActivity {
+  name: string;
+  commits: number;
+}
+
+export interface TodayActions {
+  commits: number;
+  repos: number;
+  issues: number;
+  prs: number;
+  reviews: number;
+}
+
 export interface TimelineActivity {
-  topRepos: { name: string; commits: number }[];
+  topRepos: RepoActivity[];
   issuesOpened: number;
   pullRequests: number;
   mergedPullRequests: number;
   pullRequestReviews: number;
   createdRepos: number;
-  createdRepoList: { name: string; date: string }[];
+  createdRepoList: CreatedRepo[];
+  todayActions: TodayActions;
 }
 
 export interface SocialStats {
   followers: number;
+  following: number;
   organizations: number;
 }
 
@@ -120,7 +141,7 @@ export interface AdvancedStats {
   mergedPullRequests: number;
   pullRequestReviews: number;
   createdRepos: number;
-  createdRepoList: { name: string; date: string }[];
+  createdRepoList: CreatedRepo[];
   totalStars: number;
   totalForks: number;
   socials: SocialStats;
@@ -194,6 +215,8 @@ export interface AdvancedStats {
     weekend: TooltipStat;
   };
   achievements: string[];
+  aboveVelocityDates: string[];
+  belowVelocityDates: string[];
 }
 
 export interface GitHeatSettings {
@@ -256,7 +279,7 @@ export interface GitHeatSettings {
   theme?: string;
   customStart?: string;
   customStop?: string;
-  colorMode?: 'rgb' | 'hsl' | 'lab';
+  colorMode?: 'rgb' | 'hsl' | 'hsl-far' | 'lab';
   gridOrder?: string[];
   customAvatar?: CustomAvatarSettings;
 }

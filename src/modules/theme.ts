@@ -1,4 +1,4 @@
-import { ContributionDay } from '../types';
+import { ContributionDay, GitHeatSettings } from '../types';
 
 export const THEMES: Record<string, string[]> = {
   flame: [
@@ -23,7 +23,7 @@ export const THEMES: Record<string, string[]> = {
   ]
 };
 
-export function interpolateColor(color1: string, color2: string, factor: number, mode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb') {
+export function interpolateColor(color1: string, color2: string, factor: number, mode: 'rgb' | 'hsl' | 'hsl-far' | 'lab' = 'rgb'): string {
   const hex = (x: number) => {
     const s = Math.max(0, Math.min(255, Math.round(x))).toString(16);
     return s.length === 1 ? '0' + s : s;
@@ -99,7 +99,7 @@ export function interpolateColor(color1: string, color2: string, factor: number,
   const c1 = parseToRgb(color1);
   const c2 = parseToRgb(color2);
 
-  if (mode === 'rgb') {
+  if (mode === 'rgb' || mode === 'lab') { // lab fallback
     const r = c1.r + factor * (c2.r - c1.r);
     const g = c1.g + factor * (c2.g - c1.g);
     const b = c1.b + factor * (c2.b - c1.b);
@@ -128,7 +128,7 @@ export function interpolateColor(color1: string, color2: string, factor: number,
   }
 }
 
-export function generateCustomScale(start: string, stop: string, steps: number = 11, mode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb'): string[] {
+export function generateCustomScale(start: string, stop: string, steps: number = 11, mode: 'rgb' | 'hsl' | 'hsl-far' | 'lab' = 'rgb'): string[] {
   const scale = ['#161b22']; 
   for (let i = 0; i < steps; i++) {
     const factor = i / (steps - 1);
@@ -257,7 +257,7 @@ function applyColorAnimation(speed: number = 8, styles: string[] = ['hue']) {
   `;
 }
 
-export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string, tickerData?: { date: string; count: number }[], colorMode: 'rgb' | 'hsl' | 'hsl-far' = 'rgb') {
+export async function applyDeepRecoloring(data: ContributionDay[], percentiles: Record<number, number>, themeName: string = 'green', customStart?: string, customStop?: string, tickerData?: { date: string; count: number }[], colorMode: 'rgb' | 'hsl' | 'hsl-far' | 'lab' = 'rgb') {
   console.log("GitHeat: Applying Deep Recoloring (v1.3 - High Resolution Gradient)...");
   const days = document.querySelectorAll('.ContributionCalendar-day');
   
@@ -276,10 +276,10 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
     return 1;
   };
 
-  const settings = await chrome.storage.local.get(['showColorAnimation', 'animationSpeed', 'animationStyle']);
-  const doAnimate = settings.showColorAnimation === true;
-  const speed = settings.animationSpeed || 8;
-  const animStyles = settings.animationStyle || ['hue'];
+  const s = await chrome.storage.local.get(['showColorAnimation', 'animationSpeed', 'animationStyle']) as Partial<GitHeatSettings>;
+  const doAnimate = s.showColorAnimation === true;
+  const speed = s.animationSpeed || 8;
+  const animStyles = s.animationStyle || ['hue'];
 
   let colors: string[] = [];
   if (themeName !== 'none') {
@@ -289,7 +289,7 @@ export async function applyDeepRecoloring(data: ContributionDay[], percentiles: 
 
       if (!start || !stop) {
         try {
-          const settings = await chrome.storage.local.get(['customStart', 'customStop', 'colorMode']);
+          const settings = await chrome.storage.local.get(['customStart', 'customStop', 'colorMode']) as Partial<GitHeatSettings>;
           start = start || (settings.customStart as string) || '#4a207e';
           stop = stop || (settings.customStop as string) || '#04ff00';
           colorMode = colorMode || (settings.colorMode as any) || 'rgb';
