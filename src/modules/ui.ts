@@ -6,7 +6,8 @@ import { DEFAULT_GRID_ORDER, GRID_ITEM_TO_SETTING, VISIBILITY_KEYS } from './con
 let selectionStartIdx = -1;
 let isDragging = false;
 let globalAdvanced: AdvancedStats | null = null;
-let battleInterval: any = null;
+let battleAnimationFrame: number | null = null;
+let isArenaVisible = false;
 let playerScore = 0;
 let enemyScore = 0;
 
@@ -393,8 +394,7 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats, sett
     if (ent.currentHp <= 0) {
       if (ent.isPlayer) enemyScore++; else playerScore++;
       updateScoreboard();
-      showWinner(!ent.isPlayer);
-
+      
       // Reset positions and HP
       player.x = 50; player.y = 50; player.kx = 0; player.ky = 0; player.currentHp = player.stats.maxHp;
       enemy.x = 250; enemy.y = 50; enemy.kx = 0; enemy.ky = 0; enemy.currentHp = enemy.stats.maxHp;
@@ -450,19 +450,9 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats, sett
           const dmg = Math.max(1, ent.stats.attack - (target.stats.defense / 2));
           target.currentHp -= dmg;
           
-          if (ent.attackType === 'ranged') {
-            spawnProjectile(ent, target);
-          } else {
-            // Melee Knockback
-            target.kx = (dx / dist) * 15;
-            target.ky = (dy / dist) * 15;
-          }
-
           const targetEl = (target === player ? playerEl : enemyEl);
           const fill = targetEl.querySelector('.gh-hp-bar-fill') as HTMLElement;
           if (fill) fill.style.width = `${Math.max(0, (target.currentHp / target.stats.maxHp) * 100)}%`;
-          
-          setTimeout(() => showDamage(target.x, target.y, dmg), ent.attackType === 'ranged' ? 300 : 0);
           
           // Attack animation
           el.style.transform = `scale(1.2)`;
@@ -489,10 +479,20 @@ function startBattle(playerStats: AdvancedStats, enemyStats: AdvancedStats, sett
     el.style.top = `${ent.y}px`;
   };
 
-  battleInterval = setInterval(() => {
-    updateEntity(player, playerEl, enemy);
-    updateEntity(enemy, enemyEl, player);
-  }, 50);
+  const battleLoop = () => {
+    if (isArenaVisible) {
+      updateEntity(player, playerEl, enemy);
+      updateEntity(enemy, enemyEl, player);
+    }
+    battleAnimationFrame = requestAnimationFrame(battleLoop);
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    isArenaVisible = entries[0].isIntersecting;
+  }, { threshold: 0.1 });
+  observer.observe(arenaContainer);
+
+  battleLoop();
 }
 
 function renderTickerGraph(data: { date: string; count: number }[], thresholds: Record<number, {min:number; max:number}>) {
@@ -1129,9 +1129,12 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
   if (battleToggleCheck) {
     battleToggleCheck.addEventListener('change', async () => {
       await chrome.storage.local.set({ showBattle: battleToggleCheck.checked });
-      if (!battleToggleCheck.checked && battleInterval) {
-        clearInterval(battleInterval);
-        battleInterval = null;
+      if (!battleToggleCheck.checked && battleAnimationFrame) {
+        cancelAnimationFrame(battleAnimationFrame);
+        battleAnimationFrame = null;
+        isArenaVisible = false;
+      } else if (battleToggleCheck.checked && ownCharacter) {
+        startBattle(ownCharacter, advanced, settings);
       }
     });
   }

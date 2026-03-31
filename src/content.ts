@@ -80,6 +80,8 @@ function init() {
   });
 
   let isAnalysisRunning = false;
+  let analysisTimeout: any = null;
+
   const runAnalysis = async () => {
     if (!isContextValid() || isAnalysisRunning) return;
     isAnalysisRunning = true;
@@ -126,17 +128,34 @@ function init() {
     } finally { isAnalysisRunning = false; }
   };
 
+  const debouncedAnalysis = () => {
+    if (analysisTimeout) clearTimeout(analysisTimeout);
+    analysisTimeout = setTimeout(() => {
+      if (document.querySelector('.js-yearly-contributions') && !document.getElementById('git-heat-stats')) {
+        runAnalysis().catch(() => {});
+      }
+    }, 500);
+  };
+
   const observer = new MutationObserver((mutations) => {
     if (!isContextValid()) { observer.disconnect(); return; }
     for (const mutation of mutations) {
       if (mutation.type === 'childList') {
-        if (document.querySelector('.js-yearly-contributions') && !document.getElementById('git-heat-stats')) {
-          runAnalysis().catch(() => {});
+        const target = mutation.target as HTMLElement;
+        if (target.id === 'js-pjax-container' || target.classList.contains('js-yearly-contributions') || target.closest('.js-yearly-contributions')) {
+          debouncedAnalysis();
         }
       }
     }
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+
+  const mainContent = document.querySelector('main');
+  if (mainContent) {
+    observer.observe(mainContent, { childList: true, subtree: true });
+  } else {
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+  
   runAnalysis().catch(() => {});
 }
 
