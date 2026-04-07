@@ -1,6 +1,7 @@
 import { ContributionDay, AdvancedStats, GitHeatSettings, Skill, AvatarData, BattleStats, YearlyStats, CreatedRepo } from '../types';
 import { getCodingClass, generateGuestCharacter } from './rpg';
 import { DEFAULT_GRID_ORDER, GRID_ITEM_TO_SETTING, VISIBILITY_KEYS } from './constants';
+import { formatStreakTooltip } from './utils';
 
 // Module-level state to persist across re-injections
 let selectionStartIdx = -1;
@@ -641,7 +642,7 @@ const highlightWeekday = (weekdayIndex: number, startDate?: string, endDate?: st
 
 function renderYearComparison(results: YearlyStats[]) {
   if (results.length === 0) return '';
-  
+
   return `
     <div id="gh-year-comparison" class="mb-3" style="border-top: 1px solid var(--color-border-muted); padding-top: 8px;">
       <div class="d-flex flex-justify-between flex-items-center mb-2">
@@ -664,7 +665,7 @@ function renderYearComparison(results: YearlyStats[]) {
               <tr style="border-bottom: 1px solid var(--color-border-subtle);">
                 <td style="padding: 4px; font-weight: 600;">${r.year}</td>
                 <td style="padding: 4px;">${r.total}</td>
-                <td style="padding: 4px;">${r.advanced.longestStreak}d</td>
+                <td style="padding: 4px;" title="${formatStreakTooltip(r.advanced.longestStreak)}">${r.advanced.longestStreak}d</td>
                 <td style="padding: 4px;">${r.advanced.velocity} c/d</td>
                 <td style="padding: 4px;">${r.advanced.consistency}%</td>
                 <td style="padding: 4px;">${r.thresholds[4]?.min ?? '?'}+</td>
@@ -676,7 +677,10 @@ function renderYearComparison(results: YearlyStats[]) {
     </div>
   `;
 }
+
+
 export async function injectStats(thresholds: Record<number, {min:number; max:number}>, percentiles: any, data: ContributionDay[], advanced: AdvancedStats, savedOrder: string[] | null = null, showTrends: boolean = true, yearlyComparison: YearlyStats[] = [], ownCharacter?: AdvancedStats) {
+
   const settings = await chrome.storage.local.get(VISIBILITY_KEYS) as GitHeatSettings;
   const isBattleEnabled = settings.showBattle !== false;
 
@@ -738,7 +742,7 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
                     (advanced.streakHeat.status === 'On Fire' || advanced.streakHeat.status === 'Hot' ? 'streak-hot' : '');
 
   const itemMap: Record<string, string> = {
-    'gh-streak': `<div class="stat-card highlightable ${heatClass}" id="gh-streak" data-current-streak="${(advanced.currentStreakDates || []).join(',')}" data-longest-streak="${(advanced.longestStreakDates || []).join(',')}" title="Your current streak: ${advanced.currentStreak} days. Longest streak ever: ${advanced.longestStreak} days.">
+    'gh-streak': `<div class="stat-card highlightable ${heatClass}" id="gh-streak" data-current-streak="${(advanced.currentStreakDates || []).join(',')}" data-longest-streak="${(advanced.longestStreakDates || []).join(',')}" title="Your current streak: ${formatStreakTooltip(advanced.currentStreak)}. Longest streak ever: ${formatStreakTooltip(advanced.longestStreak)}.">
       <div class="d-flex flex-justify-between flex-items-center">
         <span class="color-fg-muted d-block text-small">Current / Best Streak</span>
         ${advanced.streakHeat.multiplier > 1 ? `<span class="Label" style="background: ${advanced.streakHeat.color}; color: white; font-size: 9px; padding: 0 4px;">${advanced.streakHeat.icon} ${advanced.streakHeat.status}</span>` : ''}
@@ -753,7 +757,7 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
         </div>
       ` : `<div class="text-small color-fg-accent mt-1 font-weight-bold" style="font-size: 9px;">NEW PERSONAL RECORD! 🏆</div>`}
     </div>`,
-    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${(advanced.bestMonthDates || []).join(',')}" title="Best month score vs average month score (${Math.round(advanced.avgMonthScore)}). (${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${advanced.bestMonthStats.streak} day streak)">
+    'gh-best-month': `<div class="stat-card highlightable" id="gh-best-month" data-month-dates="${(advanced.bestMonthDates || []).join(',')}" title="Best month score vs average month score (${Math.round(advanced.avgMonthScore)}). (${advanced.bestMonthStats.count} commits, ${advanced.bestMonthStats.consistency}% consistency, ${formatStreakTooltip(advanced.bestMonthStats.streak)} streak)">
       <span class="color-fg-muted d-block text-small">Best Month (${advanced.bestMonthName})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.bestMonthStats.score}</strong>
@@ -763,7 +767,7 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
           </span>` : ''}
       </div>
     </div>`,
-    'gh-worst-month': `<div class="stat-card highlightable" id="gh-worst-month" data-month-dates="${(advanced.worstMonthDates || []).join(',')}" title="Calculation: Commits × Consistency × Max Streak. This month: ${advanced.worstMonthStats.count} commits, ${advanced.worstMonthStats.consistency}% consistency, ${advanced.worstMonthStats.streak} day streak. Average month score: ${Math.round(advanced.avgMonthScore || 0)}.">
+    'gh-worst-month': `<div class="stat-card highlightable" id="gh-worst-month" data-month-dates="${(advanced.worstMonthDates || []).join(',')}" title="Calculation: Commits × Consistency × Max Streak. This month: ${advanced.worstMonthStats.count} commits, ${advanced.worstMonthStats.consistency}% consistency, ${formatStreakTooltip(advanced.worstMonthStats.streak)} streak. Average month score: ${Math.round(advanced.avgMonthScore || 0)}.">
       <span class="color-fg-muted d-block text-small">Worst Month (${advanced.worstMonthName})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.worstMonthStats.score}</strong>
@@ -773,7 +777,7 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
           </span>` : ''}
       </div>
     </div>`,
-    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${(advanced.bestWeekDates || []).join(',')}" title="Best week score vs average week score (${Math.round(advanced.avgWeekScore)}). (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${advanced.bestWeekStats.streak} day streak)">
+    'gh-best-week': `<div class="stat-card highlightable" id="gh-best-week" data-week-dates="${(advanced.bestWeekDates || []).join(',')}" title="Best week score vs average week score (${Math.round(advanced.avgWeekScore)}). (${advanced.bestWeekStats.count} commits, ${advanced.bestWeekStats.consistency}% consistency, ${formatStreakTooltip(advanced.bestWeekStats.streak)} streak)">
       <span class="color-fg-muted d-block text-small">Best Week (${advanced.bestWeekName})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.bestWeekStats.score}</strong>
@@ -783,7 +787,7 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
           </span>` : ''}
       </div>
     </div>`,
-    'gh-worst-week': `<div class="stat-card highlightable" id="gh-worst-week" data-week-dates="${(advanced.worstWeekDates || []).join(',')}" title="Calculation: Commits × Consistency × Max Streak. This week: ${advanced.worstWeekStats.count} commits, ${advanced.worstWeekStats.consistency}% consistency, ${advanced.worstWeekStats.streak} day streak. Average week score: ${Math.round(advanced.avgWeekScore || 0)}.">
+    'gh-worst-week': `<div class="stat-card highlightable" id="gh-worst-week" data-week-dates="${(advanced.worstWeekDates || []).join(',')}" title="Calculation: Commits × Consistency × Max Streak. This week: ${advanced.worstWeekStats.count} commits, ${advanced.worstWeekStats.consistency}% consistency, ${formatStreakTooltip(advanced.worstWeekStats.streak)} streak. Average week score: ${Math.round(advanced.avgWeekScore || 0)}.">
       <span class="color-fg-muted d-block text-small">Worst Week (${advanced.worstWeekName})</span>
       <div class="d-flex flex-items-center gap-1">
         <strong class="f3-light">Score: ${advanced.worstWeekStats.score}</strong>
@@ -793,14 +797,14 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
           </span>` : ''}
       </div>
     </div>`,
-    'gh-current-week': `<div class="stat-card highlightable" id="gh-current-week" data-week-dates="${(advanced.currentWeekDates || []).join(',')}" title="Your performance this week so far vs average week score (${Math.round(advanced.avgWeekScore)}). (${advanced.currentWeekStats.count} commits, ${advanced.currentWeekStats.consistency}% consistency, ${advanced.currentWeekStats.streak} day streak)">
+    'gh-current-week': `<div class="stat-card highlightable" id="gh-current-week" data-week-dates="${(advanced.currentWeekDates || []).join(',')}" title="Your performance this week so far vs average week score (${Math.round(advanced.avgWeekScore)}). (${advanced.currentWeekStats.count} commits, ${advanced.currentWeekStats.consistency}% consistency, ${formatStreakTooltip(advanced.currentWeekStats.streak)} streak)">
       <span class="color-fg-muted d-block text-small">Current Week</span>
       <strong class="f3-light">Score: ${advanced.currentWeekStats.score}</strong>
     </div>`,
     'gh-dominant-weekday': `<div class="stat-card" id="gh-dominant-weekday" title="The day of the week you are most active in terms of being the 'winner' of the week most often."><span class="color-fg-muted d-block text-small">Dominant Weekday</span><strong class="f3-light">${advanced.dominantWeekday} (${advanced.dominantWeekdayWins} weeks)</strong></div>`,
-    'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${(advanced.biggestIslandDates || []).join(',')}" title="The longest continuous period where you had at least level 2 (moderate) activity."><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
-    'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${(advanced.biggestSlumpIslandDates || []).join(',')}" title="The longest continuous period where you had level 0-1 (minimal) activity."><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
-    'gh-above-avg-island': `<div class="stat-card highlightable" id="gh-above-avg-island" data-island="${(advanced.biggestAboveAvgIslandDates || []).join(',')}" title="The longest continuous period where you were above your daily average velocity (${advanced.velocity} commits)."><span class="color-fg-muted d-block text-small">Longest Above Avg Island</span><strong class="f3-light">${advanced.biggestAboveAvgIslandSize} days</strong></div>`,
+    'gh-island': `<div class="stat-card highlightable" id="gh-island" data-island="${(advanced.biggestIslandDates || []).join(',')}" title="The longest continuous period where you had at least level 2 (moderate) activity: ${formatStreakTooltip(advanced.biggestIslandSize)}"><span class="color-fg-muted d-block text-small">Biggest Island (L2+)</span><strong class="f3-light">${advanced.biggestIslandSize} days</strong></div>`,
+    'gh-slump-island': `<div class="stat-card highlightable" id="gh-slump-island" data-island="${(advanced.biggestSlumpIslandDates || []).join(',')}" title="The longest continuous period where you had level 0-1 (minimal) activity: ${formatStreakTooltip(advanced.biggestSlumpIslandSize)}"><span class="color-fg-muted d-block text-small">Worst Island (0-1)</span><strong class="f3-light">${advanced.biggestSlumpIslandSize} days</strong></div>`,
+    'gh-above-avg-island': `<div class="stat-card highlightable" id="gh-above-avg-island" data-island="${(advanced.biggestAboveAvgIslandDates || []).join(',')}" title="The longest continuous period where you were above your daily average velocity (${advanced.velocity} commits): ${formatStreakTooltip(advanced.biggestAboveAvgIslandSize)}"><span class="color-fg-muted d-block text-small">Longest Above Avg Island</span><strong class="f3-light">${advanced.biggestAboveAvgIslandSize} days</strong></div>`,
     'gh-velocity': `<div class="stat-card" id="gh-velocity" title="Average commits per active day: ${advanced.velocity}. Trend: Last 7 days vs Overall. Acceleration: Last 7 days vs 7 days prior.">
       <span class="color-fg-muted d-block text-small">Average Velocity</span>
       <div class="d-flex flex-items-center flex-wrap gap-1">
@@ -821,7 +825,7 @@ export async function injectStats(thresholds: Record<number, {min:number; max:nu
     'gh-velocity-below': `<div class="stat-card highlightable" id="gh-velocity-below" title="Days where your commit count was > 0 but < your average velocity (${advanced.velocity})."><span class="color-fg-muted d-block text-small">Below Average Days</span><strong class="f3-light">${advanced.belowVelocityDates.length} days</strong></div>`,
     'gh-consistency': `<div class="stat-card" id="gh-consistency" title="${advanced.statsForTooltips.consistency.active} active days out of ${advanced.statsForTooltips.consistency.total} total days. Average active days per week: ${((advanced.statsForTooltips.consistency.active / advanced.statsForTooltips.consistency.total) * 7).toFixed(1)}."><span class="color-fg-muted d-block text-small">Consistency</span><strong class="f3-light">${advanced.consistency}%</strong></div>`,
     'gh-weekend': `<div class="stat-card" id="gh-weekend" title="${advanced.statsForTooltips.weekend.active} active weekend days out of ${advanced.statsForTooltips.weekend.total} total weekend days. Weekend contribution share: ${((advanced.weekendCommits / advanced.total) * 100).toFixed(1)}%."><span class="color-fg-muted d-block text-small">Weekend Score</span><strong class="f3-light">${advanced.weekendScore}%</strong></div>`,
-    'gh-slump': `<div class="stat-card highlightable" id="gh-slump" title="Longest period without any commits: ${advanced.longestSlump} days. Period: ${(advanced.longestSlumpDates || []).length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
+    'gh-slump': `<div class="stat-card highlightable" id="gh-slump" title="Longest period without any commits: ${formatStreakTooltip(advanced.longestSlump)}. Period: ${(advanced.longestSlumpDates || []).length > 0 ? (advanced.longestSlumpDates[0] + ' to ' + advanced.longestSlumpDates[advanced.longestSlumpDates.length - 1]) : 'N/A'}"><span class="color-fg-muted d-block text-small">Longest Slump</span><strong class="f3-light">${advanced.longestSlump} days</strong></div>`,
     'gh-best-day': `<div class="stat-card highlightable" id="gh-best-day" data-weekday="${advanced.bestDayIndex}" title="Average for this day: ${advanced.bestWeekdayAvg} commits. Comparison vs other weekdays: ${advanced.bestWeekdayTrend > 0 ? '+' : ''}${advanced.bestWeekdayTrend}%.">
       <span class="color-fg-muted d-block text-small">Best Weekday</span>
       <div class="d-flex flex-items-center gap-1">
