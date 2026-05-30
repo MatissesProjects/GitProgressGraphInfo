@@ -54,11 +54,11 @@ jobs:
         working-directory: profile-updater
         run: |
           npm install
-          # Install Chrome cleanly without cache collision
-          npx puppeteer browsers install chrome
-          # Install system dependencies
+          # Install Chrome and its system dependencies automatically
+          sudo npx puppeteer browsers install chrome --install-deps
+          # Install ffmpeg for GIF generation
           sudo apt-get update
-          sudo apt-get install -y libgbm-dev libnss3 libatk-bridge2.0-0 libgtk-3-0t64 libxss1 libasound2t64 libpango-1.0-0 libpangocairo-1.0-0 ffmpeg
+          sudo apt-get install -y ffmpeg
 
       - name: Run Profile Updater
         working-directory: profile-updater
