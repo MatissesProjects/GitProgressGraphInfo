@@ -54,6 +54,8 @@ jobs:
         working-directory: profile-updater
         run: |
           npm install
+          # Clean up any potential root-owned cache from previous failed runs
+          sudo rm -rf /home/runner/.cache/puppeteer
           # Install Chrome and its system dependencies automatically
           npx puppeteer browsers install chrome --install-deps
           # Install ffmpeg for GIF generation
