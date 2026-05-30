@@ -55,7 +55,7 @@ jobs:
         run: |
           npm install
           # Install Chrome and its system dependencies automatically
-          sudo npx puppeteer browsers install chrome --install-deps
+          npx puppeteer browsers install chrome --install-deps
           # Install ffmpeg for GIF generation
           sudo apt-get update
           sudo apt-get install -y ffmpeg
