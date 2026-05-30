@@ -52,8 +52,6 @@ jobs:
 
       - name: Install dependencies
         working-directory: profile-updater
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: 'true'
         run: |
           npm install
           # Install Chrome cleanly without cache collision
