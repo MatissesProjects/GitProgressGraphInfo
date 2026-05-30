@@ -87,6 +87,7 @@ We will target the SVG/Table elements in the GitHub UI.
 - [x] Fix PR activity double-counting in timeline scraper.
 - [x] Implement AFK Battler toggle for persistent visibility and control.
 - [x] Implement Guest Character Fallback for uninitialized profiles (Workflows).
+- [x] Fix daily GitHub Actions profile updater workflow failure by replacing fragile manual library installations with Puppeteer's automated, version-aware '--install-deps' CLI.
 
 ## 6. Future Expansion Ideas
 * **Year Comparison:** Compare "Level 4" thresholds between 2023 and 2024.
